@@ -12,11 +12,12 @@
 完整方法与历次取舍见[编译分析](../analyses/policy_space_meta_compiler_proposal_20261015.md)。
 旧反馈学习原理保持其真实历史；当前不把自由因子、BA或FM接通重新描述成未经尝试的新原理。
 
-**当前唯一范围为§21：同生成器/fresh同流，仅前1000更新以参考另一因子分别教A/B；后180仍FM/.1BA，终点576/400。**
-§2–20均为完成/失败/恢复历史；§20 seen244/held57，实际条件学习不足见控制空间分析§28–29。
+**当前唯一范围为§22：只读已保存的§21 update1090，重新编译并执行同条件576/400，与原1180比较；0新训练。**
+§2–21均为完成/失败/恢复历史；§21 seen306/held128比§20的244/57部分恢复，仍低于强MT153。
+完整取舍见控制空间分析§30–31；相邻点检验不等于已获稳定性或后续训练资格。
 §18实践505→647而held117→119，§19内部排除投影98→37/128，
 停止原固定全局轨迹空间继续加量/微扫；不声称空间唯一根因或所有低维方法无效。
-新候选零交互、无任务内动作轨迹拟合/新reference/额外checkpoint选择/controls/Test；唯一实施合同见§21。
+本批零交互适应、无任务内动作轨迹拟合/新reference/controls/Test；唯一实施合同见§22。
 
 ## 2. 已核资产与选择新参考教师的理由
 
@@ -1964,3 +1965,93 @@ source模型/数据计算无改动，不为这次窄目标改动做无关架构�
 无GPUh硬限；明显超期、真实科学或其它资源边界变化明确报告，不能静默多训或把时间充裕当扩矩阵理由。
 全部成本/教学读取/有效更新/新976/资源退出/Git交付后一次回main01a13dd9并归还canonical窗口。
 唯一owner持续真实退出等待，0自Queue/心跳/第二waiter；main消费后继续科学取舍，0自动后继。
+
+## 22. 已保存1090的相邻完整能力读出
+
+### 22.1 裁决问题与唯一范围
+
+§21原1180为seen306/576、target135/384、validation128/400；相对同曝光§20的244/71/57，
+训练域及held三个suite有实质恢复，分别保留旧seen225/244、held45/57，source保203/218。
+但相对Reader900为seen少28、held仅净11且G50/L39，held breadth仍5，低于强MT153且16/23/39仍零。
+因此只执行§21.5预留的既存1090完整读出，判断后半段的能力保持、获得与波动；**不追加任何训练**。
+这不是把57降为接受标准，也不是用一个相邻低点证明1180已经稳定；完整理由见分析§30–31。
+
+唯一新ROOT为`/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/source_weight_factor_credit_adjacent1090_seed7`。
+唯一模型来自原`source_weight_factor_credit_seed7/checkpoints/update_00001090/state.pt`及相邻manifest，
+训练producer为`eadfe958ff17b0d1b4e1ff10265c234883b243b0`，stage joint、next_update1090，
+schema `ember_source_weight_factor_credit_r8_seed7_v1`，完整generator/Adam/流/六rank RNG均已保存。
+只读加载其generator，不copy checkpoint、不恢复optimizer、不写旧状态；新读取代码身份与训练来源分列。
+原schema/目标、source W、Φ900及layout身份须由实际loader正确承接，不能改旧manifest或将其冒充新run训练状态。
+0 update1000/其它checkpoint读出、0新初始化/loss/scale/seed/曝光、0参考重训或选择、0实践/任务内拟合/搜索/Test。
+
+### 22.2 固定计算、教学与最终部署
+
+沿§21.2/§20.3原4,838,160参数SourceWeightCompiler，完整38-target/rank8/alpha8/dropout0，
+冻结source1000、normalization、W/A0/76个S、Reader900全部有序M；不换结构、数值语义或生成路径。
+每条合法教学独立产生该1090模型的一套完整A/B，最终source加该LoRA执行；无MT、U、H或第二adapter。
+Compiler无直接L/ID输入，exact L在原生policy正常读取；原teacher动作/state/reward/terminal等不进入条件。
+最终LoRA冻结后Compiler/M/参考/helpers退出，final只读自身观测和exact L，不用final反馈适应或选参数。
+
+§20 source_inputs/W/D和2200小M按原身份只读引用；本ROOT仅维护引用与消费账，不写旧SQLite或ready状态。
+原59114训练/14528 held采样帧及所有已付教学成本保留，缓存命中不等于零教学。
+共享M现有617130072 bytes计入统一≤1GiB额度；若原合法同项需要重建，沿原完整frame indices/stride5/有序前端
+重建并计费，所有新旧payload/partial/reserved合计受限；不换视频、不复制高维prefix/W/旧cache树。
+held离线标签及最终反馈无梯度；原训练数据/专家只作来源，不进入本次新condition的计算。
+
+### 22.3 唯一完整面板与实际配对
+
+严格复用§20.5的`video_initial_seed7/panels.json`：seen36×init0..15共576、root202610151；
+validation `[3,6,11,16,23,26,31,39]`×50共400、root7。保持原registered scenes、state/video/policy-env RNG。
+validation每task全部50条合法video各一次，由原video_schedule确定，与GPU/worker/恢复顺序无关。
+每一行都须由1090新生成完整LoRA并新执行episode，不用原1180、source或其它旧输出/行填结果。
+缓存输入复用与新输出必须分开登记；保存全部976 LoRA、实际raw rows、首plan配对事实与来源。
+
+官方render256/model224、双相机180度rotate一次、state8/action7、10flow、前5动作后replan、dummy settling10，
+target horizon220/280/300/520、support400，成功立即终止。无独立环境smoke或额外教学controls。
+新读取实际首批是976的有效子集，检查消费者不重复其有效环境行，也不按中间结果停止或改变面板。
+
+主要相邻比较为**1090→既存1180**，从原真实行复算R/G/L、churn/Jaccard、成功集合重合与逐task/suite。
+seen分target24/support12、identity/nonidentity，报告source218保持及reference新增288/target270的保留；
+held单列task26与其余350，以及16/23/39零项。不得只交总分或只比较弱§20控制臂。
+全部既存参照继续只读：seen source218/reference502/U484/Reader900334/Reader1800413/§20的244；
+held Reader117/111、MT153、G165、D175/168、ψ119、§20的57及本家族1180的128。
+MT缺proprio、G/D含MT、ψ含实践及seen参考使用过init面板等限制原样披露，不伪造配对元数据或重跑强参照。
+
+### 22.4 结果分支与停止含义
+
+本次只回答固定方法末段是否获得并保留真实能力，不能区分pair预训练与FM各自唯一因果贡献，
+不能证明有序操作知识、当前source权重地址的必要性或所有任务泛化；没有匹配视频control便不作视频因果主张。
+复用原训练曲线作背景；不新增逐层几何、动作探针或内部模型forward来替代976闭环。
+
+若1090→1180跨任务继续获得且合理保持，支持后段仍在学习的解释，但**不自动授权更多更新**，
+更不能取两点最大值或union冒称稳定模型。main须把两点相对强MT/Reader的差距、任务覆盖和代价一起裁决。
+若两点均停在相近的不足、明显回落/交换、或恢复仍集中于旧方法已有的少数任务，
+则当前冻结Φ900＋source-W共享行列头＋36参考回归没有新增训练投入依据，执行§21家族停止线。
+相邻高低本身不是资格；即使方向向上，也不能以小幅loss或个别任务增长保护同一弱假说。
+不追加更多保存点寻找好趋势、不自动补controls/Test、不换loss/初始化/scale/seed或第二时间块。
+本批完整回报后由main消费并自主确定后继；停止当前假说不等于停止EMBER或等待Owner例行许可。
+
+### 22.5 预算、执行与生命周期
+
+独立正常976提交/control335520/dummy9760/总345280；另16项工程extra，累计同时满足
+**992提交/control343840/dummy9920/总353760**。0旧余额转入；unknown最坏收费，正常阴性和有效行不重跑。
+全部准备/失败/物化/评测费用真实保留；原§21的3.579776625832GPUh/266610步和§20的9.817228845821GPUh/
+281142步、source/reference/Reader等共享依赖单列，不能把只读采用当从零成本或重复累加依赖。
+
+新增峰**6GiB**，含976完整LoRA约2.4GiB、metadata/atomic临时文件/日志/分析和余量；0新CP/W/M整树副本。
+执行者在创建新ROOT/cache及launch前现场核strg01 data1独立user quota、相关du和shared容量，新增只写data1。
+每launch/resume同时核双node GPU/process/实际VRAM及CPU PSS/线程；合计6或8、单node≤6，训练占用为0。
+独立物化/评测沿原动态long-first/persistent workers、16/8/4有用槽，0NCCL/0dummy/0重复32探测。
+复用§21真实16/8吞吐和显存证据，按live余量选有用并行；0单独GPU profile/临时训练/额外环境消费者。
+
+沿既有control_space模型、checkpoint loader、逐条件物化和queue实现唯一当前只读owner；
+不复制平行模型或添加自动训练fallback。旧主动训练合同由Git/frozen保留，必要model/loader保持真实来源兼容。
+窄实现核验实际1090来源、976映射/完整LoRA、旧输入只读和ledger消费者；不更改模型数学或正常数值策略。
+执行者独占工程/科研记录/Git，在独占分支完成针对性检查、集成push，从新clean detached冻结版本正式运行；
+main不重复工程测试或设ACK。真正涉及科学/信息墙/选择/其它资源边界的变化具体回报，普通工程修复自行闭环。
+
+预计**35–65分钟**：窄实现/实际消费者约10–15分钟，976物化与读出约25–50分钟，
+依据§21同面板readout实耗2.425849497914GPUh及持久worker吞吐，受现场卡数/排队/加载影响；验收/Git另计。
+首个有用阶段按实测校准，显著超期说明原因，GPUh不是硬限。家族与原批时钟/全部失败不重置。
+唯一owner持续等待真实退出，0自Queue/心跳/第二waiter；整批976、费用/教学/资源退出及Git完成后一次回main01a13dd9，
+明确归还canonical写窗口。登记或接手不冒称GPU已运行，科学/工程完成后均无自动后继。

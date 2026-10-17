@@ -1,3 +1,18 @@
+## 2026-10-17 §21已科学消费；唯一§22只读1090，0新训练
+
+01:25Z完整回报已交main并归还canonical写窗口，main15b98272 clean pushed。
+main直接消费实际实现、1180更新/976新行和保存算子：target71→135，held57→128的恢复跨三个suite；
+pair改变了真实能力，不仅内部loss。但对Reader117仅G50/L39、对MT153为G32/L57，三零held与大量参考能力缺失仍在。
+BA .773562→.653264、晚十层q恢复并不意味着全层改善；pair阶段末实际BA比旧阶段高，不能唯一归因预训练/FM。
+完整解释见[分析§30–31](docs/analyses/source_control_space_learning_20261015.md#30-因子信用改变了完整能力但多数参考控制仍未传递)。
+
+main裁决唯一active为[design§22](docs/designs/source_policy_space_compiler_20261015.md#22-已保存1090的相邻完整能力读出)：
+原§21/eadfe958完整1090只读生成新976 LoRA/episode，与既存1180看保持/获得/波动；0训练/更多选点/controls/Test。
+ROOT source_weight_factor_credit_adjacent1090_seed7；独立992提交/353760联合步/16工程extra，新增峰6GiB、共享M≤1GiB。
+已有W/D/M只读，不copy CP或旧输出；预计35–65分钟，沿现场GPU6/8-node6/CPU/data1准入和原实际16/8worker吞吐。
+文档push后实际派发唯一执行01a13dbf，接手后其独占工程/科研记录/Git；当前是科学登记，不是GPU启动记录。
+整批退出/验收/Git后一次回main归还窗口，0Queue/心跳/第二waiter/工程ACK；相邻结果不自动授权续训，main须继续裁决。
+
 ## 2026-10-17 §21整批完成，待一次可靠主讨论交付
 
 owner878801于01:18:16.890092Z exit0，直接reader1430/PTY43534结束；00:32:39首次至科学退出45.631min，旧90–150min/修正60–100min与家族09:05:48.038保留。formal全程eadfe958，无工程中断。

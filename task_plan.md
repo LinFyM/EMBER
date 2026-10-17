@@ -1,3 +1,17 @@
+## 2026-10-17 当前唯一目标：已保存1090的完整相邻能力读出
+
+main已消费§21实际源码/1180日志/976新行和CPU算子原件：seen244→306、target71→135、held57→128，
+恢复跨三个held suite，保留旧held45/57与source203/218；但对Reader117只净11且G50/L39，低于强MT153，三任务仍零。
+完整科学判断见[分析§30–31](docs/analyses/source_control_space_learning_20261015.md#30-因子信用改变了完整能力但多数参考控制仍未传递)。
+
+唯一active [design§22](docs/designs/source_policy_space_compiler_20261015.md#22-已保存1090的相邻完整能力读出)：
+只读原§21 checkpoint1090，新生成并执行同条件seen576＋strict400，与既存1180检查保持/获得/波动。
+0训练/optimizer恢复/更多选点/内部探针/controls/Test；继续当前回归家族没有自动资格，结果后由main自主裁决后继。
+唯一ROOT source_weight_factor_credit_adjacent1090_seed7；976正常＋独立16工程extra，累计992提交/353760步/新增峰6GiB。
+原W/D/M与所有强参照只读，新976输出/episode不能复用旧结果；现场data1 quota/双node6或8卡/node6和CPU准入保持。
+预计实施/读取35–65分钟，验收/Git另计；登记不冒称GPU启动。文档push后唯一执行01a13dbf接手独占工程/记录/Git，
+完成整批一次回main并归还窗口，0main工程ACK/Queue/心跳/第二waiter。§21已完成、所有成本/旧正负证据保留。
+
 ## 2026-10-17 §21执行验收完成，0自动后继
 
 唯一§21目标已完成：fresh相同模型/seed/流，1000 pair+180原FM/.1BA，完整1180状态及976新控制器/episode；没有恢复旧§20训练或使用旧episode填结果。

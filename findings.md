@@ -1,3 +1,10 @@
+## 2026-10-17 §21分别监督因子的完整结果与适用边界
+
+固定source-W生成器/Φ900/相同fresh seed7与1000+180曝光，阶段A改teacher-detached pair、后段保持FM+.1BA后，seen244→306，目标24为71→135/384、support173→171；参考新增288保35→87（target270保31→82），source218保203/失15，identity79/80。训练域有实质部分获取，仍低于Reader334/413及reference502。
+严格400旧57→128，Reader117→128为R78G50L39，MT153→128为R96G32L57；task26的42→38与其它七task15→90并存，task16/23/39仍0。单点变化不能认证稳定超过强MT、视频因果或解决迁移；完整分布及所有旧正负参照保留。
+相同D的576保存输出CPU分解：BA .773562→.653264，公共.034605/任务差异.611402/同task视频.007257，晚十层q误差均值1.000105→.828561。pair末20=.323926对应真实BA .759277（旧阶段A真实BA .705336），故新loss下降不能直接当真实乘积恢复或归因唯一阶段。两head/body/native信用真实，不单独证明操作理解。
+完整实际原件与一次CPU读回、成功集合、费用/资源见[报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/source_weight_factor_credit_seed7/analysis/engineering_completion.md)。0自动邻点/controls/Test/加量；main依§21.5消费后裁决，不清零旧G/E-D/V负证据或宣布全部hypernetwork/source-r8不可能。3.579776625832GPUh/266610步及旧共享依赖独立，缓存复用不叫零教学。
+
 ## 2026-10-17 §21真实CPU消费者通过；正式计算尚未开始
 
 pair低秩Gram与小dense oracle的数值/生成A、B梯度一致；teacher双stopgrad、identity L_A=0、真实BA日志无梯度通过。

@@ -1,3 +1,12 @@
+## 2026-10-17 §21整批完成，待一次可靠主讨论交付
+
+owner878801于01:18:16.890092Z exit0，直接reader1430/PTY43534结束；00:32:39首次至科学退出45.631min，旧90–150min/修正60–100min与家族09:05:48.038保留。formal全程eadfe958，无工程中断。
+完整1180/36720逻辑视频/20160跨episodeFM、1000/1090/1180+rolling1170及完整Adam/RNG/流已验收。976新LoRA/episode、92shard，seen306（旧244/source218/ref502/Reader334413），target135/support171/identity79/breadth33；validation128（旧57/Reader117111/MT153/G165/D175168），八task为[32,9,38,0,0,38,11,0]。Reader对新R78G50L39，MT对新R96G32L57；单点无稳定或最终成功资格。
+真实BA .773562→.653264，晚十层q误差1.000105→.828561；新pair与真实BA分别记录，不以loss认证能力。全部不利任务/成功集合和目标参考新增270保82（旧31）保留。
+9job全exit0，3.579776625832GPUh/266610步/unknown0/extra0/16/有效行重跑0；实际峰6卡/node4/6，拟8最后两项被live6上限在launch前拒绝。32次fullclose/316累计envPID全退，末GPU0/zombie0，nodePSS .312/1.696GiB；不碰foreign。实际16/8/末2有用wave，无32探测。
+旧W/D/M只读，旧M index00:11早于本批；共享617130072bytes，新ROOT无W/D/M副本，约2.696GiB<16。全部费用/旧CP/事故与历史时钟保持；M命中不是零教学。
+[完整报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/source_weight_factor_credit_seed7/analysis/engineering_completion.md)含每task/suite/集合/信用/费用/资源；详情与来源见research_history和ROOT analysis。开发树已集成清理，formal frozen保留；最终clean pushed main见git_delivery.json。整批可靠回main后归还canonical写窗口，0自动邻点/controls/Test/补丁家族续跑。
+
 ## 2026-10-17 §21首正式有效更新
 
 2026-10-17T00:41:55.734Z正式fresh pair update1完成：6rank/36条件/pack6/row4096无重算，.874s（含首次加载/同步）、峰5438MiB。

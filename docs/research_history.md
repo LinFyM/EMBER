@@ -1,3 +1,22 @@
+## 2026-10-17 §21完整1180/976与费用资源验收完成
+
+唯一owner878801于01:18:16.890092Z exit0，持续直接reader1430/PTY43534结束。00:32:39首次→科学退出45.631min；原90–150min、profile后60–100min预期均保留，验收/Git另计；家族09:05:48.038与旧费用不重置。全程formal eadfe958，无工程中断/热改/第二waiter/Queue。
+
+seen306/576（source218/ref502/U484/Reader900334/1800413/旧§20 244），target24 135/384（旧71）、support12 171/192（旧173）、identity79/80、breadth33/36。source R203/G103/L15；旧1180 R225/G81/L19；Reader900 R261/G45/L73。参考新增288保87（旧35），target270保82（旧31）；不是参考完整控制恢复。
+validation128/400（Reader117/111、MT153/G165/D175168/ψ119、旧§20 57）：Reader R78/G50/L39，MT R96/G32/L57，旧1180 R45/G83/L12。八task[3,6,11,16,23,26,31,39]=[32,9,38,0,0,38,11,0]；task26较旧42少4、其余七task90/350（旧15）。单点未胜强MT，无相邻/视频因果或最终成功资格；全部不利task/集合保留。
+
+同D仅对576保存输出一次CPU分解，0新forward：BA .773562→.653264=公共.034605+task差异.611402+同task视频.007257；晚十层q误差均值1.000105→.828561。pair末20 L_A .200410/L_B .447443/L_pair .323926，真实BA .759277；joint末20BA .685333/FM .106504。新pair不能与旧BA损失直接等同，晚层仍有较大缺口。
+完整1180/36720逻辑video/20160跨episodequery，每task1020访问/560query；1000/1090/1180+rolling1170完整generator/Adam/scheduler/scaler/6rank CPU-CUDA RNG/流均核，同新1000 Adam接续、0旧优化器恢复。A/B头1000步均有梯度，body999；joint180均有真实完整LoRA余切和body信用，仅是实际消费者证据。
+
+976新完整LoRA/976episode/92shard；256850control+9760dummy=266610，unknown0/工程extra0/16/有效行重跑0，正常失败原样保留。9个实际job全exit0；3.579776625832GPUh=profile .063090001345+pair .500640106599+joint .590197019974+readout2.425849497914，0新RGB/H/实践/controls/Test。正式pair/joint均值.248229/1.759487s，峰allocator5479/14935MiB；临时2pair+2joint/224query、0env、参数弃用。
+pool拟8卡，第7/8项launch前live空闲10/8使上限6，均0child/0env/0GPUh；实际峰6/node峰4/6，不以训练world6限制整批。实际16/8/末2有用wave，0重探32；32次fullclose/累计316env PID（非并发），全部退出。node最低MemAvailable280.85/366.92GiB；末UID GPU0/zombies0，PSS .312/1.696GiB，foreign与服务进程未触碰。
+
+旧W/D/M只读，旧M index mtime00:11:23早于新派发；新ROOT无W/D副本/M payload目录。共享2200M charged617130072bytes<1GiB。训练全rank实际M读取37440次/1229564帧当量、物化976次/33459帧当量均旧M命中，0prefix重建/Phi forward；旧59114/14528采样帧保留已付教学成本，producer545读取0。profile全球88次为完整有用更新推导、仅rank0留14条细项，如实区分。
+ROOT最终约2.696GiB<16，磁盘未连续采样不虚称精确峰；原模型/数据/参考/Reader/§20 9.817228845821GPUh/281142步及所有旧CP/事故/费用区间不改、不双计共享依赖。
+
+完整每task/suite/target-support/identity、RGL/churn/Jaccard/成功集合、学习/读回/教学/费用/资源原件见[整批报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/source_weight_factor_credit_seed7/analysis/engineering_completion.md)及results/training_acceptance/engineering_acceptance/operator_readout/operator_comparison/teaching_consumption/resource_exit。
+当前有限批已结束，无自动1090/controls/Test/第二窗口或loss/初始化/scale/seed/曝光补丁。主讨论消费完整正负分布后依§21.5裁决家族与后继；不以本轮宣布全部hypernetwork/source-r8不可能。Git/开发树清理及整批可靠回报后归还canonical记录写窗口，身份见ROOT analysis/git_delivery.json。
+
 ## 2026-10-17 §21真实CPU消费者通过；正式计算尚未开始
 
 pair低秩Gram与小dense oracle的数值/生成A、B梯度一致；teacher双stopgrad、identity L_A=0、真实BA日志无梯度通过。

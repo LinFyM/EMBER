@@ -1,3 +1,10 @@
+## 2026-10-17 §21执行验收完成，0自动后继
+
+唯一§21目标已完成：fresh相同模型/seed/流，1000 pair+180原FM/.1BA，完整1180状态及976新控制器/episode；没有恢复旧§20训练或使用旧episode填结果。
+结果seen306/576、target135/support171；strict validation128/400，仍低于MT153且未做相邻/视频因果证据。完整结果与限制见[整批报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/source_weight_factor_credit_seed7/analysis/engineering_completion.md)。
+原预算同时满足：976提交/266610步、0extra/unknown/有效行重跑，3.579776625832GPUh，所有子进程/环境/GPU已退出；代码eadfe958，开发树已集成清理、正式frozen保留。当前无待跑科学阶段。
+完成clean pushed Git及一次可靠main01a13dd9交付后释放写窗口；由main消费正负分布并按§21.5裁决家族，不自动1090/controls/Test或loss/初始化/scale/seed/曝光补丁。时钟/完整费用/工程验收见progress与research_history，不把本有限批当最终目标成功。
+
 ## 2026-10-17 §21首正式有效更新
 
 2026-10-17T00:41:55.734Z正式fresh pair update1完成：6rank/36条件/pack6/row4096无重算，.874s（含首次加载/同步）、峰5438MiB。

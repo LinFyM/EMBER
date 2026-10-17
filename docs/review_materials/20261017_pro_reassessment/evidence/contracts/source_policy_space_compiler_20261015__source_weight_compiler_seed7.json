@@ -1,0 +1,267 @@
+{
+  "Test": false,
+  "alpha": 8,
+  "dropout": 0.0,
+  "eval_rows": 976,
+  "final_update": 1180,
+  "frozen_reader": "runs/source_policy_space_compiler_20261015/video_initial_seed7/checkpoints/update_00000900/state.pt",
+  "interaction_adaptation": false,
+  "limits": {
+    "BA_conditions": 36000,
+    "FM_queries": 20160,
+    "M_cache_bytes": 1073741824,
+    "added_peak_GiB": 16,
+    "control_steps": 343840,
+    "dummy_steps": 9920,
+    "engineering_extra_attempts": 16,
+    "joint_conditions": 720,
+    "optimizer_updates": 1180,
+    "physical_submissions": 992,
+    "profile_BA_equivalents": 8,
+    "profile_FM_queries": 448,
+    "profile_joint_equivalents": 4,
+    "total_steps": 353760
+  },
+  "normalization": "repo/configs/pi05_source_corpus_v1/source_normalization.json",
+  "panels": "runs/source_policy_space_compiler_20261015/source_weight_compiler_seed7/panels.json",
+  "phase": "source_weight_compiler",
+  "rank": 8,
+  "references": [
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0000/checkpoints/update_00001680/lora.safetensors",
+      "selected_update": 1680,
+      "task": 0
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0001/checkpoints/update_00001200/lora.safetensors",
+      "selected_update": 1200,
+      "task": 1
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0012/checkpoints/update_00000480/lora.safetensors",
+      "selected_update": 480,
+      "task": 12
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0013/checkpoints/update_00000960/lora.safetensors",
+      "selected_update": 960,
+      "task": 13
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0020/checkpoints/update_00000720/lora.safetensors",
+      "selected_update": 720,
+      "task": 20
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0021/checkpoints/update_00000320/lora.safetensors",
+      "selected_update": 320,
+      "task": 21
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0032/checkpoints/update_00000960/lora.safetensors",
+      "selected_update": 960,
+      "task": 32
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0034/checkpoints/update_00000960/lora.safetensors",
+      "selected_update": 960,
+      "task": 34
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0002/checkpoints/update_00000320/lora.safetensors",
+      "selected_update": 320,
+      "task": 2
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0004/checkpoints/update_00000960/lora.safetensors",
+      "selected_update": 960,
+      "task": 4
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0005/checkpoints/update_00001680/lora.safetensors",
+      "selected_update": 1680,
+      "task": 5
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0007/checkpoints/update_00000480/lora.safetensors",
+      "selected_update": 480,
+      "task": 7
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0014/checkpoints/update_00000480/lora.safetensors",
+      "selected_update": 480,
+      "task": 14
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0015/checkpoints/update_00000480/lora.safetensors",
+      "selected_update": 480,
+      "task": 15
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0017/checkpoints/update_00000480/lora.safetensors",
+      "selected_update": 480,
+      "task": 17
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0019/checkpoints/update_00000480/lora.safetensors",
+      "selected_update": 480,
+      "task": 19
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0022/checkpoints/update_00001200/lora.safetensors",
+      "selected_update": 1200,
+      "task": 22
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0025/checkpoints/update_00001680/lora.safetensors",
+      "selected_update": 1680,
+      "task": 25
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0028/checkpoints/update_00000720/lora.safetensors",
+      "selected_update": 720,
+      "task": 28
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0029/checkpoints/update_00001440/lora.safetensors",
+      "selected_update": 1440,
+      "task": 29
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0035/checkpoints/update_00000320/lora.safetensors",
+      "selected_update": 320,
+      "task": 35
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0036/checkpoints/update_00000720/lora.safetensors",
+      "selected_update": 720,
+      "task": 36
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0037/checkpoints/update_00001200/lora.safetensors",
+      "selected_update": 1200,
+      "task": 37
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0038/checkpoints/update_00001680/lora.safetensors",
+      "selected_update": 1680,
+      "task": 38
+    },
+    {
+      "path": null,
+      "selected_update": 0,
+      "task": 42
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0043/checkpoints/update_00001920/lora.safetensors",
+      "selected_update": 1920,
+      "task": 43
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0051/checkpoints/update_00000160/lora.safetensors",
+      "selected_update": 160,
+      "task": 51
+    },
+    {
+      "path": null,
+      "selected_update": 0,
+      "task": 55
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0056/checkpoints/update_00000480/lora.safetensors",
+      "selected_update": 480,
+      "task": 56
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0062/checkpoints/update_00000160/lora.safetensors",
+      "selected_update": 160,
+      "task": 62
+    },
+    {
+      "path": null,
+      "selected_update": 0,
+      "task": 64
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0073/checkpoints/update_00000320/lora.safetensors",
+      "selected_update": 320,
+      "task": 73
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0095/checkpoints/update_00000080/lora.safetensors",
+      "selected_update": 80,
+      "task": 95
+    },
+    {
+      "path": null,
+      "selected_update": 0,
+      "task": 96
+    },
+    {
+      "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0097/checkpoints/update_00000080/lora.safetensors",
+      "selected_update": 80,
+      "task": 97
+    },
+    {
+      "path": null,
+      "selected_update": 0,
+      "task": 101
+    }
+  ],
+  "schema": "ember_source_weight_complete_r8_seed7_v1",
+  "seed": 7,
+  "source_checkpoint": "repo/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+  "stages": {
+    "BA": {
+      "batch": 36,
+      "conditions": 36000,
+      "updates": 1000
+    },
+    "joint": {
+      "BA_weight": 0.1,
+      "batch": 112,
+      "conditions": 720,
+      "queries": 20160,
+      "updates": 180
+    }
+  },
+  "targets": 38,
+  "tasks": [
+    0,
+    1,
+    12,
+    13,
+    20,
+    21,
+    32,
+    34,
+    2,
+    4,
+    5,
+    7,
+    14,
+    15,
+    17,
+    19,
+    22,
+    25,
+    28,
+    29,
+    35,
+    36,
+    37,
+    38,
+    42,
+    43,
+    51,
+    55,
+    56,
+    62,
+    64,
+    73,
+    95,
+    96,
+    97,
+    101
+  ]
+}

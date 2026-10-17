@@ -1,0 +1,1399 @@
+{
+  "source": "runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/refinement_from8883_20261013/analysis/completion_20261013/paired_raw_rows.jsonl",
+  "all36": {
+    "successes": {
+      "MT": 340,
+      "G432": 337,
+      "G864": 341,
+      "G1296": 348,
+      "G8883": 362,
+      "G24849": 425,
+      "E": 455
+    },
+    "vs": {
+      "MT": {
+        "retained": 313,
+        "gained": 112,
+        "lost": 27,
+        "net": 85
+      },
+      "G8883": {
+        "retained": 336,
+        "gained": 89,
+        "lost": 26,
+        "net": 63
+      },
+      "E": {
+        "retained": 402,
+        "gained": 23,
+        "lost": 53,
+        "net": -30
+      }
+    }
+  },
+  "per_task": [
+    {
+      "task": 0,
+      "suite": "libero_spatial",
+      "language": "pick up the black bowl between the plate and the ramekin and place it on the plate",
+      "successes": {
+        "MT": 14,
+        "G432": 12,
+        "G864": 11,
+        "G1296": 12,
+        "G8883": 14,
+        "G24849": 14,
+        "E": 15
+      },
+      "vs": {
+        "MT": {
+          "retained": 13,
+          "gained": 1,
+          "lost": 1,
+          "net": 0
+        },
+        "G8883": {
+          "retained": 13,
+          "gained": 1,
+          "lost": 1,
+          "net": 0
+        },
+        "E": {
+          "retained": 14,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        }
+      }
+    },
+    {
+      "task": 1,
+      "suite": "libero_spatial",
+      "language": "pick up the black bowl next to the ramekin and place it on the plate",
+      "successes": {
+        "MT": 4,
+        "G432": 7,
+        "G864": 3,
+        "G1296": 6,
+        "G8883": 7,
+        "G24849": 16,
+        "E": 15
+      },
+      "vs": {
+        "MT": {
+          "retained": 4,
+          "gained": 12,
+          "lost": 0,
+          "net": 12
+        },
+        "G8883": {
+          "retained": 7,
+          "gained": 9,
+          "lost": 0,
+          "net": 9
+        },
+        "E": {
+          "retained": 15,
+          "gained": 1,
+          "lost": 0,
+          "net": 1
+        }
+      }
+    },
+    {
+      "task": 2,
+      "suite": "libero_spatial",
+      "language": "pick up the black bowl from table center and place it on the plate",
+      "successes": {
+        "MT": 14,
+        "G432": 14,
+        "G864": 15,
+        "G1296": 13,
+        "G8883": 13,
+        "G24849": 16,
+        "E": 16
+      },
+      "vs": {
+        "MT": {
+          "retained": 14,
+          "gained": 2,
+          "lost": 0,
+          "net": 2
+        },
+        "G8883": {
+          "retained": 13,
+          "gained": 3,
+          "lost": 0,
+          "net": 3
+        },
+        "E": {
+          "retained": 16,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        }
+      }
+    },
+    {
+      "task": 4,
+      "suite": "libero_spatial",
+      "language": "pick up the black bowl in the top drawer of the wooden cabinet and place it on the plate",
+      "successes": {
+        "MT": 8,
+        "G432": 7,
+        "G864": 9,
+        "G1296": 8,
+        "G8883": 3,
+        "G24849": 8,
+        "E": 7
+      },
+      "vs": {
+        "MT": {
+          "retained": 5,
+          "gained": 3,
+          "lost": 3,
+          "net": 0
+        },
+        "G8883": {
+          "retained": 3,
+          "gained": 5,
+          "lost": 0,
+          "net": 5
+        },
+        "E": {
+          "retained": 7,
+          "gained": 1,
+          "lost": 0,
+          "net": 1
+        }
+      }
+    },
+    {
+      "task": 5,
+      "suite": "libero_spatial",
+      "language": "pick up the black bowl on the ramekin and place it on the plate",
+      "successes": {
+        "MT": 6,
+        "G432": 3,
+        "G864": 5,
+        "G1296": 3,
+        "G8883": 6,
+        "G24849": 7,
+        "E": 14
+      },
+      "vs": {
+        "MT": {
+          "retained": 4,
+          "gained": 3,
+          "lost": 2,
+          "net": 1
+        },
+        "G8883": {
+          "retained": 3,
+          "gained": 4,
+          "lost": 3,
+          "net": 1
+        },
+        "E": {
+          "retained": 7,
+          "gained": 0,
+          "lost": 7,
+          "net": -7
+        }
+      }
+    },
+    {
+      "task": 7,
+      "suite": "libero_spatial",
+      "language": "pick up the black bowl on the stove and place it on the plate",
+      "successes": {
+        "MT": 7,
+        "G432": 7,
+        "G864": 6,
+        "G1296": 4,
+        "G8883": 6,
+        "G24849": 12,
+        "E": 12
+      },
+      "vs": {
+        "MT": {
+          "retained": 3,
+          "gained": 9,
+          "lost": 4,
+          "net": 5
+        },
+        "G8883": {
+          "retained": 5,
+          "gained": 7,
+          "lost": 1,
+          "net": 6
+        },
+        "E": {
+          "retained": 11,
+          "gained": 1,
+          "lost": 1,
+          "net": 0
+        }
+      }
+    },
+    {
+      "task": 12,
+      "suite": "libero_object",
+      "language": "pick up the salad dressing and place it in the basket",
+      "successes": {
+        "MT": 7,
+        "G432": 8,
+        "G864": 7,
+        "G1296": 7,
+        "G8883": 8,
+        "G24849": 10,
+        "E": 11
+      },
+      "vs": {
+        "MT": {
+          "retained": 7,
+          "gained": 3,
+          "lost": 0,
+          "net": 3
+        },
+        "G8883": {
+          "retained": 8,
+          "gained": 2,
+          "lost": 0,
+          "net": 2
+        },
+        "E": {
+          "retained": 10,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        }
+      }
+    },
+    {
+      "task": 13,
+      "suite": "libero_object",
+      "language": "pick up the bbq sauce and place it in the basket",
+      "successes": {
+        "MT": 7,
+        "G432": 9,
+        "G864": 9,
+        "G1296": 11,
+        "G8883": 8,
+        "G24849": 8,
+        "E": 7
+      },
+      "vs": {
+        "MT": {
+          "retained": 6,
+          "gained": 2,
+          "lost": 1,
+          "net": 1
+        },
+        "G8883": {
+          "retained": 7,
+          "gained": 1,
+          "lost": 1,
+          "net": 0
+        },
+        "E": {
+          "retained": 6,
+          "gained": 2,
+          "lost": 1,
+          "net": 1
+        }
+      }
+    },
+    {
+      "task": 14,
+      "suite": "libero_object",
+      "language": "pick up the ketchup and place it in the basket",
+      "successes": {
+        "MT": 11,
+        "G432": 10,
+        "G864": 10,
+        "G1296": 11,
+        "G8883": 13,
+        "G24849": 15,
+        "E": 16
+      },
+      "vs": {
+        "MT": {
+          "retained": 11,
+          "gained": 4,
+          "lost": 0,
+          "net": 4
+        },
+        "G8883": {
+          "retained": 13,
+          "gained": 2,
+          "lost": 0,
+          "net": 2
+        },
+        "E": {
+          "retained": 15,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        }
+      }
+    },
+    {
+      "task": 15,
+      "suite": "libero_object",
+      "language": "pick up the tomato sauce and place it in the basket",
+      "successes": {
+        "MT": 3,
+        "G432": 3,
+        "G864": 4,
+        "G1296": 3,
+        "G8883": 2,
+        "G24849": 6,
+        "E": 9
+      },
+      "vs": {
+        "MT": {
+          "retained": 3,
+          "gained": 3,
+          "lost": 0,
+          "net": 3
+        },
+        "G8883": {
+          "retained": 2,
+          "gained": 4,
+          "lost": 0,
+          "net": 4
+        },
+        "E": {
+          "retained": 4,
+          "gained": 2,
+          "lost": 5,
+          "net": -3
+        }
+      }
+    },
+    {
+      "task": 17,
+      "suite": "libero_object",
+      "language": "pick up the milk and place it in the basket",
+      "successes": {
+        "MT": 0,
+        "G432": 1,
+        "G864": 1,
+        "G1296": 1,
+        "G8883": 1,
+        "G24849": 9,
+        "E": 12
+      },
+      "vs": {
+        "MT": {
+          "retained": 0,
+          "gained": 9,
+          "lost": 0,
+          "net": 9
+        },
+        "G8883": {
+          "retained": 0,
+          "gained": 9,
+          "lost": 1,
+          "net": 8
+        },
+        "E": {
+          "retained": 8,
+          "gained": 1,
+          "lost": 4,
+          "net": -3
+        }
+      }
+    },
+    {
+      "task": 19,
+      "suite": "libero_object",
+      "language": "pick up the orange juice and place it in the basket",
+      "successes": {
+        "MT": 6,
+        "G432": 5,
+        "G864": 4,
+        "G1296": 7,
+        "G8883": 7,
+        "G24849": 11,
+        "E": 13
+      },
+      "vs": {
+        "MT": {
+          "retained": 6,
+          "gained": 5,
+          "lost": 0,
+          "net": 5
+        },
+        "G8883": {
+          "retained": 6,
+          "gained": 5,
+          "lost": 1,
+          "net": 4
+        },
+        "E": {
+          "retained": 11,
+          "gained": 0,
+          "lost": 2,
+          "net": -2
+        }
+      }
+    },
+    {
+      "task": 20,
+      "suite": "libero_goal",
+      "language": "open the middle drawer of the cabinet",
+      "successes": {
+        "MT": 8,
+        "G432": 4,
+        "G864": 9,
+        "G1296": 7,
+        "G8883": 7,
+        "G24849": 9,
+        "E": 8
+      },
+      "vs": {
+        "MT": {
+          "retained": 6,
+          "gained": 3,
+          "lost": 2,
+          "net": 1
+        },
+        "G8883": {
+          "retained": 7,
+          "gained": 2,
+          "lost": 0,
+          "net": 2
+        },
+        "E": {
+          "retained": 6,
+          "gained": 3,
+          "lost": 2,
+          "net": 1
+        }
+      }
+    },
+    {
+      "task": 21,
+      "suite": "libero_goal",
+      "language": "put the bowl on the stove",
+      "successes": {
+        "MT": 14,
+        "G432": 14,
+        "G864": 14,
+        "G1296": 14,
+        "G8883": 15,
+        "G24849": 16,
+        "E": 16
+      },
+      "vs": {
+        "MT": {
+          "retained": 14,
+          "gained": 2,
+          "lost": 0,
+          "net": 2
+        },
+        "G8883": {
+          "retained": 15,
+          "gained": 1,
+          "lost": 0,
+          "net": 1
+        },
+        "E": {
+          "retained": 16,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        }
+      }
+    },
+    {
+      "task": 22,
+      "suite": "libero_goal",
+      "language": "put the wine bottle on top of the cabinet",
+      "successes": {
+        "MT": 10,
+        "G432": 11,
+        "G864": 9,
+        "G1296": 11,
+        "G8883": 12,
+        "G24849": 14,
+        "E": 15
+      },
+      "vs": {
+        "MT": {
+          "retained": 9,
+          "gained": 5,
+          "lost": 1,
+          "net": 4
+        },
+        "G8883": {
+          "retained": 11,
+          "gained": 3,
+          "lost": 1,
+          "net": 2
+        },
+        "E": {
+          "retained": 14,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        }
+      }
+    },
+    {
+      "task": 25,
+      "suite": "libero_goal",
+      "language": "push the plate to the front of the stove",
+      "successes": {
+        "MT": 2,
+        "G432": 0,
+        "G864": 1,
+        "G1296": 1,
+        "G8883": 3,
+        "G24849": 2,
+        "E": 6
+      },
+      "vs": {
+        "MT": {
+          "retained": 0,
+          "gained": 2,
+          "lost": 2,
+          "net": 0
+        },
+        "G8883": {
+          "retained": 2,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        },
+        "E": {
+          "retained": 2,
+          "gained": 0,
+          "lost": 4,
+          "net": -4
+        }
+      }
+    },
+    {
+      "task": 28,
+      "suite": "libero_goal",
+      "language": "put the bowl on the plate",
+      "successes": {
+        "MT": 15,
+        "G432": 15,
+        "G864": 16,
+        "G1296": 15,
+        "G8883": 16,
+        "G24849": 15,
+        "E": 16
+      },
+      "vs": {
+        "MT": {
+          "retained": 15,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        },
+        "G8883": {
+          "retained": 15,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        },
+        "E": {
+          "retained": 15,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        }
+      }
+    },
+    {
+      "task": 29,
+      "suite": "libero_goal",
+      "language": "put the wine bottle on the rack",
+      "successes": {
+        "MT": 0,
+        "G432": 1,
+        "G864": 1,
+        "G1296": 2,
+        "G8883": 0,
+        "G24849": 1,
+        "E": 3
+      },
+      "vs": {
+        "MT": {
+          "retained": 0,
+          "gained": 1,
+          "lost": 0,
+          "net": 1
+        },
+        "G8883": {
+          "retained": 0,
+          "gained": 1,
+          "lost": 0,
+          "net": 1
+        },
+        "E": {
+          "retained": 1,
+          "gained": 0,
+          "lost": 2,
+          "net": -2
+        }
+      }
+    },
+    {
+      "task": 32,
+      "suite": "libero_10",
+      "language": "turn on the stove and put the moka pot on it",
+      "successes": {
+        "MT": 2,
+        "G432": 3,
+        "G864": 2,
+        "G1296": 4,
+        "G8883": 7,
+        "G24849": 13,
+        "E": 13
+      },
+      "vs": {
+        "MT": {
+          "retained": 2,
+          "gained": 11,
+          "lost": 0,
+          "net": 11
+        },
+        "G8883": {
+          "retained": 6,
+          "gained": 7,
+          "lost": 1,
+          "net": 6
+        },
+        "E": {
+          "retained": 11,
+          "gained": 2,
+          "lost": 2,
+          "net": 0
+        }
+      }
+    },
+    {
+      "task": 34,
+      "suite": "libero_10",
+      "language": "put the white mug on the left plate and put the yellow and white mug on the right plate",
+      "successes": {
+        "MT": 11,
+        "G432": 10,
+        "G864": 10,
+        "G1296": 12,
+        "G8883": 8,
+        "G24849": 13,
+        "E": 10
+      },
+      "vs": {
+        "MT": {
+          "retained": 10,
+          "gained": 3,
+          "lost": 1,
+          "net": 2
+        },
+        "G8883": {
+          "retained": 7,
+          "gained": 6,
+          "lost": 1,
+          "net": 5
+        },
+        "E": {
+          "retained": 9,
+          "gained": 4,
+          "lost": 1,
+          "net": 3
+        }
+      }
+    },
+    {
+      "task": 35,
+      "suite": "libero_10",
+      "language": "pick up the book and place it in the back compartment of the caddy",
+      "successes": {
+        "MT": 12,
+        "G432": 13,
+        "G864": 10,
+        "G1296": 11,
+        "G8883": 12,
+        "G24849": 11,
+        "E": 12
+      },
+      "vs": {
+        "MT": {
+          "retained": 11,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        },
+        "G8883": {
+          "retained": 11,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        },
+        "E": {
+          "retained": 11,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        }
+      }
+    },
+    {
+      "task": 36,
+      "suite": "libero_10",
+      "language": "put the white mug on the plate and put the chocolate pudding to the right of the plate",
+      "successes": {
+        "MT": 1,
+        "G432": 1,
+        "G864": 5,
+        "G1296": 3,
+        "G8883": 10,
+        "G24849": 10,
+        "E": 12
+      },
+      "vs": {
+        "MT": {
+          "retained": 1,
+          "gained": 9,
+          "lost": 0,
+          "net": 9
+        },
+        "G8883": {
+          "retained": 8,
+          "gained": 2,
+          "lost": 2,
+          "net": 0
+        },
+        "E": {
+          "retained": 10,
+          "gained": 0,
+          "lost": 2,
+          "net": -2
+        }
+      }
+    },
+    {
+      "task": 37,
+      "suite": "libero_10",
+      "language": "put both the alphabet soup and the cream cheese box in the basket",
+      "successes": {
+        "MT": 7,
+        "G432": 7,
+        "G864": 6,
+        "G1296": 7,
+        "G8883": 11,
+        "G24849": 11,
+        "E": 12
+      },
+      "vs": {
+        "MT": {
+          "retained": 5,
+          "gained": 6,
+          "lost": 2,
+          "net": 4
+        },
+        "G8883": {
+          "retained": 9,
+          "gained": 2,
+          "lost": 2,
+          "net": 0
+        },
+        "E": {
+          "retained": 11,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        }
+      }
+    },
+    {
+      "task": 38,
+      "suite": "libero_10",
+      "language": "put both moka pots on the stove",
+      "successes": {
+        "MT": 0,
+        "G432": 1,
+        "G864": 1,
+        "G1296": 1,
+        "G8883": 2,
+        "G24849": 5,
+        "E": 2
+      },
+      "vs": {
+        "MT": {
+          "retained": 0,
+          "gained": 5,
+          "lost": 0,
+          "net": 5
+        },
+        "G8883": {
+          "retained": 1,
+          "gained": 4,
+          "lost": 1,
+          "net": 3
+        },
+        "E": {
+          "retained": 1,
+          "gained": 4,
+          "lost": 1,
+          "net": 3
+        }
+      }
+    },
+    {
+      "task": 42,
+      "suite": "libero_90",
+      "language": "put the black bowl in the top drawer of the cabinet",
+      "successes": {
+        "MT": 16,
+        "G432": 16,
+        "G864": 16,
+        "G1296": 16,
+        "G8883": 16,
+        "G24849": 15,
+        "E": 16
+      },
+      "vs": {
+        "MT": {
+          "retained": 15,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        },
+        "G8883": {
+          "retained": 15,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        },
+        "E": {
+          "retained": 15,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        }
+      }
+    },
+    {
+      "task": 43,
+      "suite": "libero_90",
+      "language": "put the butter at the back in the top drawer of the cabinet and close it",
+      "successes": {
+        "MT": 7,
+        "G432": 8,
+        "G864": 10,
+        "G1296": 8,
+        "G8883": 9,
+        "G24849": 11,
+        "E": 15
+      },
+      "vs": {
+        "MT": {
+          "retained": 7,
+          "gained": 4,
+          "lost": 0,
+          "net": 4
+        },
+        "G8883": {
+          "retained": 9,
+          "gained": 2,
+          "lost": 0,
+          "net": 2
+        },
+        "E": {
+          "retained": 11,
+          "gained": 0,
+          "lost": 4,
+          "net": -4
+        }
+      }
+    },
+    {
+      "task": 51,
+      "suite": "libero_90",
+      "language": "open the top drawer of the cabinet",
+      "successes": {
+        "MT": 14,
+        "G432": 15,
+        "G864": 14,
+        "G1296": 15,
+        "G8883": 15,
+        "G24849": 16,
+        "E": 16
+      },
+      "vs": {
+        "MT": {
+          "retained": 14,
+          "gained": 2,
+          "lost": 0,
+          "net": 2
+        },
+        "G8883": {
+          "retained": 15,
+          "gained": 1,
+          "lost": 0,
+          "net": 1
+        },
+        "E": {
+          "retained": 16,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        }
+      }
+    },
+    {
+      "task": 55,
+      "suite": "libero_90",
+      "language": "put the middle black bowl on top of the cabinet",
+      "successes": {
+        "MT": 16,
+        "G432": 15,
+        "G864": 16,
+        "G1296": 16,
+        "G8883": 15,
+        "G24849": 16,
+        "E": 16
+      },
+      "vs": {
+        "MT": {
+          "retained": 16,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        },
+        "G8883": {
+          "retained": 15,
+          "gained": 1,
+          "lost": 0,
+          "net": 1
+        },
+        "E": {
+          "retained": 16,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        }
+      }
+    },
+    {
+      "task": 56,
+      "suite": "libero_90",
+      "language": "stack the black bowl at the front on the black bowl in the middle",
+      "successes": {
+        "MT": 13,
+        "G432": 14,
+        "G864": 13,
+        "G1296": 15,
+        "G8883": 13,
+        "G24849": 13,
+        "E": 13
+      },
+      "vs": {
+        "MT": {
+          "retained": 12,
+          "gained": 1,
+          "lost": 1,
+          "net": 0
+        },
+        "G8883": {
+          "retained": 12,
+          "gained": 1,
+          "lost": 1,
+          "net": 0
+        },
+        "E": {
+          "retained": 12,
+          "gained": 1,
+          "lost": 1,
+          "net": 0
+        }
+      }
+    },
+    {
+      "task": 62,
+      "suite": "libero_90",
+      "language": "close the bottom drawer of the cabinet",
+      "successes": {
+        "MT": 14,
+        "G432": 15,
+        "G864": 14,
+        "G1296": 15,
+        "G8883": 16,
+        "G24849": 13,
+        "E": 16
+      },
+      "vs": {
+        "MT": {
+          "retained": 12,
+          "gained": 1,
+          "lost": 2,
+          "net": -1
+        },
+        "G8883": {
+          "retained": 13,
+          "gained": 0,
+          "lost": 3,
+          "net": -3
+        },
+        "E": {
+          "retained": 13,
+          "gained": 0,
+          "lost": 3,
+          "net": -3
+        }
+      }
+    },
+    {
+      "task": 64,
+      "suite": "libero_90",
+      "language": "put the black bowl in the bottom drawer of the cabinet",
+      "successes": {
+        "MT": 16,
+        "G432": 15,
+        "G864": 16,
+        "G1296": 16,
+        "G8883": 16,
+        "G24849": 16,
+        "E": 16
+      },
+      "vs": {
+        "MT": {
+          "retained": 16,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        },
+        "G8883": {
+          "retained": 16,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        },
+        "E": {
+          "retained": 16,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        }
+      }
+    },
+    {
+      "task": 73,
+      "suite": "libero_90",
+      "language": "close the microwave",
+      "successes": {
+        "MT": 14,
+        "G432": 13,
+        "G864": 13,
+        "G1296": 13,
+        "G8883": 11,
+        "G24849": 13,
+        "E": 14
+      },
+      "vs": {
+        "MT": {
+          "retained": 12,
+          "gained": 1,
+          "lost": 2,
+          "net": -1
+        },
+        "G8883": {
+          "retained": 9,
+          "gained": 4,
+          "lost": 2,
+          "net": 2
+        },
+        "E": {
+          "retained": 12,
+          "gained": 1,
+          "lost": 2,
+          "net": -1
+        }
+      }
+    },
+    {
+      "task": 95,
+      "suite": "libero_90",
+      "language": "pick up the alphabet soup and put it in the tray",
+      "successes": {
+        "MT": 13,
+        "G432": 13,
+        "G864": 13,
+        "G1296": 13,
+        "G8883": 13,
+        "G24849": 13,
+        "E": 13
+      },
+      "vs": {
+        "MT": {
+          "retained": 13,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        },
+        "G8883": {
+          "retained": 13,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        },
+        "E": {
+          "retained": 13,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        }
+      }
+    },
+    {
+      "task": 96,
+      "suite": "libero_90",
+      "language": "pick up the butter and put it in the tray",
+      "successes": {
+        "MT": 16,
+        "G432": 16,
+        "G864": 16,
+        "G1296": 16,
+        "G8883": 16,
+        "G24849": 16,
+        "E": 16
+      },
+      "vs": {
+        "MT": {
+          "retained": 16,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        },
+        "G8883": {
+          "retained": 16,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        },
+        "E": {
+          "retained": 16,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        }
+      }
+    },
+    {
+      "task": 97,
+      "suite": "libero_90",
+      "language": "pick up the cream cheese and put it in the tray",
+      "successes": {
+        "MT": 16,
+        "G432": 16,
+        "G864": 16,
+        "G1296": 16,
+        "G8883": 16,
+        "G24849": 16,
+        "E": 16
+      },
+      "vs": {
+        "MT": {
+          "retained": 16,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        },
+        "G8883": {
+          "retained": 16,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        },
+        "E": {
+          "retained": 16,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        }
+      }
+    },
+    {
+      "task": 101,
+      "suite": "libero_90",
+      "language": "pick up the chocolate pudding and put it in the tray",
+      "successes": {
+        "MT": 16,
+        "G432": 15,
+        "G864": 16,
+        "G1296": 15,
+        "G8883": 15,
+        "G24849": 15,
+        "E": 16
+      },
+      "vs": {
+        "MT": {
+          "retained": 15,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        },
+        "G8883": {
+          "retained": 15,
+          "gained": 0,
+          "lost": 0,
+          "net": 0
+        },
+        "E": {
+          "retained": 15,
+          "gained": 0,
+          "lost": 1,
+          "net": -1
+        }
+      }
+    }
+  ],
+  "categories": {
+    "E_only": {
+      "rows": 134,
+      "successes": {
+        "MT": 0,
+        "G432": 17,
+        "G864": 17,
+        "G1296": 22,
+        "G8883": 44,
+        "G24849": 97,
+        "E": 134
+      },
+      "vs": {
+        "MT": {
+          "retained": 0,
+          "gained": 97,
+          "lost": 0,
+          "net": 97
+        },
+        "G8883": {
+          "retained": 39,
+          "gained": 58,
+          "lost": 5,
+          "net": 53
+        },
+        "E": {
+          "retained": 97,
+          "gained": 0,
+          "lost": 37,
+          "net": -37
+        }
+      }
+    },
+    "both_success": {
+      "rows": 321,
+      "successes": {
+        "MT": 321,
+        "G432": 298,
+        "G864": 296,
+        "G1296": 298,
+        "G8883": 296,
+        "G24849": 305,
+        "E": 321
+      },
+      "vs": {
+        "MT": {
+          "retained": 305,
+          "gained": 0,
+          "lost": 16,
+          "net": -16
+        },
+        "G8883": {
+          "retained": 286,
+          "gained": 19,
+          "lost": 10,
+          "net": 9
+        },
+        "E": {
+          "retained": 305,
+          "gained": 0,
+          "lost": 16,
+          "net": -16
+        }
+      }
+    },
+    "MT_only": {
+      "rows": 19,
+      "successes": {
+        "MT": 19,
+        "G432": 13,
+        "G864": 13,
+        "G1296": 12,
+        "G8883": 9,
+        "G24849": 8,
+        "E": 0
+      },
+      "vs": {
+        "MT": {
+          "retained": 8,
+          "gained": 0,
+          "lost": 11,
+          "net": -11
+        },
+        "G8883": {
+          "retained": 5,
+          "gained": 3,
+          "lost": 4,
+          "net": -1
+        },
+        "E": {
+          "retained": 0,
+          "gained": 8,
+          "lost": 0,
+          "net": 8
+        }
+      }
+    },
+    "both_fail": {
+      "rows": 102,
+      "successes": {
+        "MT": 0,
+        "G432": 9,
+        "G864": 15,
+        "G1296": 16,
+        "G8883": 13,
+        "G24849": 15,
+        "E": 0
+      },
+      "vs": {
+        "MT": {
+          "retained": 0,
+          "gained": 15,
+          "lost": 0,
+          "net": 15
+        },
+        "G8883": {
+          "retained": 6,
+          "gained": 9,
+          "lost": 7,
+          "net": 2
+        },
+        "E": {
+          "retained": 0,
+          "gained": 15,
+          "lost": 0,
+          "net": 15
+        }
+      }
+    }
+  },
+  "E_successes_not_acquired": {
+    "MT": 134,
+    "G8883": 115,
+    "G24849": 53
+  },
+  "one_fixed_MT_G24849_choice_retrospective_max": 430,
+  "scope": "Seen36 original fixed teaching/MT-H conditions; no video/H causality, new-video or held generalization claim.",
+  "new_forward": 0,
+  "new_episode": 0
+}

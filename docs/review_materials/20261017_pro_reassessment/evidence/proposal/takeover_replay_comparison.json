@@ -1,0 +1,90 @@
+[
+  {
+    "case": "task_0017_state_005",
+    "source_success": true,
+    "replay_success": true,
+    "original_replans": 31,
+    "actual_replans": 29,
+    "first_chunk_RMS": 0.0044986905927774596,
+    "first_chunk_max_abs": 0.013927459716796875,
+    "initial_proprio_max_abs_difference": 0.0,
+    "native_noise_common_prefix_matches_source": true
+  },
+  {
+    "case": "task_0017_state_001",
+    "source_success": false,
+    "replay_success": false,
+    "original_replans": 56,
+    "actual_replans": 56,
+    "first_chunk_RMS": 0.0035174858495551973,
+    "first_chunk_max_abs": 0.010009765625,
+    "initial_proprio_max_abs_difference": 0.0,
+    "native_noise_common_prefix_matches_source": true
+  },
+  {
+    "case": "task_0034_state_007",
+    "source_success": true,
+    "replay_success": true,
+    "original_replans": 62,
+    "actual_replans": 49,
+    "first_chunk_RMS": 0.011316309194282075,
+    "first_chunk_max_abs": 0.0462646484375,
+    "initial_proprio_max_abs_difference": 0.0,
+    "native_noise_common_prefix_matches_source": true
+  },
+  {
+    "case": "task_0025_state_004",
+    "source_success": false,
+    "replay_success": false,
+    "original_replans": 60,
+    "actual_replans": 60,
+    "first_chunk_RMS": 0.00260828608970079,
+    "first_chunk_max_abs": 0.005859375,
+    "initial_proprio_max_abs_difference": 0.0,
+    "native_noise_common_prefix_matches_source": true
+  },
+  {
+    "case": "task_0004_state_001",
+    "source_success": true,
+    "replay_success": false,
+    "original_replans": 44,
+    "actual_replans": 44,
+    "first_chunk_RMS": 0.004654431282651658,
+    "first_chunk_max_abs": 0.0107421875,
+    "initial_proprio_max_abs_difference": 0.0,
+    "native_noise_common_prefix_matches_source": true
+  },
+  {
+    "case": "task_0004_state_013",
+    "source_success": false,
+    "replay_success": false,
+    "original_replans": 44,
+    "actual_replans": 44,
+    "first_chunk_RMS": 0.005326560981964336,
+    "first_chunk_max_abs": 0.01570892333984375,
+    "initial_proprio_max_abs_difference": 0.0,
+    "native_noise_common_prefix_matches_source": true
+  },
+  {
+    "case": "task_0025_state_033",
+    "source_success": true,
+    "replay_success": false,
+    "original_replans": 21,
+    "actual_replans": 60,
+    "first_chunk_RMS": 0.0026788999496674838,
+    "first_chunk_max_abs": 0.007080078125,
+    "initial_proprio_max_abs_difference": 0.0,
+    "native_noise_common_prefix_matches_source": true
+  },
+  {
+    "case": "task_0034_state_012",
+    "source_success": false,
+    "replay_success": false,
+    "original_replans": 104,
+    "actual_replans": 104,
+    "first_chunk_RMS": 0.0,
+    "first_chunk_max_abs": 0.0,
+    "initial_proprio_max_abs_difference": 0.0,
+    "native_noise_common_prefix_matches_source": true
+  }
+]

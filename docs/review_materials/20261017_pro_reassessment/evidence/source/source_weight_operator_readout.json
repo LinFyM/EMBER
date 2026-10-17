@@ -1,0 +1,1352 @@
+{
+  "purpose": "decompose existing endpoint BA approximation into common operator, task differences and within-task video variation",
+  "inputs": {
+    "run": "runs/source_policy_space_compiler_20261015/source_weight_compiler_seed7",
+    "generated": "all576 existing seen controllers",
+    "references": [
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0000/checkpoints/update_00001680/lora.safetensors",
+        "selected_update": 1680,
+        "task": 0
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0001/checkpoints/update_00001200/lora.safetensors",
+        "selected_update": 1200,
+        "task": 1
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0012/checkpoints/update_00000480/lora.safetensors",
+        "selected_update": 480,
+        "task": 12
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0013/checkpoints/update_00000960/lora.safetensors",
+        "selected_update": 960,
+        "task": 13
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0020/checkpoints/update_00000720/lora.safetensors",
+        "selected_update": 720,
+        "task": 20
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0021/checkpoints/update_00000320/lora.safetensors",
+        "selected_update": 320,
+        "task": 21
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0032/checkpoints/update_00000960/lora.safetensors",
+        "selected_update": 960,
+        "task": 32
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0034/checkpoints/update_00000960/lora.safetensors",
+        "selected_update": 960,
+        "task": 34
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0002/checkpoints/update_00000320/lora.safetensors",
+        "selected_update": 320,
+        "task": 2
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0004/checkpoints/update_00000960/lora.safetensors",
+        "selected_update": 960,
+        "task": 4
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0005/checkpoints/update_00001680/lora.safetensors",
+        "selected_update": 1680,
+        "task": 5
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0007/checkpoints/update_00000480/lora.safetensors",
+        "selected_update": 480,
+        "task": 7
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0014/checkpoints/update_00000480/lora.safetensors",
+        "selected_update": 480,
+        "task": 14
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0015/checkpoints/update_00000480/lora.safetensors",
+        "selected_update": 480,
+        "task": 15
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0017/checkpoints/update_00000480/lora.safetensors",
+        "selected_update": 480,
+        "task": 17
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0019/checkpoints/update_00000480/lora.safetensors",
+        "selected_update": 480,
+        "task": 19
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0022/checkpoints/update_00001200/lora.safetensors",
+        "selected_update": 1200,
+        "task": 22
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0025/checkpoints/update_00001680/lora.safetensors",
+        "selected_update": 1680,
+        "task": 25
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0028/checkpoints/update_00000720/lora.safetensors",
+        "selected_update": 720,
+        "task": 28
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0029/checkpoints/update_00001440/lora.safetensors",
+        "selected_update": 1440,
+        "task": 29
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0035/checkpoints/update_00000320/lora.safetensors",
+        "selected_update": 320,
+        "task": 35
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0036/checkpoints/update_00000720/lora.safetensors",
+        "selected_update": 720,
+        "task": 36
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0037/checkpoints/update_00001200/lora.safetensors",
+        "selected_update": 1200,
+        "task": 37
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0038/checkpoints/update_00001680/lora.safetensors",
+        "selected_update": 1680,
+        "task": 38
+      },
+      {
+        "path": null,
+        "selected_update": 0,
+        "task": 42
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0043/checkpoints/update_00001920/lora.safetensors",
+        "selected_update": 1920,
+        "task": 43
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0051/checkpoints/update_00000160/lora.safetensors",
+        "selected_update": 160,
+        "task": 51
+      },
+      {
+        "path": null,
+        "selected_update": 0,
+        "task": 55
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0056/checkpoints/update_00000480/lora.safetensors",
+        "selected_update": 480,
+        "task": 56
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0062/checkpoints/update_00000160/lora.safetensors",
+        "selected_update": 160,
+        "task": 62
+      },
+      {
+        "path": null,
+        "selected_update": 0,
+        "task": 64
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0073/checkpoints/update_00000320/lora.safetensors",
+        "selected_update": 320,
+        "task": 73
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0095/checkpoints/update_00000080/lora.safetensors",
+        "selected_update": 80,
+        "task": 95
+      },
+      {
+        "path": null,
+        "selected_update": 0,
+        "task": 96
+      },
+      {
+        "path": "runs/source_policy_space_compiler_20261015/reference_seed7/training/task_0097/checkpoints/update_00000080/lora.safetensors",
+        "selected_update": 80,
+        "task": 97
+      },
+      {
+        "path": null,
+        "selected_update": 0,
+        "task": 101
+      }
+    ],
+    "constants": "runs/source_policy_space_compiler_20261015/source_weight_compiler_seed7/operator_constants.json"
+  },
+  "definitions": {
+    "metric": "mean38 squared Frobenius divided by original fixed D_l; alpha/rank=1",
+    "means": "means of BA operators for analysis only; no factor averaging and no deployed mean controller",
+    "decomposition": "mean_t,v ||G_tv-E_t||^2 = ||Gbar-Ebar||^2 + mean_t ||(G_tbar-Gbar)-(E_t-Ebar)||^2 + mean_t,v ||G_tv-G_tbar||^2",
+    "conditional_alignment": "mean_t inner(G_tbar-Gbar,E_t-Ebar), weighted by D_l",
+    "limitations": "descriptive operator approximation, not action-weighted metric, intervention, lossless representation or causal failure attribution"
+  },
+  "totals": {
+    "error": 0.7735621374159745,
+    "reference_energy": 0.9999999975984317,
+    "generated_energy": 0.2891603604231962,
+    "task_mean_energy": 0.2838655662168241,
+    "within_video_variance": 0.005294794206372127,
+    "mean_error": 0.7682673432096024,
+    "task_mean_dot_reference": 0.2577991103028267,
+    "public_error": 0.05154566068641107,
+    "public_reference_energy": 0.10307969752942574,
+    "public_generated_energy": 0.07182677199593446,
+    "conditional_error": 0.7167216825231911,
+    "conditional_reference_energy": 0.896920300069006,
+    "conditional_generated_energy": 0.21203879422088953,
+    "conditional_alignment": 0.19611870588335217,
+    "public_alignment": 0.061680404419474553,
+    "decomposition_residual": 1.1709383462843448e-16,
+    "public_relative_error": 0.5000563827973645,
+    "conditional_relative_error": 0.7990918284133484,
+    "conditional_least_squares_alignment_coefficient": 0.2186578962124767,
+    "conditional_cosine": 0.44971195110318746,
+    "public_least_squares_alignment_coefficient": 0.5983758770912856
+  },
+  "tasks": [
+    {
+      "task": 0,
+      "error": 2.007513128445081,
+      "reference_energy": 2.584575661952763,
+      "generated_energy": 0.8052685399295855,
+      "within_video_variance": 0.028724178072122786,
+      "mean_error": 1.9787889503729577,
+      "relative_error": 0.776728326431858
+    },
+    {
+      "task": 1,
+      "error": 1.383778651054646,
+      "reference_energy": 1.7917570267295788,
+      "generated_energy": 0.47035850513033045,
+      "within_video_variance": 0.014079938978756661,
+      "mean_error": 1.3696987120758892,
+      "relative_error": 0.7723026227392007
+    },
+    {
+      "task": 12,
+      "error": 0.47706974776743666,
+      "reference_energy": 0.585732170062235,
+      "generated_energy": 0.224823132177652,
+      "within_video_variance": 0.0023935027888485113,
+      "mean_error": 0.47467624497858796,
+      "relative_error": 0.8144844557824905
+    },
+    {
+      "task": 13,
+      "error": 0.9762824282805331,
+      "reference_energy": 1.1951174660774362,
+      "generated_energy": 0.2741649273586837,
+      "within_video_variance": 0.0032366255418022826,
+      "mean_error": 0.9730458027387309,
+      "relative_error": 0.816892444459745
+    },
+    {
+      "task": 20,
+      "error": 0.9062287966253287,
+      "reference_energy": 1.0509580748552394,
+      "generated_energy": 0.18127502090581257,
+      "within_video_variance": 0.002679568533397396,
+      "mean_error": 0.9035492280919313,
+      "relative_error": 0.8622882475594035
+    },
+    {
+      "task": 21,
+      "error": 0.4032222852264161,
+      "reference_energy": 0.5140336129043371,
+      "generated_energy": 0.11555950683668376,
+      "within_video_variance": 0.0030171797484059744,
+      "mean_error": 0.4002051054780102,
+      "relative_error": 0.7844278566690867
+    },
+    {
+      "task": 32,
+      "error": 0.871814940191492,
+      "reference_energy": 0.9683296471017082,
+      "generated_energy": 0.19275097816132397,
+      "within_video_variance": 0.008679081273039334,
+      "mean_error": 0.8631358589184523,
+      "relative_error": 0.9003286667932838
+    },
+    {
+      "task": 34,
+      "error": 0.6237003043115283,
+      "reference_energy": 0.6673434278157468,
+      "generated_energy": 0.13469227044908447,
+      "within_video_variance": 0.005054552668652815,
+      "mean_error": 0.6186457516428755,
+      "relative_error": 0.934601703283323
+    },
+    {
+      "task": 2,
+      "error": 0.28237415239952696,
+      "reference_energy": 0.29512991105079645,
+      "generated_energy": 0.1024201719231574,
+      "within_video_variance": 0.016387037521243798,
+      "mean_error": 0.26598711487828314,
+      "relative_error": 0.9567791735989984
+    },
+    {
+      "task": 4,
+      "error": 1.1177432584640865,
+      "reference_energy": 1.391925322169527,
+      "generated_energy": 0.3617530380477131,
+      "within_video_variance": 0.008398995940371246,
+      "mean_error": 1.1093442625237147,
+      "relative_error": 0.8030195590679491
+    },
+    {
+      "task": 5,
+      "error": 2.0423275395430616,
+      "reference_energy": 3.104395513262665,
+      "generated_energy": 1.3704897129158096,
+      "within_video_variance": 0.018310787803727916,
+      "mean_error": 2.0240167517393335,
+      "relative_error": 0.6578825187762919
+    },
+    {
+      "task": 7,
+      "error": 0.5143885495179448,
+      "reference_energy": 0.5988342010815665,
+      "generated_energy": 0.17293672488511486,
+      "within_video_variance": 0.004641211650190435,
+      "mean_error": 0.5097473378677545,
+      "relative_error": 0.858983252107006
+    },
+    {
+      "task": 14,
+      "error": 0.46251753201154305,
+      "reference_energy": 0.5181752479423339,
+      "generated_energy": 0.21034949645883055,
+      "within_video_variance": 0.0027077464045786055,
+      "mean_error": 0.4598097856069643,
+      "relative_error": 0.892589010857221
+    },
+    {
+      "task": 15,
+      "error": 0.7053192467386906,
+      "reference_energy": 0.8330933999356283,
+      "generated_energy": 0.234519547216654,
+      "within_video_variance": 0.0036912486265183596,
+      "mean_error": 0.7016279981121724,
+      "relative_error": 0.8466268569564823
+    },
+    {
+      "task": 17,
+      "error": 0.4981561945273537,
+      "reference_energy": 0.5755617984148681,
+      "generated_energy": 0.16208268463600767,
+      "within_video_variance": 0.001791524269398037,
+      "mean_error": 0.49636467025795555,
+      "relative_error": 0.8655129577732676
+    },
+    {
+      "task": 19,
+      "error": 0.4587085347026691,
+      "reference_energy": 0.5289164807031294,
+      "generated_energy": 0.17627490717297195,
+      "within_video_variance": 0.002744595237324015,
+      "mean_error": 0.4559639394653452,
+      "relative_error": 0.8672608085361087
+    },
+    {
+      "task": 22,
+      "error": 1.705018032321244,
+      "reference_energy": 2.2858574992072547,
+      "generated_energy": 0.7986748745349515,
+      "within_video_variance": 0.004858582783211819,
+      "mean_error": 1.7001594495380326,
+      "relative_error": 0.74589865418669
+    },
+    {
+      "task": 25,
+      "error": 3.0908385585061726,
+      "reference_energy": 5.169045684275735,
+      "generated_energy": 2.369768107380581,
+      "within_video_variance": 0.013803485012700845,
+      "mean_error": 3.0770350734934713,
+      "relative_error": 0.5979514880103537
+    },
+    {
+      "task": 28,
+      "error": 0.8524567877485766,
+      "reference_energy": 1.1761173763583197,
+      "generated_energy": 0.29960446783514966,
+      "within_video_variance": 0.007019933815623104,
+      "mean_error": 0.8454368539329539,
+      "relative_error": 0.7248058781242463
+    },
+    {
+      "task": 29,
+      "error": 3.0902276509888518,
+      "reference_energy": 3.9724371088783093,
+      "generated_energy": 0.7572495302272246,
+      "within_video_variance": 0.009924715876155784,
+      "mean_error": 3.0803029351126963,
+      "relative_error": 0.7779173253825117
+    },
+    {
+      "task": 35,
+      "error": 0.2416370301558853,
+      "reference_energy": 0.2870438029670511,
+      "generated_energy": 0.04472531160361837,
+      "within_video_variance": 0.0017542610487441233,
+      "mean_error": 0.23988276910714126,
+      "relative_error": 0.8418123912036591
+    },
+    {
+      "task": 36,
+      "error": 0.8104127074884591,
+      "reference_energy": 0.8530387059815931,
+      "generated_energy": 0.11530836444665575,
+      "within_video_variance": 0.006902287040121399,
+      "mean_error": 0.8035104204483376,
+      "relative_error": 0.9500304051923596
+    },
+    {
+      "task": 37,
+      "error": 1.0996256580542967,
+      "reference_energy": 1.2324832001212933,
+      "generated_energy": 0.2021651022798516,
+      "within_video_variance": 0.006647445652646905,
+      "mean_error": 1.0929782124016494,
+      "relative_error": 0.8922033646755415
+    },
+    {
+      "task": 38,
+      "error": 1.8803979426725483,
+      "reference_energy": 2.1628161950001523,
+      "generated_energy": 0.2897371741227076,
+      "within_video_variance": 0.004552902577408339,
+      "mean_error": 1.8758450400951405,
+      "relative_error": 0.8694210571473994
+    },
+    {
+      "task": 42,
+      "error": 0.002298251854023156,
+      "reference_energy": 0.0,
+      "generated_energy": 0.002298251854023156,
+      "within_video_variance": 4.20186377748764e-05,
+      "mean_error": 0.00225623321624828,
+      "relative_error": null
+    },
+    {
+      "task": 43,
+      "error": 0.9820517488093579,
+      "reference_energy": 1.2800924150478592,
+      "generated_energy": 0.26797328310502205,
+      "within_video_variance": 0.0037798009382066762,
+      "mean_error": 0.9782719478711512,
+      "relative_error": 0.76717253947063
+    },
+    {
+      "task": 51,
+      "error": 0.057651582385435364,
+      "reference_energy": 0.059341387085292886,
+      "generated_energy": 0.00962505653589108,
+      "within_video_variance": 0.00014888156326444072,
+      "mean_error": 0.057502700822170925,
+      "relative_error": 0.9715240107645492
+    },
+    {
+      "task": 55,
+      "error": 0.002585745608974144,
+      "reference_energy": 0.0,
+      "generated_energy": 0.002585745608974144,
+      "within_video_variance": 6.615297384095621e-05,
+      "mean_error": 0.0025195926351331875,
+      "relative_error": null
+    },
+    {
+      "task": 56,
+      "error": 0.10545320356049125,
+      "reference_energy": 0.12116863211505706,
+      "generated_energy": 0.018773217364510684,
+      "within_video_variance": 0.0020581222119507004,
+      "mean_error": 0.10339508134854052,
+      "relative_error": 0.8703011804272657
+    },
+    {
+      "task": 62,
+      "error": 0.05459009770434062,
+      "reference_energy": 0.05558418379871284,
+      "generated_energy": 0.00828406304341608,
+      "within_video_variance": 0.00047071254656592086,
+      "mean_error": 0.054119385157774695,
+      "relative_error": 0.9821156662482963
+    },
+    {
+      "task": 64,
+      "error": 0.004388097419547185,
+      "reference_energy": 0.0,
+      "generated_energy": 0.004388097419547185,
+      "within_video_variance": 0.0007439892250690861,
+      "mean_error": 0.0036441081944780995,
+      "relative_error": null
+    },
+    {
+      "task": 73,
+      "error": 0.09172958217590686,
+      "reference_energy": 0.09797396053873707,
+      "generated_energy": 0.01909591084587082,
+      "within_video_variance": 0.0011913205797320229,
+      "mean_error": 0.09053826159617481,
+      "relative_error": 0.9362649184692161
+    },
+    {
+      "task": 95,
+      "error": 0.024601347519488097,
+      "reference_energy": 0.026031582328170277,
+      "generated_energy": 0.0024731119473370786,
+      "within_video_variance": 3.054613107013434e-05,
+      "mean_error": 0.024570801388417954,
+      "relative_error": 0.9450577075702986
+    },
+    {
+      "task": 96,
+      "error": 0.002320659210389689,
+      "reference_energy": 0.0,
+      "generated_energy": 0.002320659210389689,
+      "within_video_variance": 4.721527771299076e-06,
+      "mean_error": 0.0023159376826183886,
+      "relative_error": null
+    },
+    {
+      "task": 97,
+      "error": 0.016215530731968963,
+      "reference_energy": 0.017089217780444352,
+      "generated_energy": 0.0024120394121431594,
+      "within_video_variance": 5.3466194652022185e-06,
+      "mean_error": 0.016210184112503776,
+      "relative_error": 0.9488749538041951
+    },
+    {
+      "task": 101,
+      "error": 0.0025914422517829753,
+      "reference_energy": 0.0,
+      "generated_energy": 0.0025914422517829753,
+      "within_video_variance": 6.958960969475946e-05,
+      "mean_error": 0.0025218526420882157,
+      "relative_error": null
+    }
+  ],
+  "layers": [
+    {
+      "name": "model.action_in_proj",
+      "denominator": 0.04820989928622212,
+      "normalized": {
+        "error": 0.8614041909881024,
+        "reference_energy": 1.0000000090309833,
+        "generated_energy": 0.11340944053636344,
+        "task_mean_energy": 0.11197491845088817,
+        "within_video_variance": 0.0014345220854752358,
+        "mean_error": 0.8599696689026268,
+        "task_mean_dot_reference": 0.12600262928962222,
+        "public_error": 0.07554946572767247,
+        "public_reference_energy": 0.14985862574893488,
+        "public_generated_energy": 0.060488623958786486,
+        "conditional_error": 0.7844202031749544,
+        "conditional_reference_energy": 0.8501413832820484,
+        "conditional_generated_energy": 0.051486294492101674,
+        "conditional_alignment": 0.05860373729959776,
+        "public_alignment": 0.06739889199002447
+      }
+    },
+    {
+      "name": "model.action_out_proj",
+      "denominator": 0.006758493671643212,
+      "normalized": {
+        "error": 0.9462914936489724,
+        "reference_energy": 0.9999999861232252,
+        "generated_energy": 0.4798689847677186,
+        "task_mean_energy": 0.46389403467553614,
+        "within_video_variance": 0.015974950092182482,
+        "mean_error": 0.9303165435567898,
+        "task_mean_dot_reference": 0.26678873862098557,
+        "public_error": 0.056611555447690094,
+        "public_reference_energy": 0.07766415309668033,
+        "public_generated_energy": 0.05450567323944661,
+        "conditional_error": 0.8737049881090997,
+        "conditional_reference_energy": 0.9223358330265448,
+        "conditional_generated_energy": 0.40938836143608953,
+        "conditional_alignment": 0.22900960317676713,
+        "public_alignment": 0.037779135444218424
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.q_proj",
+      "denominator": 1.1203714680030117,
+      "normalized": {
+        "error": 0.4957689157748234,
+        "reference_energy": 0.9999999973087289,
+        "generated_energy": 0.7110853024617863,
+        "task_mean_energy": 0.6962178271705359,
+        "within_video_variance": 0.01486747529124999,
+        "mean_error": 0.4809014404835733,
+        "task_mean_dot_reference": 0.6076581919978455,
+        "public_error": 0.03145581434682103,
+        "public_reference_energy": 0.10299337517418529,
+        "public_generated_energy": 0.16342991629470974,
+        "conditional_error": 0.44944562613675226,
+        "conditional_reference_energy": 0.8970066221345435,
+        "conditional_generated_energy": 0.5327879108758262,
+        "conditional_alignment": 0.4901744534368085,
+        "public_alignment": 0.11748373856103705
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.0.self_attn.v_proj",
+      "denominator": 0.060354345148274056,
+      "normalized": {
+        "error": 0.36810173366003063,
+        "reference_energy": 1.0000000451908664,
+        "generated_energy": 0.7168900366878884,
+        "task_mean_energy": 0.7082181254077888,
+        "within_video_variance": 0.008671911280099929,
+        "mean_error": 0.35942982237993065,
+        "task_mean_dot_reference": 0.674394174109362,
+        "public_error": 0.024229279037549373,
+        "public_reference_energy": 0.2383353526976482,
+        "public_generated_energy": 0.266074202383867,
+        "conditional_error": 0.33520054334238125,
+        "conditional_reference_energy": 0.7616646924932181,
+        "conditional_generated_energy": 0.44214392302392186,
+        "conditional_alignment": 0.4343040360873791,
+        "public_alignment": 0.24009013802198292
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.1.self_attn.q_proj",
+      "denominator": 1.4676973965639863,
+      "normalized": {
+        "error": 0.3537693250253645,
+        "reference_energy": 1.0000000077243612,
+        "generated_energy": 0.6410692677277154,
+        "task_mean_energy": 0.6343417168762551,
+        "within_video_variance": 0.006727550851460263,
+        "mean_error": 0.34704177417390436,
+        "task_mean_dot_reference": 0.643649975213356,
+        "public_error": 0.018130064899839794,
+        "public_reference_energy": 0.17528741748912813,
+        "public_generated_energy": 0.15800853088163733,
+        "conditional_error": 0.32891170927406455,
+        "conditional_reference_energy": 0.824712590235233,
+        "conditional_generated_energy": 0.47633318599461777,
+        "conditional_alignment": 0.4860670334778931,
+        "public_alignment": 0.15758294173546286
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.1.self_attn.v_proj",
+      "denominator": 0.10327780335986365,
+      "normalized": {
+        "error": 0.3992406762102285,
+        "reference_energy": 1.0000000158947178,
+        "generated_energy": 0.6065324961728358,
+        "task_mean_energy": 0.5984022135615371,
+        "within_video_variance": 0.008130282611298835,
+        "mean_error": 0.3911103935989298,
+        "task_mean_dot_reference": 0.6036459179286626,
+        "public_error": 0.022153834675882007,
+        "public_reference_energy": 0.2137697352999495,
+        "public_generated_energy": 0.17970903007081243,
+        "conditional_error": 0.36895655892304774,
+        "conditional_reference_energy": 0.7862302805947684,
+        "conditional_generated_energy": 0.41869318349072465,
+        "conditional_alignment": 0.4179834525812227,
+        "public_alignment": 0.18566246534743996
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.10.self_attn.q_proj",
+      "denominator": 4.452305821805365,
+      "normalized": {
+        "error": 1.0005063299568795,
+        "reference_energy": 0.9999999955796081,
+        "generated_energy": 0.0013307825652545888,
+        "task_mean_energy": 0.0013182946841797042,
+        "within_video_variance": 1.248788107488491e-05,
+        "mean_error": 1.0004938420758052,
+        "task_mean_dot_reference": 0.00041222409399160306,
+        "public_error": 0.06947401123236874,
+        "public_reference_energy": 0.06913166564681565,
+        "public_generated_energy": 0.0010342623786088038,
+        "conditional_error": 0.9310198308434363,
+        "conditional_reference_energy": 0.9308683299327923,
+        "conditional_generated_energy": 0.00028403230557090043,
+        "conditional_alignment": 6.626569746373965e-05,
+        "public_alignment": 0.00034595839652786344
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.10.self_attn.v_proj",
+      "denominator": 0.3006546248410208,
+      "normalized": {
+        "error": 0.997204215989504,
+        "reference_energy": 1.0000000054302176,
+        "generated_energy": 0.00381503459984065,
+        "task_mean_energy": 0.0037491858403480554,
+        "within_video_variance": 6.584875949259434e-05,
+        "mean_error": 0.9971383672300119,
+        "task_mean_dot_reference": 0.0033054120202767015,
+        "public_error": 0.06656674627970083,
+        "public_reference_energy": 0.06901466449974189,
+        "public_generated_energy": 0.002461012706336296,
+        "conditional_error": 0.9305716209503112,
+        "conditional_reference_energy": 0.9309853409304757,
+        "conditional_generated_energy": 0.001288173134011759,
+        "conditional_alignment": 0.0008509465570880278,
+        "public_alignment": 0.0024544654631886735
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.11.self_attn.q_proj",
+      "denominator": 1.5869561663000953,
+      "normalized": {
+        "error": 0.9995216834630541,
+        "reference_energy": 1.0000000167830925,
+        "generated_energy": 0.0021455730496602607,
+        "task_mean_energy": 0.0021263679097763832,
+        "within_video_variance": 1.9205139883878173e-05,
+        "mean_error": 0.99950247832317,
+        "task_mean_dot_reference": 0.0013119531848495407,
+        "public_error": 0.0643883381697939,
+        "public_reference_energy": 0.06483318786948149,
+        "public_generated_energy": 0.0016782618416006892,
+        "conditional_error": 0.9351141401533761,
+        "conditional_reference_energy": 0.935166828913611,
+        "conditional_generated_energy": 0.0004481060681756941,
+        "conditional_alignment": 0.00025039741420540665,
+        "public_alignment": 0.001061555770644134
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.11.self_attn.v_proj",
+      "denominator": 0.06352864756223023,
+      "normalized": {
+        "error": 0.7255328565426367,
+        "reference_energy": 1.0000000204437283,
+        "generated_energy": 0.36729215735502013,
+        "task_mean_energy": 0.35758528931273303,
+        "within_video_variance": 0.009706868042287271,
+        "mean_error": 0.7158259885003494,
+        "task_mean_dot_reference": 0.320879660628056,
+        "public_error": 0.040028122943833226,
+        "public_reference_energy": 0.07065061500465776,
+        "public_generated_energy": 0.07459179081652412,
+        "conditional_error": 0.6757978655565161,
+        "conditional_reference_energy": 0.9293494054390704,
+        "conditional_generated_energy": 0.2829934984962089,
+        "conditional_alignment": 0.2682725191893816,
+        "public_alignment": 0.05260714143867434
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.12.self_attn.q_proj",
+      "denominator": 3.750417751467063,
+      "normalized": {
+        "error": 1.0007506393388343,
+        "reference_energy": 0.9999999855743168,
+        "generated_energy": 0.0009367793059440454,
+        "task_mean_energy": 0.0009307618425361951,
+        "within_video_variance": 6.017463407850417e-06,
+        "mean_error": 1.0007446218754266,
+        "task_mean_dot_reference": 9.306277071316451e-05,
+        "public_error": 0.05256987647800162,
+        "public_reference_energy": 0.05191771310145973,
+        "public_generated_energy": 0.0008095506815039788,
+        "conditional_error": 0.948174745397425,
+        "conditional_reference_energy": 0.9480822724728571,
+        "conditional_generated_energy": 0.00012121116103221633,
+        "conditional_alignment": 1.436911823211698e-05,
+        "public_alignment": 7.869365248104753e-05
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.12.self_attn.v_proj",
+      "denominator": 0.8713314059035232,
+      "normalized": {
+        "error": 0.9996516515252666,
+        "reference_energy": 0.9999999850418967,
+        "generated_energy": 0.000929845563053637,
+        "task_mean_energy": 0.000926079286129476,
+        "within_video_variance": 3.766276924161043e-06,
+        "mean_error": 0.9996478852483424,
+        "task_mean_dot_reference": 0.0006390895398419859,
+        "public_error": 0.07879663169312921,
+        "public_reference_energy": 0.07912065527468656,
+        "public_generated_energy": 0.0008467987802204747,
+        "conditional_error": 0.920851253555213,
+        "conditional_reference_energy": 0.9208793297672102,
+        "conditional_generated_energy": 7.928050590900136e-05,
+        "conditional_alignment": 5.367835895306865e-05,
+        "public_alignment": 0.0005854111808889173
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.13.self_attn.q_proj",
+      "denominator": 3.592530849389732,
+      "normalized": {
+        "error": 1.0006858893329915,
+        "reference_energy": 1.0000000071079929,
+        "generated_energy": 0.000891937434505012,
+        "task_mean_energy": 0.0008865654516458633,
+        "within_video_variance": 5.371982859148694e-06,
+        "mean_error": 1.0006805173501319,
+        "task_mean_dot_reference": 0.00010302760475333548,
+        "public_error": 0.0630313192217842,
+        "public_reference_energy": 0.06242357156633849,
+        "public_generated_energy": 0.0007792154742866845,
+        "conditional_error": 0.9376491981283476,
+        "conditional_reference_energy": 0.9375764355416543,
+        "conditional_generated_energy": 0.00010734997735917886,
+        "conditional_alignment": 1.729369533285355e-05,
+        "public_alignment": 8.573390942048193e-05
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.13.self_attn.v_proj",
+      "denominator": 0.6532179703677281,
+      "normalized": {
+        "error": 0.9993153193595019,
+        "reference_energy": 0.9999999795200469,
+        "generated_energy": 0.0013861286264492166,
+        "task_mean_energy": 0.001381206166225682,
+        "within_video_variance": 4.922460223534756e-06,
+        "mean_error": 0.9993103968992786,
+        "task_mean_dot_reference": 0.00103539439349722,
+        "public_error": 0.09783091462078114,
+        "public_reference_energy": 0.0984764448536459,
+        "public_generated_energy": 0.001270532409748398,
+        "conditional_error": 0.9014794822784974,
+        "conditional_reference_energy": 0.901523534666401,
+        "conditional_generated_energy": 0.00011067375647728385,
+        "conditional_alignment": 7.736307219063937e-05,
+        "public_alignment": 0.0009580313213065808
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.14.self_attn.q_proj",
+      "denominator": 6.079119268597829,
+      "normalized": {
+        "error": 1.000522743241377,
+        "reference_energy": 0.9999999928974843,
+        "generated_energy": 0.001245942740820783,
+        "task_mean_energy": 0.001237751634999815,
+        "within_video_variance": 8.191105820968375e-06,
+        "mean_error": 1.0005145521355558,
+        "task_mean_dot_reference": 0.0003615961984640231,
+        "public_error": 0.05139000590033521,
+        "public_reference_energy": 0.050860325459268364,
+        "public_generated_energy": 0.001050340839873523,
+        "conditional_error": 0.9491245462352206,
+        "conditional_reference_energy": 0.949139667438216,
+        "conditional_generated_energy": 0.00018741079512629198,
+        "conditional_alignment": 0.00010126599906064778,
+        "public_alignment": 0.0002603301994033753
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.14.self_attn.v_proj",
+      "denominator": 1.15607248681287,
+      "normalized": {
+        "error": 0.9999555833013553,
+        "reference_energy": 1.000000022874413,
+        "generated_energy": 0.0008588688029881581,
+        "task_mean_energy": 0.0008560451363527679,
+        "within_video_variance": 2.823666635390461e-06,
+        "mean_error": 0.9999527596347193,
+        "task_mean_dot_reference": 0.0004516541880231309,
+        "public_error": 0.09067931452324358,
+        "public_reference_energy": 0.09072999820124679,
+        "public_generated_energy": 0.0007997118910740802,
+        "conditional_error": 0.9092734451114757,
+        "conditional_reference_energy": 0.9092700246731662,
+        "conditional_generated_energy": 5.633324527868769e-05,
+        "conditional_alignment": 2.6456403484498876e-05,
+        "public_alignment": 0.000425197784538632
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.15.self_attn.q_proj",
+      "denominator": 1.8119146041572092,
+      "normalized": {
+        "error": 1.0007509212503956,
+        "reference_energy": 0.9999999995966585,
+        "generated_energy": 0.0013822628080920087,
+        "task_mean_energy": 0.0013756006333527323,
+        "within_video_variance": 6.662174739276256e-06,
+        "mean_error": 1.0007442590756563,
+        "task_mean_dot_reference": 0.00031567057717738693,
+        "public_error": 0.051904862968718546,
+        "public_reference_energy": 0.051194510594771786,
+        "public_generated_energy": 0.001248868668220638,
+        "conditional_error": 0.9488393961069379,
+        "conditional_reference_energy": 0.9488054890018868,
+        "conditional_generated_energy": 0.00012673196513209424,
+        "conditional_alignment": 4.6412430040440075e-05,
+        "public_alignment": 0.00026925814713694686
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.15.self_attn.v_proj",
+      "denominator": 0.4827877203157791,
+      "normalized": {
+        "error": 0.950871368526856,
+        "reference_energy": 0.9999999675414035,
+        "generated_energy": 0.03855890674259003,
+        "task_mean_energy": 0.037440080293017604,
+        "within_video_variance": 0.00111882644957241,
+        "mean_error": 0.9497525420772835,
+        "task_mean_dot_reference": 0.04384375287856863,
+        "public_error": 0.061849199283750406,
+        "public_reference_energy": 0.07644411052012033,
+        "public_generated_energy": 0.012446491651667488,
+        "conditional_error": 0.8879033427935331,
+        "conditional_reference_energy": 0.9235558570212832,
+        "conditional_generated_energy": 0.024993588641350116,
+        "conditional_alignment": 0.030323051434549917,
+        "public_alignment": 0.01352070144401871
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.16.self_attn.q_proj",
+      "denominator": 1.9102373916345337,
+      "normalized": {
+        "error": 1.000335362632108,
+        "reference_energy": 1.000000001245482,
+        "generated_energy": 0.001624787185742043,
+        "task_mean_energy": 0.0016125423288357458,
+        "within_video_variance": 1.224485690629707e-05,
+        "mean_error": 1.0003231177752017,
+        "task_mean_dot_reference": 0.0006447128995579582,
+        "public_error": 0.061549163189850445,
+        "public_reference_energy": 0.06128033100552018,
+        "public_generated_energy": 0.001336843181670049,
+        "conditional_error": 0.9387739545853512,
+        "conditional_reference_energy": 0.9387196702399618,
+        "conditional_generated_energy": 0.0002756991471656967,
+        "conditional_alignment": 0.00011070740088805735,
+        "public_alignment": 0.0005340054986699008
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.16.self_attn.v_proj",
+      "denominator": 0.4256521508020037,
+      "normalized": {
+        "error": 0.7576147646453397,
+        "reference_energy": 0.9999999735056239,
+        "generated_energy": 0.5366562083857019,
+        "task_mean_energy": 0.5247272149052988,
+        "within_video_variance": 0.011928993480402997,
+        "mean_error": 0.7456857711649367,
+        "task_mean_dot_reference": 0.3895207086229933,
+        "public_error": 0.0384829898811722,
+        "public_reference_energy": 0.06392277630291912,
+        "public_generated_energy": 0.06632990290003193,
+        "conditional_error": 0.7072027812837645,
+        "conditional_reference_energy": 0.9360771972027047,
+        "conditional_generated_energy": 0.4583973120052669,
+        "conditional_alignment": 0.34363586396210394,
+        "public_alignment": 0.04588484466088942
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.17.self_attn.q_proj",
+      "denominator": 1.447541965119955,
+      "normalized": {
+        "error": 1.0006786880018308,
+        "reference_energy": 1.0000000111341922,
+        "generated_energy": 0.0022978796556171713,
+        "task_mean_energy": 0.0022854034912262416,
+        "within_video_variance": 1.2476164390928879e-05,
+        "mean_error": 1.00066621183744,
+        "task_mean_dot_reference": 0.000809601393989199,
+        "public_error": 0.050076533588541375,
+        "public_reference_energy": 0.049424832475965325,
+        "public_generated_energy": 0.0020225591702721355,
+        "conditional_error": 0.9505896782488988,
+        "conditional_reference_energy": 0.9505751786582269,
+        "conditional_generated_energy": 0.0002628443209541063,
+        "conditional_alignment": 0.00012417236514114722,
+        "public_alignment": 0.0006854290288480518
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.17.self_attn.v_proj",
+      "denominator": 0.4125402720205279,
+      "normalized": {
+        "error": 0.9829437260237084,
+        "reference_energy": 1.0000000014457378,
+        "generated_energy": 0.24184424529618756,
+        "task_mean_energy": 0.23635397565068209,
+        "within_video_variance": 0.005490269645505366,
+        "mean_error": 0.9774534563782031,
+        "task_mean_dot_reference": 0.12945026035910825,
+        "public_error": 0.04777493497319831,
+        "public_reference_energy": 0.05205430826245199,
+        "public_generated_energy": 0.05724697736158146,
+        "conditional_error": 0.9296785214050048,
+        "conditional_reference_energy": 0.9479456931832857,
+        "conditional_generated_energy": 0.17910699828910062,
+        "conditional_alignment": 0.09868708503369068,
+        "public_alignment": 0.030763175325417565
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.2.self_attn.q_proj",
+      "denominator": 0.6647794869366205,
+      "normalized": {
+        "error": 0.49338010171561403,
+        "reference_energy": 0.9999999990729851,
+        "generated_energy": 0.5977001342731024,
+        "task_mean_energy": 0.5885496867884431,
+        "within_video_variance": 0.009150447484659072,
+        "mean_error": 0.48422965423095515,
+        "task_mean_dot_reference": 0.5521600158152367,
+        "public_error": 0.023253351857696416,
+        "public_reference_energy": 0.17540474136912146,
+        "public_generated_energy": 0.19214748744978222,
+        "conditional_error": 0.4609763023732587,
+        "conditional_reference_energy": 0.8245952577038635,
+        "conditional_generated_energy": 0.39640219933866094,
+        "conditional_alignment": 0.380010577334633,
+        "public_alignment": 0.17214943848060357
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.2.self_attn.v_proj",
+      "denominator": 0.09603189303824262,
+      "normalized": {
+        "error": 0.4841993397566693,
+        "reference_energy": 0.9999999862416332,
+        "generated_energy": 0.5084508065809726,
+        "task_mean_energy": 0.4957284204736802,
+        "within_video_variance": 0.012722386107292498,
+        "mean_error": 0.47147695364937686,
+        "task_mean_dot_reference": 0.5121257265329685,
+        "public_error": 0.0320169477810281,
+        "public_reference_energy": 0.1739794156227792,
+        "public_generated_energy": 0.1392358613282282,
+        "conditional_error": 0.43946000586834877,
+        "conditional_reference_energy": 0.8260205706188541,
+        "conditional_generated_energy": 0.356492559145452,
+        "conditional_alignment": 0.37152656194797884,
+        "public_alignment": 0.14059916458498967
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.3.self_attn.q_proj",
+      "denominator": 1.2564775722308292,
+      "normalized": {
+        "error": 0.515722238567984,
+        "reference_energy": 1.0000000211002857,
+        "generated_energy": 0.5315538058535096,
+        "task_mean_energy": 0.5254181247717287,
+        "within_video_variance": 0.006135681081781057,
+        "mean_error": 0.509586557486203,
+        "task_mean_dot_reference": 0.5079157941929056,
+        "public_error": 0.02773884119673039,
+        "public_reference_energy": 0.12849209238186798,
+        "public_generated_energy": 0.14355240157717214,
+        "conditional_error": 0.48184771628947254,
+        "conditional_reference_energy": 0.8715079287184176,
+        "conditional_generated_energy": 0.38186572319455653,
+        "conditional_alignment": 0.38576296781175073,
+        "public_alignment": 0.12215282638115484
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.3.self_attn.v_proj",
+      "denominator": 0.2780037804946511,
+      "normalized": {
+        "error": 0.3690901838255788,
+        "reference_energy": 0.9999999797624578,
+        "generated_energy": 0.8025792089502286,
+        "task_mean_energy": 0.7895229622376498,
+        "within_video_variance": 0.01305624671257889,
+        "mean_error": 0.35603393711300013,
+        "task_mean_dot_reference": 0.7167445024435538,
+        "public_error": 0.02986444258054773,
+        "public_reference_energy": 0.2188981996305898,
+        "public_generated_energy": 0.2594967064965688,
+        "conditional_error": 0.32616949453245236,
+        "conditional_reference_energy": 0.781101780131868,
+        "conditional_generated_energy": 0.5300262557410811,
+        "conditional_alignment": 0.4924792706702484,
+        "public_alignment": 0.22426523177330546
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.4.self_attn.q_proj",
+      "denominator": 1.202938897121284,
+      "normalized": {
+        "error": 0.4476016867516613,
+        "reference_energy": 0.9999999431077893,
+        "generated_energy": 0.580161738953622,
+        "task_mean_energy": 0.5728706254164913,
+        "within_video_variance": 0.007291113537130695,
+        "mean_error": 0.4403105732145306,
+        "task_mean_dot_reference": 0.566279997654875,
+        "public_error": 0.021000696574221277,
+        "public_reference_energy": 0.12523861940239184,
+        "public_generated_energy": 0.1414844567922481,
+        "conditional_error": 0.4193098766403094,
+        "conditional_reference_energy": 0.8747613237053975,
+        "conditional_generated_energy": 0.4313861686242431,
+        "conditional_alignment": 0.4434188078446658,
+        "public_alignment": 0.12286118981020927
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.4.self_attn.v_proj",
+      "denominator": 0.08437340916781169,
+      "normalized": {
+        "error": 0.4397970386009699,
+        "reference_energy": 0.9999999874906175,
+        "generated_energy": 0.7449784853192466,
+        "task_mean_energy": 0.7313877252929136,
+        "within_video_variance": 0.013590760026332813,
+        "mean_error": 0.4262062785746371,
+        "task_mean_dot_reference": 0.6525907171044468,
+        "public_error": 0.03725645323915676,
+        "public_reference_energy": 0.10366503518513552,
+        "public_generated_energy": 0.13326838684011227,
+        "conditional_error": 0.38894982533548034,
+        "conditional_reference_energy": 0.8963349523054819,
+        "conditional_generated_energy": 0.5981193384528014,
+        "conditional_alignment": 0.5527522327114014,
+        "public_alignment": 0.09983848439304553
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.5.self_attn.q_proj",
+      "denominator": 2.6646180673916304,
+      "normalized": {
+        "error": 0.8015942901675019,
+        "reference_energy": 1.0000000204817774,
+        "generated_energy": 0.17467236203946834,
+        "task_mean_energy": 0.17175297514121812,
+        "within_video_variance": 0.0029193868982501318,
+        "mean_error": 0.7986749032692521,
+        "task_mean_dot_reference": 0.18653904617687178,
+        "public_error": 0.02853675984577088,
+        "public_reference_energy": 0.11847216050207768,
+        "public_generated_energy": 0.06557922758107565,
+        "conditional_error": 0.7701381434234813,
+        "conditional_reference_energy": 0.8815278599796996,
+        "conditional_generated_energy": 0.10617374756014249,
+        "conditional_alignment": 0.10878173205818058,
+        "public_alignment": 0.07775731411869122
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.5.self_attn.v_proj",
+      "denominator": 0.1211130619566474,
+      "normalized": {
+        "error": 0.4203897198820089,
+        "reference_energy": 1.0000000366898776,
+        "generated_energy": 0.5666669955547116,
+        "task_mean_energy": 0.5547018170779723,
+        "within_video_variance": 0.011965178476739311,
+        "mean_error": 0.4084245414052695,
+        "task_mean_dot_reference": 0.5731386561812905,
+        "public_error": 0.023648783153566492,
+        "public_reference_energy": 0.07910126713566606,
+        "public_generated_energy": 0.07552730587987469,
+        "conditional_error": 0.38477575825170307,
+        "conditional_reference_energy": 0.9208987695542116,
+        "conditional_generated_energy": 0.47917451119809756,
+        "conditional_alignment": 0.5076487612503033,
+        "public_alignment": 0.06548989493098711
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.6.self_attn.q_proj",
+      "denominator": 2.518263675582906,
+      "normalized": {
+        "error": 0.801728973256772,
+        "reference_energy": 0.9999999927577313,
+        "generated_energy": 0.2852433357778347,
+        "task_mean_energy": 0.28163287134186304,
+        "within_video_variance": 0.003610464435971745,
+        "mean_error": 0.7981185088207998,
+        "task_mean_dot_reference": 0.24175717763939714,
+        "public_error": 0.02998516455203,
+        "public_reference_energy": 0.10622591855787619,
+        "public_generated_energy": 0.1052299718739696,
+        "conditional_error": 0.7681333442687698,
+        "conditional_reference_energy": 0.8937740741998551,
+        "conditional_generated_energy": 0.17640289946789345,
+        "conditional_alignment": 0.15102181469948922,
+        "public_alignment": 0.0907353629399079
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.6.self_attn.v_proj",
+      "denominator": 0.3171386462312917,
+      "normalized": {
+        "error": 0.998756916481301,
+        "reference_energy": 1.00000001264837,
+        "generated_energy": 0.0012221350058478732,
+        "task_mean_energy": 0.001216300775462345,
+        "within_video_variance": 5.834230385528537e-06,
+        "mean_error": 0.9987510822509155,
+        "task_mean_dot_reference": 0.0012326155864583117,
+        "public_error": 0.1032973690735339,
+        "public_reference_energy": 0.10440131468273997,
+        "public_generated_energy": 0.001089988194764915,
+        "conditional_error": 0.8954537131773815,
+        "conditional_reference_energy": 0.89559869796563,
+        "conditional_generated_energy": 0.00012631258069742998,
+        "conditional_alignment": 0.00013564868447281492,
+        "public_alignment": 0.0010969669019854967
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.7.self_attn.q_proj",
+      "denominator": 1.0846332262477114,
+      "normalized": {
+        "error": 0.6140609609646044,
+        "reference_energy": 0.9999999559796803,
+        "generated_energy": 0.48851606378745277,
+        "task_mean_energy": 0.4809506837923875,
+        "within_video_variance": 0.007565379995065169,
+        "mean_error": 0.6064955809695391,
+        "task_mean_dot_reference": 0.43722752940126425,
+        "public_error": 0.044998606666019424,
+        "public_reference_energy": 0.09611603831967741,
+        "public_generated_energy": 0.10516720369042828,
+        "conditional_error": 0.5614969743035196,
+        "conditional_reference_energy": 0.9038839176600029,
+        "conditional_generated_energy": 0.3757834801019592,
+        "conditional_alignment": 0.35908521172922114,
+        "public_alignment": 0.07814231767204312
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.7.self_attn.v_proj",
+      "denominator": 0.23615165730653737,
+      "normalized": {
+        "error": 0.5478973222316967,
+        "reference_energy": 0.9999999794968308,
+        "generated_energy": 0.7161458897468056,
+        "task_mean_energy": 0.7000542453661983,
+        "within_video_variance": 0.01609164438060721,
+        "mean_error": 0.5318056778510898,
+        "task_mean_dot_reference": 0.5841242735059697,
+        "public_error": 0.04642916439143703,
+        "public_reference_energy": 0.10531930020402312,
+        "public_generated_energy": 0.14390291117220158,
+        "conditional_error": 0.48537651345965277,
+        "conditional_reference_energy": 0.8946806792928077,
+        "conditional_generated_energy": 0.5561513341939968,
+        "conditional_alignment": 0.48272775001357593,
+        "public_alignment": 0.10139652349239384
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj",
+      "denominator": 3.6635634651304128,
+      "normalized": {
+        "error": 0.9987502822181274,
+        "reference_energy": 0.9999999877303115,
+        "generated_energy": 0.0011622083609644715,
+        "task_mean_energy": 0.0011544112971480264,
+        "within_video_variance": 7.797063816445347e-06,
+        "mean_error": 0.998742485154311,
+        "task_mean_dot_reference": 0.0012059569365741897,
+        "public_error": 0.08988404150844716,
+        "public_reference_energy": 0.09087588101278578,
+        "public_generated_energy": 0.0009796576571089296,
+        "conditional_error": 0.9088584436458638,
+        "conditional_reference_energy": 0.9091241067175257,
+        "conditional_generated_energy": 0.00017475364003909682,
+        "conditional_alignment": 0.00022020835585040817,
+        "public_alignment": 0.0009857485807237816
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj",
+      "denominator": 0.18532146015463194,
+      "normalized": {
+        "error": 0.6240810205553676,
+        "reference_energy": 0.999999985888945,
+        "generated_energy": 0.5106526528206651,
+        "task_mean_energy": 0.49785741037461567,
+        "within_video_variance": 0.01279524244604915,
+        "mean_error": 0.6112857781093184,
+        "task_mean_dot_reference": 0.44328580907712123,
+        "public_error": 0.03334056505560484,
+        "public_reference_energy": 0.09624243751121016,
+        "public_generated_energy": 0.11031221421139567,
+        "conditional_error": 0.5779452130537135,
+        "conditional_reference_energy": 0.9037575483777348,
+        "conditional_generated_energy": 0.38754519616322003,
+        "conditional_alignment": 0.3566787657436207,
+        "public_alignment": 0.08660704333350053
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.9.self_attn.q_proj",
+      "denominator": 2.611660317000416,
+      "normalized": {
+        "error": 0.9985508993397733,
+        "reference_energy": 0.9999999951531446,
+        "generated_energy": 0.004045466324719262,
+        "task_mean_energy": 0.003984828268660658,
+        "within_video_variance": 6.0638056058603876e-05,
+        "mean_error": 0.9984902612837151,
+        "task_mean_dot_reference": 0.0027472810690452997,
+        "public_error": 0.08754695862650222,
+        "public_reference_energy": 0.08839331479667456,
+        "public_generated_energy": 0.0025484459643940623,
+        "conditional_error": 0.9109433026572128,
+        "conditional_reference_energy": 0.9116066803564702,
+        "conditional_generated_energy": 0.0014363823042665964,
+        "conditional_alignment": 0.0010498800017621067,
+        "public_alignment": 0.0016974010672831928
+      }
+    },
+    {
+      "name": "model.paligemma_with_expert.gemma_expert.model.layers.9.self_attn.v_proj",
+      "denominator": 0.43114214195197254,
+      "normalized": {
+        "error": 0.9983421690522377,
+        "reference_energy": 0.9999999981431903,
+        "generated_energy": 0.002289538260528786,
+        "task_mean_energy": 0.002267227112999984,
+        "within_video_variance": 2.23111475288014e-05,
+        "mean_error": 0.9983198579047087,
+        "task_mean_dot_reference": 0.0019736836757406435,
+        "public_error": 0.08541398089767012,
+        "public_reference_energy": 0.08681439965794333,
+        "public_generated_energy": 0.0017260115537043746,
+        "conditional_error": 0.9129058770070385,
+        "conditional_reference_energy": 0.9131855984852469,
+        "conditional_generated_energy": 0.0005412155592956094,
+        "conditional_alignment": 0.00041046851875185277,
+        "public_alignment": 0.0015632151569887906
+      }
+    }
+  ],
+  "elapsed_seconds": 22.966560366010526,
+  "peak_RSS_KiB": 1803752,
+  "new_model_forwards": 0,
+  "new_training_updates": 0,
+  "new_environment_episodes": 0,
+  "GPU_used": false
+}

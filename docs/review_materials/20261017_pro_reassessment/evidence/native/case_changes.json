@@ -1,0 +1,793 @@
+[
+  {
+    "task": 0,
+    "suite": "libero_spatial",
+    "group": "target24",
+    "source": [
+      4
+    ],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [
+      0,
+      4,
+      8
+    ],
+    "source_gain": [
+      0,
+      8
+    ],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": [
+      12
+    ]
+  },
+  {
+    "task": 1,
+    "suite": "libero_spatial",
+    "group": "target24",
+    "source": [],
+    "Reader900": [
+      12
+    ],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": [
+      12
+    ]
+  },
+  {
+    "task": 2,
+    "suite": "libero_spatial",
+    "group": "target24",
+    "source": [
+      12
+    ],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [
+      0,
+      4
+    ],
+    "source_gain": [
+      0,
+      4
+    ],
+    "source_loss": [
+      12
+    ],
+    "Reader_gain": [],
+    "Reader_loss": [
+      8,
+      12
+    ]
+  },
+  {
+    "task": 4,
+    "suite": "libero_spatial",
+    "group": "target24",
+    "source": [],
+    "Reader900": [
+      8
+    ],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": [
+      8
+    ]
+  },
+  {
+    "task": 5,
+    "suite": "libero_spatial",
+    "group": "target24",
+    "source": [
+      0
+    ],
+    "Reader900": [
+      0,
+      4,
+      12
+    ],
+    "new": [
+      0
+    ],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": [
+      4,
+      12
+    ]
+  },
+  {
+    "task": 7,
+    "suite": "libero_spatial",
+    "group": "target24",
+    "source": [],
+    "Reader900": [
+      0,
+      8
+    ],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": [
+      0,
+      8
+    ]
+  },
+  {
+    "task": 12,
+    "suite": "libero_object",
+    "group": "target24",
+    "source": [],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": [
+      0,
+      4,
+      8,
+      12
+    ]
+  },
+  {
+    "task": 13,
+    "suite": "libero_object",
+    "group": "target24",
+    "source": [],
+    "Reader900": [],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 14,
+    "suite": "libero_object",
+    "group": "target24",
+    "source": [],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": [
+      0,
+      4,
+      8,
+      12
+    ]
+  },
+  {
+    "task": 15,
+    "suite": "libero_object",
+    "group": "target24",
+    "source": [],
+    "Reader900": [],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 17,
+    "suite": "libero_object",
+    "group": "target24",
+    "source": [],
+    "Reader900": [],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 19,
+    "suite": "libero_object",
+    "group": "target24",
+    "source": [],
+    "Reader900": [
+      12
+    ],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": [
+      12
+    ]
+  },
+  {
+    "task": 20,
+    "suite": "libero_goal",
+    "group": "target24",
+    "source": [],
+    "Reader900": [
+      0,
+      8,
+      12
+    ],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": [
+      0,
+      8,
+      12
+    ]
+  },
+  {
+    "task": 21,
+    "suite": "libero_goal",
+    "group": "target24",
+    "source": [
+      0,
+      4,
+      12
+    ],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "source_gain": [
+      8
+    ],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 22,
+    "suite": "libero_goal",
+    "group": "target24",
+    "source": [
+      4
+    ],
+    "Reader900": [
+      0,
+      4,
+      8
+    ],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [
+      4
+    ],
+    "Reader_gain": [],
+    "Reader_loss": [
+      0,
+      4,
+      8
+    ]
+  },
+  {
+    "task": 25,
+    "suite": "libero_goal",
+    "group": "target24",
+    "source": [],
+    "Reader900": [],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 28,
+    "suite": "libero_goal",
+    "group": "target24",
+    "source": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 29,
+    "suite": "libero_goal",
+    "group": "target24",
+    "source": [],
+    "Reader900": [],
+    "new": [
+      8
+    ],
+    "source_gain": [
+      8
+    ],
+    "source_loss": [],
+    "Reader_gain": [
+      8
+    ],
+    "Reader_loss": []
+  },
+  {
+    "task": 32,
+    "suite": "libero_10",
+    "group": "target24",
+    "source": [],
+    "Reader900": [],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 34,
+    "suite": "libero_10",
+    "group": "target24",
+    "source": [
+      4,
+      8
+    ],
+    "Reader900": [
+      8
+    ],
+    "new": [
+      4
+    ],
+    "source_gain": [],
+    "source_loss": [
+      8
+    ],
+    "Reader_gain": [
+      4
+    ],
+    "Reader_loss": [
+      8
+    ]
+  },
+  {
+    "task": 35,
+    "suite": "libero_10",
+    "group": "target24",
+    "source": [],
+    "Reader900": [
+      4
+    ],
+    "new": [
+      0,
+      4,
+      12
+    ],
+    "source_gain": [
+      0,
+      4,
+      12
+    ],
+    "source_loss": [],
+    "Reader_gain": [
+      0,
+      12
+    ],
+    "Reader_loss": []
+  },
+  {
+    "task": 36,
+    "suite": "libero_10",
+    "group": "target24",
+    "source": [],
+    "Reader900": [],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 37,
+    "suite": "libero_10",
+    "group": "target24",
+    "source": [
+      8
+    ],
+    "Reader900": [
+      4,
+      8
+    ],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [
+      8
+    ],
+    "Reader_gain": [],
+    "Reader_loss": [
+      4,
+      8
+    ]
+  },
+  {
+    "task": 38,
+    "suite": "libero_10",
+    "group": "target24",
+    "source": [],
+    "Reader900": [
+      0
+    ],
+    "new": [],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": [
+      0
+    ]
+  },
+  {
+    "task": 42,
+    "suite": "libero_90",
+    "group": "source_seen_support12",
+    "source": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 43,
+    "suite": "libero_90",
+    "group": "source_seen_support12",
+    "source": [
+      4,
+      8,
+      12
+    ],
+    "Reader900": [
+      4,
+      8,
+      12
+    ],
+    "new": [
+      4,
+      8,
+      12
+    ],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 51,
+    "suite": "libero_90",
+    "group": "source_seen_support12",
+    "source": [
+      0,
+      8,
+      12
+    ],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "source_gain": [
+      4
+    ],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 55,
+    "suite": "libero_90",
+    "group": "source_seen_support12",
+    "source": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 56,
+    "suite": "libero_90",
+    "group": "source_seen_support12",
+    "source": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [
+      4,
+      8,
+      12
+    ],
+    "source_gain": [],
+    "source_loss": [
+      0
+    ],
+    "Reader_gain": [],
+    "Reader_loss": [
+      0
+    ]
+  },
+  {
+    "task": 62,
+    "suite": "libero_90",
+    "group": "source_seen_support12",
+    "source": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 64,
+    "suite": "libero_90",
+    "group": "source_seen_support12",
+    "source": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 73,
+    "suite": "libero_90",
+    "group": "source_seen_support12",
+    "source": [
+      0,
+      8,
+      12
+    ],
+    "Reader900": [
+      0,
+      8,
+      12
+    ],
+    "new": [
+      0,
+      8,
+      12
+    ],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 95,
+    "suite": "libero_90",
+    "group": "source_seen_support12",
+    "source": [
+      4,
+      8,
+      12
+    ],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "source_gain": [
+      0
+    ],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 96,
+    "suite": "libero_90",
+    "group": "source_seen_support12",
+    "source": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 97,
+    "suite": "libero_90",
+    "group": "source_seen_support12",
+    "source": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  },
+  {
+    "task": 101,
+    "suite": "libero_90",
+    "group": "source_seen_support12",
+    "source": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "Reader900": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "new": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "source_gain": [],
+    "source_loss": [],
+    "Reader_gain": [],
+    "Reader_loss": []
+  }
+]

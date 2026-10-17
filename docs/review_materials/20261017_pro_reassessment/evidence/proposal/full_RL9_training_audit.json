@@ -1,0 +1,4651 @@
+{
+  "complete": true,
+  "failures": [],
+  "root": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013",
+  "checkpoint": {
+    "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000009/state.pt",
+    "schema": "ember_full_writer_frozen_frontend_endpoint_v10",
+    "stage": "RL",
+    "F_cursor": 38349,
+    "theta_cursor": 9,
+    "bank_version": 9,
+    "G_sampler": {
+      "next_update": 38349,
+      "logical_batch": 4,
+      "task_order": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        12,
+        13,
+        14,
+        15,
+        17,
+        19,
+        20,
+        21,
+        22,
+        25,
+        28,
+        29,
+        32,
+        34,
+        35,
+        36,
+        37,
+        38,
+        42,
+        43,
+        51,
+        55,
+        56,
+        62,
+        64,
+        73,
+        95,
+        96,
+        97,
+        101
+      ],
+      "task_weight": 0.027777777777777776,
+      "parent_weight": "equal actual parent",
+      "H_weight": "uniform within parent",
+      "gradient_owner": "endpoint"
+    },
+    "theta_sampler": {
+      "next_update": 9,
+      "task_order": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        12,
+        13,
+        14,
+        15,
+        17,
+        19,
+        20,
+        21,
+        22,
+        25,
+        28,
+        29,
+        32,
+        34,
+        35,
+        36,
+        37,
+        38,
+        42,
+        43,
+        51,
+        55,
+        56,
+        62,
+        64,
+        73,
+        95,
+        96,
+        97,
+        101
+      ],
+      "logical_condition_batch": 4,
+      "query_sampling": {
+        "0": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "1": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "2": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "4": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "5": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "7": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "12": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "13": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "14": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "15": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "17": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "19": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "20": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "21": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "22": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "25": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "28": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "29": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "32": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "34": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "35": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "36": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "37": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "38": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "42": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "43": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "51": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "55": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "56": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "62": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "64": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "73": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "95": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "96": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "97": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        },
+        "101": {
+          "query_rotation": 16,
+          "query_pool_size": 16
+        }
+      },
+      "sampling_identity": "conditional_continue",
+      "actual_depth": 5,
+      "supervision_version": 9,
+      "checkpoint_role": "registered_node",
+      "alternating_order": [
+        "fixed psi/theta collection",
+        "theta",
+        "append true P/H",
+        "psi",
+        "resample"
+      ]
+    },
+    "topology": {
+      "world_size": 4,
+      "task_order": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        12,
+        13,
+        14,
+        15,
+        17,
+        19,
+        20,
+        21,
+        22,
+        25,
+        28,
+        29,
+        32,
+        34,
+        35,
+        36,
+        37,
+        38,
+        42,
+        43,
+        51,
+        55,
+        56,
+        62,
+        64,
+        73,
+        95,
+        96,
+        97,
+        101
+      ],
+      "logical_condition_batch": 4
+    },
+    "full_G_tensors": 505,
+    "full_G_parameters": 496,
+    "F_parameters": 8761152,
+    "frozen_frontend_parameters_excluded_from_F_optimizer": 330,
+    "actor_parameter_names": 212,
+    "baseline_parameter_names": 4,
+    "F_optimizer": {
+      "parameter_group_count": 1,
+      "parameter_count": 166,
+      "initialized_state_count": 166,
+      "step_counts": {
+        "38349": 166
+      },
+      "never_used_parameter_names": []
+    },
+    "actor_optimizer": {
+      "parameter_group_count": 1,
+      "parameter_count": 212,
+      "initialized_state_count": 201,
+      "step_counts": {
+        "9": 5,
+        "99": 196
+      },
+      "never_used_parameter_names": [
+        "static.layers.0.memory_attention.in_proj_weight",
+        "static.layers.0.memory_attention.in_proj_bias",
+        "static.layers.0.memory_attention.out_proj.weight",
+        "static.layers.0.memory_attention.out_proj.bias",
+        "static.layers.1.memory_attention.in_proj_weight",
+        "static.layers.1.memory_attention.in_proj_bias",
+        "static.layers.1.memory_attention.out_proj.weight",
+        "static.layers.1.memory_attention.out_proj.bias",
+        "static.layers.1.broadcast.weight",
+        "static.layers.1.broadcast.bias",
+        "reader.empty"
+      ]
+    },
+    "baseline_optimizer": {
+      "parameter_group_count": 1,
+      "parameter_count": 4,
+      "initialized_state_count": 4,
+      "step_counts": {
+        "9": 4
+      },
+      "never_used_parameter_names": []
+    },
+    "rank_RNGs": 4,
+    "rank_RNG_fields": [
+      [
+        "python",
+        "numpy",
+        "torch_cpu",
+        "torch_cuda"
+      ],
+      [
+        "python",
+        "numpy",
+        "torch_cpu",
+        "torch_cuda"
+      ],
+      [
+        "python",
+        "numpy",
+        "torch_cpu",
+        "torch_cuda"
+      ],
+      [
+        "python",
+        "numpy",
+        "torch_cpu",
+        "torch_cuda"
+      ]
+    ],
+    "frozen_frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+    "component_migration": {
+      "G_checkpoint": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/G/update_00030249",
+      "theta_checkpoint": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/local/update_00000090",
+      "G_source_topology": {
+        "world_size": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "logical_condition_batch": 4
+      },
+      "theta_source_topology": {
+        "world_size": 2,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "logical_condition_batch": 4
+      },
+      "current_topology": {
+        "world_size": 4,
+        "logical_condition_batch": 4
+      },
+      "behavior_RNG_sources": [
+        {
+          "owner": "theta_local90",
+          "rank": 0
+        },
+        {
+          "owner": "theta_local90",
+          "rank": 1
+        },
+        {
+          "owner": "G_coverage30249",
+          "rank": 2
+        },
+        {
+          "owner": "G_coverage30249",
+          "rank": 3
+        }
+      ],
+      "baseline_optimizer_source": "local90",
+      "exact_resume": false,
+      "best_point_selection": false
+    },
+    "component_rng_sources": {
+      "G": {
+        "saved_ranks": 4,
+        "fields": [
+          [
+            "python",
+            "numpy",
+            "torch_cpu",
+            "torch_cuda"
+          ],
+          [
+            "python",
+            "numpy",
+            "torch_cpu",
+            "torch_cuda"
+          ],
+          [
+            "python",
+            "numpy",
+            "torch_cpu",
+            "torch_cuda"
+          ],
+          [
+            "python",
+            "numpy",
+            "torch_cpu",
+            "torch_cuda"
+          ]
+        ]
+      },
+      "theta": {
+        "saved_ranks": 2,
+        "fields": [
+          [
+            "python",
+            "numpy",
+            "torch_cpu",
+            "torch_cuda"
+          ],
+          [
+            "python",
+            "numpy",
+            "torch_cpu",
+            "torch_cuda"
+          ]
+        ]
+      }
+    },
+    "component_samplers": {
+      "G": {
+        "next_update": 38349,
+        "logical_batch": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "task_weight": 0.027777777777777776,
+        "parent_weight": "equal actual parent",
+        "H_weight": "uniform within parent",
+        "gradient_owner": "endpoint"
+      },
+      "theta": {
+        "next_update": 9,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "logical_condition_batch": 4,
+        "query_sampling": {
+          "0": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "1": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "2": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "4": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "5": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "7": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "12": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "13": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "14": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "15": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "17": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "19": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "20": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "21": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "22": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "25": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "28": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "29": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "32": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "34": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "35": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "36": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "37": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "38": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "42": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "43": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "51": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "55": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "56": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "62": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "64": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "73": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "95": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "96": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "97": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          },
+          "101": {
+            "query_rotation": 16,
+            "query_pool_size": 16
+          }
+        },
+        "sampling_identity": "conditional_continue",
+        "actual_depth": 5,
+        "supervision_version": 9,
+        "checkpoint_role": "registered_node",
+        "alternating_order": [
+          "fixed psi/theta collection",
+          "theta",
+          "append true P/H",
+          "psi",
+          "resample"
+        ]
+      }
+    }
+  },
+  "recovery_manifests": [
+    {
+      "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/G/update_00030249/manifest.json",
+      "G_gradient_owner": "endpoint",
+      "G_next_update": 30249,
+      "G_objective": "task_equal_layer_mean_full_BA_Frobenius_v1",
+      "complete": true,
+      "frozen_frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+      "full_G_theta_baseline": true,
+      "full_optimizer_rng_sampler": true,
+      "independent_F_theta_optimizers": true,
+      "next_update": 30249,
+      "schema_version": "ember_full_writer_frozen_frontend_endpoint_v10",
+      "stage": "G",
+      "supervision_version": 0,
+      "topology": {
+        "logical_condition_batch": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "world_size": 4
+      }
+    },
+    {
+      "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000001/manifest.json",
+      "G_gradient_owner": "endpoint",
+      "G_next_update": 31149,
+      "G_objective": "task_equal_layer_mean_full_BA_Frobenius_v1",
+      "complete": true,
+      "frozen_frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+      "full_G_theta_baseline": true,
+      "full_optimizer_rng_sampler": true,
+      "independent_F_theta_optimizers": true,
+      "next_update": 1,
+      "schema_version": "ember_full_writer_frozen_frontend_endpoint_v10",
+      "stage": "RL",
+      "supervision_version": 1,
+      "topology": {
+        "logical_condition_batch": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "world_size": 4
+      }
+    },
+    {
+      "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000002/manifest.json",
+      "G_gradient_owner": "endpoint",
+      "G_next_update": 32049,
+      "G_objective": "task_equal_layer_mean_full_BA_Frobenius_v1",
+      "complete": true,
+      "frozen_frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+      "full_G_theta_baseline": true,
+      "full_optimizer_rng_sampler": true,
+      "independent_F_theta_optimizers": true,
+      "next_update": 2,
+      "schema_version": "ember_full_writer_frozen_frontend_endpoint_v10",
+      "stage": "RL",
+      "supervision_version": 2,
+      "topology": {
+        "logical_condition_batch": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "world_size": 4
+      }
+    },
+    {
+      "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000003/manifest.json",
+      "G_gradient_owner": "endpoint",
+      "G_next_update": 32949,
+      "G_objective": "task_equal_layer_mean_full_BA_Frobenius_v1",
+      "complete": true,
+      "frozen_frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+      "full_G_theta_baseline": true,
+      "full_optimizer_rng_sampler": true,
+      "independent_F_theta_optimizers": true,
+      "next_update": 3,
+      "schema_version": "ember_full_writer_frozen_frontend_endpoint_v10",
+      "stage": "RL",
+      "supervision_version": 3,
+      "topology": {
+        "logical_condition_batch": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "world_size": 4
+      }
+    },
+    {
+      "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000004/manifest.json",
+      "G_gradient_owner": "endpoint",
+      "G_next_update": 33849,
+      "G_objective": "task_equal_layer_mean_full_BA_Frobenius_v1",
+      "complete": true,
+      "frozen_frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+      "full_G_theta_baseline": true,
+      "full_optimizer_rng_sampler": true,
+      "independent_F_theta_optimizers": true,
+      "next_update": 4,
+      "schema_version": "ember_full_writer_frozen_frontend_endpoint_v10",
+      "stage": "RL",
+      "supervision_version": 4,
+      "topology": {
+        "logical_condition_batch": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "world_size": 4
+      }
+    },
+    {
+      "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000005/manifest.json",
+      "G_gradient_owner": "endpoint",
+      "G_next_update": 34749,
+      "G_objective": "task_equal_layer_mean_full_BA_Frobenius_v1",
+      "complete": true,
+      "frozen_frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+      "full_G_theta_baseline": true,
+      "full_optimizer_rng_sampler": true,
+      "independent_F_theta_optimizers": true,
+      "next_update": 5,
+      "schema_version": "ember_full_writer_frozen_frontend_endpoint_v10",
+      "stage": "RL",
+      "supervision_version": 5,
+      "topology": {
+        "logical_condition_batch": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "world_size": 4
+      }
+    },
+    {
+      "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000006/manifest.json",
+      "G_gradient_owner": "endpoint",
+      "G_next_update": 35649,
+      "G_objective": "task_equal_layer_mean_full_BA_Frobenius_v1",
+      "complete": true,
+      "frozen_frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+      "full_G_theta_baseline": true,
+      "full_optimizer_rng_sampler": true,
+      "independent_F_theta_optimizers": true,
+      "next_update": 6,
+      "schema_version": "ember_full_writer_frozen_frontend_endpoint_v10",
+      "stage": "RL",
+      "supervision_version": 6,
+      "topology": {
+        "logical_condition_batch": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "world_size": 4
+      }
+    },
+    {
+      "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000007/manifest.json",
+      "G_gradient_owner": "endpoint",
+      "G_next_update": 36549,
+      "G_objective": "task_equal_layer_mean_full_BA_Frobenius_v1",
+      "complete": true,
+      "frozen_frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+      "full_G_theta_baseline": true,
+      "full_optimizer_rng_sampler": true,
+      "independent_F_theta_optimizers": true,
+      "next_update": 7,
+      "schema_version": "ember_full_writer_frozen_frontend_endpoint_v10",
+      "stage": "RL",
+      "supervision_version": 7,
+      "topology": {
+        "logical_condition_batch": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "world_size": 4
+      }
+    },
+    {
+      "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000008/manifest.json",
+      "G_gradient_owner": "endpoint",
+      "G_next_update": 37449,
+      "G_objective": "task_equal_layer_mean_full_BA_Frobenius_v1",
+      "complete": true,
+      "frozen_frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+      "full_G_theta_baseline": true,
+      "full_optimizer_rng_sampler": true,
+      "independent_F_theta_optimizers": true,
+      "next_update": 8,
+      "schema_version": "ember_full_writer_frozen_frontend_endpoint_v10",
+      "stage": "RL",
+      "supervision_version": 8,
+      "topology": {
+        "logical_condition_batch": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "world_size": 4
+      }
+    },
+    {
+      "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000009/manifest.json",
+      "G_gradient_owner": "endpoint",
+      "G_next_update": 38349,
+      "G_objective": "task_equal_layer_mean_full_BA_Frobenius_v1",
+      "complete": true,
+      "frozen_frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+      "full_G_theta_baseline": true,
+      "full_optimizer_rng_sampler": true,
+      "independent_F_theta_optimizers": true,
+      "next_update": 9,
+      "schema_version": "ember_full_writer_frozen_frontend_endpoint_v10",
+      "stage": "RL",
+      "supervision_version": 9,
+      "topology": {
+        "logical_condition_batch": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "world_size": 4
+      }
+    },
+    {
+      "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/assembled/update_00000090/manifest.json",
+      "G_gradient_owner": "endpoint",
+      "G_next_update": 30249,
+      "G_objective": "task_equal_layer_mean_full_BA_Frobenius_v1",
+      "complete": true,
+      "frozen_frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+      "full_G_theta_baseline": true,
+      "full_optimizer_rng_sampler": true,
+      "independent_F_theta_optimizers": true,
+      "next_update": 90,
+      "schema_version": "ember_full_writer_frozen_frontend_endpoint_v10",
+      "stage": "assembled",
+      "supervision_version": 0,
+      "topology": {
+        "logical_condition_batch": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "world_size": 4
+      }
+    },
+    {
+      "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/local/update_00000090/manifest.json",
+      "G_gradient_owner": "endpoint",
+      "G_next_update": 24849,
+      "G_objective": "task_equal_layer_mean_full_BA_Frobenius_v1",
+      "complete": true,
+      "frozen_frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+      "full_G_theta_baseline": true,
+      "full_optimizer_rng_sampler": true,
+      "independent_F_theta_optimizers": true,
+      "next_update": 90,
+      "schema_version": "ember_full_writer_frozen_frontend_endpoint_v10",
+      "stage": "local",
+      "supervision_version": 0,
+      "topology": {
+        "logical_condition_batch": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ],
+        "world_size": 2
+      }
+    }
+  ],
+  "initial_F": {
+    "files": [
+      "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/metrics/G_rank_0.jsonl",
+      "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/metrics/G_rank_1.jsonl",
+      "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/metrics/G_rank_2.jsonl",
+      "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/metrics/G_rank_3.jsonl"
+    ],
+    "logical_updates": 5400,
+    "retained_condition_events": 21600,
+    "task_exposures": {
+      "0": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0000_G_000": 286,
+          "MT300": 314
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0000/history.pt.gz\", \"records\": 34}": 286,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0000/history.pt.gz\"": 314
+        },
+        "demos": {
+          "48": 155,
+          "46": 164,
+          "49": 127,
+          "47": 154
+        }
+      },
+      "1": {
+        "total": 600,
+        "parents": {
+          "MT300": 312,
+          "G24849_practice_task_0001_G_000": 288
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0001/history.pt.gz\"": 312,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0001/history.pt.gz\", \"records\": 46}": 288
+        },
+        "demos": {
+          "48": 152,
+          "49": 138,
+          "46": 159,
+          "47": 151
+        }
+      },
+      "2": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0002_G_000": 309,
+          "MT300": 291
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0002/history.pt.gz\", \"records\": 41}": 309,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0002/history.pt.gz\"": 291
+        },
+        "demos": {
+          "49": 159,
+          "47": 155,
+          "48": 137,
+          "46": 149
+        }
+      },
+      "4": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0004_G_000": 283,
+          "MT300": 317
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0004/history.pt.gz\", \"records\": 68}": 283,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0004/history.pt.gz\"": 317
+        },
+        "demos": {
+          "48": 156,
+          "47": 142,
+          "46": 150,
+          "49": 152
+        }
+      },
+      "5": {
+        "total": 600,
+        "parents": {
+          "MT300": 285,
+          "G24849_practice_task_0005_G_000": 315
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0005/history.pt.gz\"": 285,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0005/history.pt.gz\", \"records\": 62}": 315
+        },
+        "demos": {
+          "49": 164,
+          "48": 150,
+          "47": 148,
+          "46": 138
+        }
+      },
+      "7": {
+        "total": 600,
+        "parents": {
+          "MT300": 300,
+          "G24849_practice_task_0007_G_000": 300
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0007/history.pt.gz\"": 300,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0007/history.pt.gz\", \"records\": 67}": 300
+        },
+        "demos": {
+          "46": 135,
+          "47": 158,
+          "49": 156,
+          "48": 151
+        }
+      },
+      "12": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0012_G_000": 305,
+          "MT300": 295
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0012/history.pt.gz\", \"records\": 112}": 305,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0012/history.pt.gz\"": 295
+        },
+        "demos": {
+          "48": 160,
+          "46": 140,
+          "49": 152,
+          "47": 148
+        }
+      },
+      "13": {
+        "total": 600,
+        "parents": {
+          "MT300": 291,
+          "G24849_practice_task_0013_G_000": 309
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0013/history.pt.gz\"": 291,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0013/history.pt.gz\", \"records\": 84}": 309
+        },
+        "demos": {
+          "47": 145,
+          "49": 151,
+          "46": 159,
+          "48": 145
+        }
+      },
+      "14": {
+        "total": 600,
+        "parents": {
+          "MT300": 307,
+          "G24849_practice_task_0014_G_000": 293
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0014/history.pt.gz\"": 307,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0014/history.pt.gz\", \"records\": 66}": 293
+        },
+        "demos": {
+          "47": 151,
+          "49": 149,
+          "48": 151,
+          "46": 149
+        }
+      },
+      "15": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0015_G_000": 298,
+          "MT300": 302
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0015/history.pt.gz\", \"records\": 81}": 298,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0015/history.pt.gz\"": 302
+        },
+        "demos": {
+          "46": 154,
+          "47": 156,
+          "49": 151,
+          "48": 139
+        }
+      },
+      "17": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0017_G_000": 312,
+          "MT300": 288
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0017/history.pt.gz\", \"records\": 82}": 312,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0017/history.pt.gz\"": 288
+        },
+        "demos": {
+          "46": 162,
+          "49": 156,
+          "47": 135,
+          "48": 147
+        }
+      },
+      "19": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0019_G_000": 291,
+          "MT300": 309
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0019/history.pt.gz\", \"records\": 83}": 291,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0019/history.pt.gz\"": 309
+        },
+        "demos": {
+          "47": 141,
+          "46": 150,
+          "49": 148,
+          "48": 161
+        }
+      },
+      "20": {
+        "total": 600,
+        "parents": {
+          "MT300": 293,
+          "G24849_practice_task_0020_G_000": 307
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0020/history.pt.gz\"": 293,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0020/history.pt.gz\", \"records\": 88}": 307
+        },
+        "demos": {
+          "49": 155,
+          "47": 176,
+          "46": 128,
+          "48": 141
+        }
+      },
+      "21": {
+        "total": 600,
+        "parents": {
+          "MT300": 303,
+          "G24849_practice_task_0021_G_000": 297
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0021/history.pt.gz\"": 303,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0021/history.pt.gz\", \"records\": 36}": 297
+        },
+        "demos": {
+          "48": 149,
+          "46": 151,
+          "47": 161,
+          "49": 139
+        }
+      },
+      "22": {
+        "total": 600,
+        "parents": {
+          "MT300": 314,
+          "G24849_practice_task_0022_G_000": 286
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0022/history.pt.gz\"": 314,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0022/history.pt.gz\", \"records\": 43}": 286
+        },
+        "demos": {
+          "49": 147,
+          "47": 150,
+          "46": 158,
+          "48": 145
+        }
+      },
+      "25": {
+        "total": 600,
+        "parents": {
+          "MT300": 299,
+          "G24849_practice_task_0025_G_000": 301
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0025/history.pt.gz\"": 299,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0025/history.pt.gz\", \"records\": 120}": 301
+        },
+        "demos": {
+          "49": 159,
+          "48": 154,
+          "47": 149,
+          "46": 138
+        }
+      },
+      "28": {
+        "total": 600,
+        "parents": {
+          "MT300": 298,
+          "G24849_practice_task_0028_G_000": 302
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0028/history.pt.gz\"": 298,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0028/history.pt.gz\", \"records\": 35}": 302
+        },
+        "demos": {
+          "49": 149,
+          "48": 166,
+          "46": 148,
+          "47": 137
+        }
+      },
+      "29": {
+        "total": 600,
+        "parents": {
+          "MT300": 307,
+          "G24849_practice_task_0029_G_000": 293
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0029/history.pt.gz\"": 307,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0029/history.pt.gz\", \"records\": 120}": 293
+        },
+        "demos": {
+          "47": 167,
+          "49": 152,
+          "46": 143,
+          "48": 138
+        }
+      },
+      "32": {
+        "total": 600,
+        "parents": {
+          "MT300": 273,
+          "G24849_practice_task_0032_G_000": 327
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0032/history.pt.gz\"": 273,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0032/history.pt.gz\", \"records\": 165}": 327
+        },
+        "demos": {
+          "47": 164,
+          "46": 141,
+          "48": 162,
+          "49": 133
+        }
+      },
+      "34": {
+        "total": 600,
+        "parents": {
+          "MT300": 312,
+          "G24849_practice_task_0034_G_000": 288
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0034/history.pt.gz\"": 312,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0034/history.pt.gz\", \"records\": 157}": 288
+        },
+        "demos": {
+          "48": 158,
+          "49": 148,
+          "47": 148,
+          "46": 146
+        }
+      },
+      "35": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0035_G_000": 294,
+          "MT300": 306
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0035/history.pt.gz\", \"records\": 170}": 294,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0035/history.pt.gz\"": 306
+        },
+        "demos": {
+          "48": 146,
+          "49": 138,
+          "46": 176,
+          "47": 140
+        }
+      },
+      "36": {
+        "total": 600,
+        "parents": {
+          "MT300": 324,
+          "G24849_practice_task_0036_G_000": 276
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0036/history.pt.gz\"": 324,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0036/history.pt.gz\", \"records\": 208}": 276
+        },
+        "demos": {
+          "47": 177,
+          "46": 125,
+          "49": 140,
+          "48": 158
+        }
+      },
+      "37": {
+        "total": 600,
+        "parents": {
+          "MT300": 320,
+          "G24849_practice_task_0037_G_000": 280
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0037/history.pt.gz\"": 320,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0037/history.pt.gz\", \"records\": 153}": 280
+        },
+        "demos": {
+          "46": 169,
+          "49": 141,
+          "48": 142,
+          "47": 148
+        }
+      },
+      "38": {
+        "total": 600,
+        "parents": {
+          "MT300": 306,
+          "G24849_practice_task_0038_G_000": 294
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0038/history.pt.gz\"": 306,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0038/history.pt.gz\", \"records\": 208}": 294
+        },
+        "demos": {
+          "46": 151,
+          "48": 151,
+          "49": 143,
+          "47": 155
+        }
+      },
+      "42": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0042_G_000": 288,
+          "MT300": 312
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0042/history.pt.gz\", \"records\": 46}": 288,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0042/history.pt.gz\"": 312
+        },
+        "demos": {
+          "48": 150,
+          "49": 135,
+          "46": 147,
+          "47": 168
+        }
+      },
+      "43": {
+        "total": 600,
+        "parents": {
+          "MT300": 300,
+          "G24849_practice_task_0043_G_000": 300
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0043/history.pt.gz\"": 300,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0043/history.pt.gz\", \"records\": 73}": 300
+        },
+        "demos": {
+          "49": 164,
+          "47": 151,
+          "48": 155,
+          "46": 130
+        }
+      },
+      "51": {
+        "total": 600,
+        "parents": {
+          "MT300": 284,
+          "G24849_practice_task_0051_G_000": 316
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0051/history.pt.gz\"": 284,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0051/history.pt.gz\", \"records\": 30}": 316
+        },
+        "demos": {
+          "47": 148,
+          "49": 170,
+          "48": 151,
+          "46": 131
+        }
+      },
+      "55": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0055_G_000": 315,
+          "MT300": 285
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0055/history.pt.gz\", \"records\": 49}": 315,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0055/history.pt.gz\"": 285
+        },
+        "demos": {
+          "49": 142,
+          "47": 151,
+          "46": 163,
+          "48": 144
+        }
+      },
+      "56": {
+        "total": 600,
+        "parents": {
+          "MT300": 307,
+          "G24849_practice_task_0056_G_000": 293
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0056/history.pt.gz\"": 307,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0056/history.pt.gz\", \"records\": 43}": 293
+        },
+        "demos": {
+          "46": 162,
+          "47": 129,
+          "48": 148,
+          "49": 161
+        }
+      },
+      "62": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0062_G_000": 313,
+          "MT300": 287
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0062/history.pt.gz\", \"records\": 44}": 313,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0062/history.pt.gz\"": 287
+        },
+        "demos": {
+          "46": 164,
+          "49": 138,
+          "47": 150,
+          "48": 148
+        }
+      },
+      "64": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0064_G_000": 294,
+          "MT300": 306
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0064/history.pt.gz\", \"records\": 45}": 294,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0064/history.pt.gz\"": 306
+        },
+        "demos": {
+          "49": 152,
+          "48": 175,
+          "46": 148,
+          "47": 125
+        }
+      },
+      "73": {
+        "total": 600,
+        "parents": {
+          "MT300": 320,
+          "G24849_practice_task_0073_G_000": 280
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0073/history.pt.gz\"": 320,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0073/history.pt.gz\", \"records\": 160}": 280
+        },
+        "demos": {
+          "48": 145,
+          "47": 146,
+          "49": 157,
+          "46": 152
+        }
+      },
+      "95": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0095_G_000": 298,
+          "MT300": 302
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0095/history.pt.gz\", \"records\": 48}": 298,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0095/history.pt.gz\"": 302
+        },
+        "demos": {
+          "47": 135,
+          "49": 157,
+          "46": 161,
+          "48": 147
+        }
+      },
+      "96": {
+        "total": 600,
+        "parents": {
+          "MT300": 295,
+          "G24849_practice_task_0096_G_000": 305
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0096/history.pt.gz\"": 295,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0096/history.pt.gz\", \"records\": 37}": 305
+        },
+        "demos": {
+          "47": 146,
+          "46": 151,
+          "49": 153,
+          "48": 150
+        }
+      },
+      "97": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0097_G_000": 317,
+          "MT300": 283
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0097/history.pt.gz\", \"records\": 58}": 317,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0097/history.pt.gz\"": 283
+        },
+        "demos": {
+          "46": 159,
+          "48": 154,
+          "49": 149,
+          "47": 138
+        }
+      },
+      "101": {
+        "total": 600,
+        "parents": {
+          "G24849_practice_task_0101_G_000": 313,
+          "MT300": 287
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0101/history.pt.gz\", \"records\": 77}": 313,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0101/history.pt.gz\"": 287
+        },
+        "demos": {
+          "46": 173,
+          "49": 149,
+          "48": 133,
+          "47": 145
+        }
+      }
+    },
+    "expected_equal_conditions_per_task": 600,
+    "source_context_events": {
+      "original144_exact_frozen_MT_context": 10834,
+      "actual_frozen_G_frontend": 10766
+    },
+    "online_windows": [
+      {
+        "block_start_cursor": 24849,
+        "block_terminal_cursor": 30249,
+        "label": "first36_updates",
+        "updates": [
+          24850,
+          24885
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.6580360468312089,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 24849,
+        "block_terminal_cursor": 30249,
+        "label": "last36_updates",
+        "updates": [
+          30214,
+          30249
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.18578471575468333,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      }
+    ],
+    "peak": {
+      "allocated_GiB": 11.542363166809082,
+      "reserved_GiB": 12.763671875,
+      "host_max_RSS_GiB": 14.616386413574219
+    },
+    "rank_summed_phases": {
+      "meta_read_seconds": 0.0,
+      "meta_read_frames": 0,
+      "teacher_cache_hits": 0,
+      "response_seconds": 0.0,
+      "response_observations": 0,
+      "response_cache_hits": 0,
+      "image_observations": 0,
+      "teaching_raw_prefix_host_seconds": 0.0,
+      "dual_meta_forward_host_seconds": 0.0,
+      "actual_H_raw_image_seconds": 0.0,
+      "teaching_raw_prefix_CUDA_stream_seconds": 0.0,
+      "dual_meta_forward_CUDA_stream_seconds": 0.0,
+      "endpoint_forward_host_seconds": 322.59057659835526,
+      "operator_loss_host_seconds": 288.5294272884785,
+      "endpoint_backward_host_seconds": 994.2849952135803,
+      "endpoint_forward_CUDA_stream_seconds": 322.58873092460715,
+      "operator_loss_CUDA_stream_seconds": 288.65379750728664,
+      "endpoint_backward_CUDA_stream_seconds": 1002.889701057432
+    },
+    "synchronized_update_seconds": {
+      "count": 5400,
+      "minimum": 0.09142114899441367,
+      "mean": 0.10356511045686838,
+      "median": 0.09917893050442217,
+      "maximum": 0.382852582995838
+    },
+    "sum_synchronized_update_seconds": 559.2515964670893,
+    "cumulative_final_counters_by_rank": {}
+  },
+  "joint_F": {
+    "files": [
+      "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/metrics/joint_G_rank_0.jsonl",
+      "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/metrics/joint_G_rank_1.jsonl",
+      "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/metrics/joint_G_rank_2.jsonl",
+      "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/metrics/joint_G_rank_3.jsonl"
+    ],
+    "logical_updates": 8100,
+    "retained_condition_events": 32400,
+    "task_exposures": {
+      "0": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0000_G_000": 282,
+          "MT300": 256,
+          "update_000004_task_0000:G_001": 126,
+          "update_000004_task_0000:G_003": 109,
+          "update_000004_task_0000:G_002": 127
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0000/history.pt.gz\", \"records\": 34}": 282,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0000/history.pt.gz\"": 200,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0000/history.pt.gz\", \"records\": 47}": 126,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0000/history.pt.gz\", \"records\": 33}": 56,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0000/history.pt.gz\", \"records\": 78}": 109,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0000/history.pt.gz\", \"records\": 63}": 58,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0000/history.pt.gz\", \"records\": 94}": 69
+        },
+        "demos": {
+          "46": 231,
+          "47": 229,
+          "48": 243,
+          "49": 197
+        }
+      },
+      "1": {
+        "total": 900,
+        "parents": {
+          "MT300": 174,
+          "G24849_practice_task_0001_G_000": 186,
+          "update_000001_task_0001:G_004": 184,
+          "update_000001_task_0001:G_001": 184,
+          "update_000001_task_0001:G_003": 172
+        },
+        "histories": {
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0001/history.pt.gz\", \"records\": 156}": 58,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0001/history.pt.gz\", \"records\": 46}": 186,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0001/history.pt.gz\", \"records\": 244}": 184,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0001/history.pt.gz\"": 54,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0001/history.pt.gz\", \"records\": 112}": 184,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0001/history.pt.gz\", \"records\": 68}": 62,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0001/history.pt.gz\", \"records\": 200}": 172
+        },
+        "demos": {
+          "49": 224,
+          "46": 231,
+          "48": 236,
+          "47": 209
+        }
+      },
+      "2": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0002_G_000": 330,
+          "MT300": 317,
+          "update_000006_task_0002:G_000": 88,
+          "update_000006_task_0002:G_002": 80,
+          "update_000006_task_0002:G_003": 85
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0002/history.pt.gz\", \"records\": 41}": 330,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0002/history.pt.gz\"": 290,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0002/history.pt.gz\", \"records\": 60}": 27,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0002/history.pt.gz\", \"records\": 40}": 88,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0002/history.pt.gz\", \"records\": 79}": 38,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0002/history.pt.gz\", \"records\": 119}": 42,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0002/history.pt.gz\", \"records\": 99}": 85
+        },
+        "demos": {
+          "48": 218,
+          "46": 235,
+          "47": 245,
+          "49": 202
+        }
+      },
+      "4": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0004_G_000": 346,
+          "MT300": 356,
+          "update_000006_task_0004:G_001": 96,
+          "update_000006_task_0004:G_002": 102
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0004/history.pt.gz\", \"records\": 68}": 346,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0004/history.pt.gz\"": 282,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0004/history.pt.gz\", \"records\": 112}": 96,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0004/history.pt.gz\", \"records\": 68}": 40,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0004/history.pt.gz\", \"records\": 133}": 49,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0004/history.pt.gz\", \"records\": 221}": 53,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0004/history.pt.gz\", \"records\": 177}": 34
+        },
+        "demos": {
+          "46": 203,
+          "47": 218,
+          "49": 216,
+          "48": 263
+        }
+      },
+      "5": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0005_G_000": 252,
+          "MT300": 243,
+          "update_000003_task_0005:G_004": 129,
+          "update_000003_task_0005:G_003": 127,
+          "update_000003_task_0005:G_002": 149
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0005/history.pt.gz\", \"records\": 62}": 252,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0005/history.pt.gz\"": 147,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0005/history.pt.gz\", \"records\": 183}": 129,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0005/history.pt.gz\", \"records\": 149}": 127,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0005/history.pt.gz\", \"records\": 124}": 149,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0005/history.pt.gz\", \"records\": 63}": 57,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0005/history.pt.gz\", \"records\": 107}": 39
+        },
+        "demos": {
+          "47": 234,
+          "46": 240,
+          "49": 221,
+          "48": 205
+        }
+      },
+      "7": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0007_G_000": 290,
+          "MT300": 296,
+          "update_000005_task_0007:G_001": 81,
+          "update_000005_task_0007:G_002": 79,
+          "update_000005_task_0007:G_004": 71,
+          "update_000005_task_0007:G_000": 83
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0007/history.pt.gz\", \"records\": 67}": 290,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0007/history.pt.gz\"": 296,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0007/history.pt.gz\", \"records\": 76}": 81,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0007/history.pt.gz\", \"records\": 100}": 79,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0007/history.pt.gz\", \"records\": 149}": 71,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0007/history.pt.gz\", \"records\": 50}": 44,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0007/history.pt.gz\", \"records\": 125}": 39
+        },
+        "demos": {
+          "47": 216,
+          "49": 229,
+          "48": 217,
+          "46": 238
+        }
+      },
+      "12": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0012_G_000": 371,
+          "MT300": 350,
+          "update_000007_task_0012:G_002": 61,
+          "update_000007_task_0012:G_000": 59,
+          "update_000007_task_0012:G_003": 59
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0012/history.pt.gz\", \"records\": 112}": 371,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0012/history.pt.gz\"": 308,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0012/history.pt.gz\", \"records\": 168}": 61,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0012/history.pt.gz\", \"records\": 250}": 22,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0012/history.pt.gz\", \"records\": 79}": 59,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0012/history.pt.gz\", \"records\": 135}": 20,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0012/history.pt.gz\", \"records\": 224}": 59
+        },
+        "demos": {
+          "47": 233,
+          "46": 229,
+          "49": 215,
+          "48": 223
+        }
+      },
+      "13": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0013_G_000": 287,
+          "MT300": 245,
+          "update_000003_task_0013:G_002": 186,
+          "update_000003_task_0013:G_000": 182
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0013/history.pt.gz\", \"records\": 84}": 287,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0013/history.pt.gz\"": 134,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0013/history.pt.gz\", \"records\": 250}": 43,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0013/history.pt.gz\", \"records\": 194}": 186,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0013/history.pt.gz\", \"records\": 112}": 182,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0013/history.pt.gz\", \"records\": 275}": 34,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0013/history.pt.gz\", \"records\": 168}": 34
+        },
+        "demos": {
+          "46": 219,
+          "48": 223,
+          "49": 234,
+          "47": 224
+        }
+      },
+      "14": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0014_G_000": 361,
+          "MT300": 391,
+          "update_000007_task_0014:G_004": 72,
+          "update_000007_task_0014:G_003": 76
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0014/history.pt.gz\", \"records\": 66}": 361,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0014/history.pt.gz\"": 344,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0014/history.pt.gz\", \"records\": 199}": 72,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0014/history.pt.gz\", \"records\": 168}": 76,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0014/history.pt.gz\", \"records\": 67}": 22,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0014/history.pt.gz\", \"records\": 103}": 10,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0014/history.pt.gz\", \"records\": 132}": 15
+        },
+        "demos": {
+          "46": 233,
+          "49": 218,
+          "47": 223,
+          "48": 226
+        }
+      },
+      "15": {
+        "total": 900,
+        "parents": {
+          "MT300": 360,
+          "G24849_practice_task_0015_G_000": 356,
+          "update_000004_task_0015:G_000": 184
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0015/history.pt.gz\"": 200,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0015/history.pt.gz\", \"records\": 81}": 356,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0015/history.pt.gz\", \"records\": 85}": 184,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0015/history.pt.gz\", \"records\": 164}": 35,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0015/history.pt.gz\", \"records\": 276}": 41,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0015/history.pt.gz\", \"records\": 108}": 35,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0015/history.pt.gz\", \"records\": 220}": 49
+        },
+        "demos": {
+          "49": 251,
+          "47": 219,
+          "46": 221,
+          "48": 209
+        }
+      },
+      "17": {
+        "total": 900,
+        "parents": {
+          "MT300": 416,
+          "G24849_practice_task_0017_G_000": 426,
+          "update_000009_task_0017:G_001": 22,
+          "update_000009_task_0017:G_003": 21,
+          "update_000009_task_0017:G_000": 15
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0017/history.pt.gz\"": 403,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0017/history.pt.gz\", \"records\": 82}": 426,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0017/history.pt.gz\", \"records\": 107}": 22,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0017/history.pt.gz\", \"records\": 219}": 13,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0017/history.pt.gz\", \"records\": 80}": 15,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0017/history.pt.gz\", \"records\": 246}": 8,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0017/history.pt.gz\", \"records\": 163}": 13
+        },
+        "demos": {
+          "46": 227,
+          "49": 229,
+          "47": 205,
+          "48": 239
+        }
+      },
+      "19": {
+        "total": 900,
+        "parents": {
+          "MT300": 468,
+          "G24849_practice_task_0019_G_000": 432
+        },
+        "histories": {
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0019/history.pt.gz\", \"records\": 207}": 80,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0019/history.pt.gz\", \"records\": 149}": 84,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0019/history.pt.gz\", \"records\": 83}": 432,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0019/history.pt.gz\", \"records\": 247}": 74,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0019/history.pt.gz\", \"records\": 177}": 84,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0019/history.pt.gz\", \"records\": 112}": 78,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0019/history.pt.gz\"": 68
+        },
+        "demos": {
+          "49": 216,
+          "46": 207,
+          "48": 235,
+          "47": 242
+        }
+      },
+      "20": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0020_G_000": 272,
+          "MT300": 295,
+          "update_000004_task_0020:G_000": 113,
+          "update_000004_task_0020:G_004": 104,
+          "update_000004_task_0020:G_002": 116
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0020/history.pt.gz\", \"records\": 88}": 272,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0020/history.pt.gz\"": 207,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0020/history.pt.gz\", \"records\": 53}": 113,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0020/history.pt.gz\", \"records\": 82}": 46,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0020/history.pt.gz\", \"records\": 160}": 104,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0020/history.pt.gz\", \"records\": 105}": 116,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0020/history.pt.gz\", \"records\": 130}": 42
+        },
+        "demos": {
+          "46": 212,
+          "47": 229,
+          "49": 245,
+          "48": 214
+        }
+      },
+      "21": {
+        "total": 900,
+        "parents": {
+          "update_000001_task_0021:G_004": 200,
+          "update_000001_task_0021:G_002": 174,
+          "MT300": 172,
+          "update_000001_task_0021:G_003": 181,
+          "G24849_practice_task_0021_G_000": 173
+        },
+        "histories": {
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0021/history.pt.gz\", \"records\": 124}": 200,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0021/history.pt.gz\", \"records\": 88}": 174,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0021/history.pt.gz\", \"records\": 52}": 56,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0021/history.pt.gz\", \"records\": 106}": 181,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0021/history.pt.gz\", \"records\": 36}": 173,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0021/history.pt.gz\", \"records\": 70}": 58,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0021/history.pt.gz\"": 58
+        },
+        "demos": {
+          "46": 235,
+          "49": 226,
+          "47": 222,
+          "48": 217
+        }
+      },
+      "22": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0022_G_000": 311,
+          "MT300": 278,
+          "update_000004_task_0022:G_004": 168,
+          "update_000004_task_0022:G_001": 143
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0022/history.pt.gz\", \"records\": 43}": 311,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0022/history.pt.gz\"": 221,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0022/history.pt.gz\", \"records\": 85}": 57,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0022/history.pt.gz\", \"records\": 209}": 168,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0022/history.pt.gz\", \"records\": 125}": 47,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0022/history.pt.gz\", \"records\": 149}": 41,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000004_task_0022/history.pt.gz\", \"records\": 103}": 55
+        },
+        "demos": {
+          "48": 210,
+          "46": 240,
+          "47": 226,
+          "49": 224
+        }
+      },
+      "25": {
+        "total": 900,
+        "parents": {
+          "MT300": 332,
+          "G24849_practice_task_0025_G_000": 287,
+          "update_000002_task_0025:G_000": 281
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0025/history.pt.gz\"": 133,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0025/history.pt.gz\", \"records\": 120}": 287,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0025/history.pt.gz\", \"records\": 360}": 58,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0025/history.pt.gz\", \"records\": 240}": 76,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0025/history.pt.gz\", \"records\": 120}": 142,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0025/history.pt.gz\", \"records\": 180}": 139,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0025/history.pt.gz\", \"records\": 300}": 65
+        },
+        "demos": {
+          "48": 232,
+          "46": 201,
+          "47": 252,
+          "49": 215
+        }
+      },
+      "28": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0028_G_000": 440,
+          "MT300": 460
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0028/history.pt.gz\", \"records\": 35}": 440,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0028/history.pt.gz\"": 289,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0028/history.pt.gz\", \"records\": 34}": 25,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0028/history.pt.gz\", \"records\": 67}": 40,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0028/history.pt.gz\", \"records\": 50}": 45,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0028/history.pt.gz\", \"records\": 82}": 32,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0028/history.pt.gz\", \"records\": 99}": 29
+        },
+        "demos": {
+          "47": 215,
+          "48": 242,
+          "46": 234,
+          "49": 209
+        }
+      },
+      "29": {
+        "total": 900,
+        "parents": {
+          "MT300": 322,
+          "G24849_practice_task_0029_G_000": 311,
+          "update_000005_task_0029:G_003": 129,
+          "update_000005_task_0029:G_002": 138
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0029/history.pt.gz\"": 237,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0029/history.pt.gz\", \"records\": 120}": 311,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0029/history.pt.gz\", \"records\": 277}": 73,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0029/history.pt.gz\", \"records\": 120}": 43,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0029/history.pt.gz\", \"records\": 337}": 56,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0029/history.pt.gz\", \"records\": 217}": 138,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0029/history.pt.gz\", \"records\": 157}": 42
+        },
+        "demos": {
+          "49": 225,
+          "48": 236,
+          "46": 215,
+          "47": 224
+        }
+      },
+      "32": {
+        "total": 900,
+        "parents": {
+          "MT300": 401,
+          "G24849_practice_task_0032_G_000": 359,
+          "update_000007_task_0032:G_003": 62,
+          "update_000007_task_0032:G_002": 78
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0032/history.pt.gz\"": 337,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0032/history.pt.gz\", \"records\": 165}": 359,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0032/history.pt.gz\", \"records\": 407}": 62,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0032/history.pt.gz\", \"records\": 358}": 36,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0032/history.pt.gz\", \"records\": 460}": 42,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0032/history.pt.gz\", \"records\": 208}": 43,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0032/history.pt.gz\", \"records\": 312}": 21
+        },
+        "demos": {
+          "49": 237,
+          "46": 211,
+          "47": 223,
+          "48": 229
+        }
+      },
+      "34": {
+        "total": 900,
+        "parents": {
+          "MT300": 423,
+          "G24849_practice_task_0034_G_000": 420,
+          "update_000009_task_0034:G_002": 21,
+          "update_000009_task_0034:G_000": 17,
+          "update_000009_task_0034:G_001": 19
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0034/history.pt.gz\"": 415,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0034/history.pt.gz\", \"records\": 157}": 420,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0034/history.pt.gz\", \"records\": 363}": 12,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0034/history.pt.gz\", \"records\": 259}": 9,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0034/history.pt.gz\", \"records\": 157}": 17,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0034/history.pt.gz\", \"records\": 208}": 19,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0034/history.pt.gz\", \"records\": 420}": 8
+        },
+        "demos": {
+          "46": 222,
+          "48": 237,
+          "47": 216,
+          "49": 225
+        }
+      },
+      "35": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0035_G_000": 323,
+          "MT300": 332,
+          "update_000005_task_0035:G_004": 120,
+          "update_000005_task_0035:G_001": 125
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0035/history.pt.gz\", \"records\": 170}": 323,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0035/history.pt.gz\"": 240,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0035/history.pt.gz\", \"records\": 329}": 120,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0035/history.pt.gz\", \"records\": 140}": 63,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0035/history.pt.gz\", \"records\": 103}": 50,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0035/history.pt.gz\", \"records\": 179}": 42,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0035/history.pt.gz\", \"records\": 283}": 62
+        },
+        "demos": {
+          "46": 230,
+          "47": 251,
+          "48": 206,
+          "49": 213
+        }
+      },
+      "36": {
+        "total": 900,
+        "parents": {
+          "MT300": 245,
+          "G24849_practice_task_0036_G_000": 236,
+          "update_000002_task_0036:G_004": 220,
+          "update_000002_task_0036:G_003": 199
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0036/history.pt.gz\"": 97,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0036/history.pt.gz\", \"records\": 208}": 236,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0036/history.pt.gz\", \"records\": 624}": 220,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0036/history.pt.gz\", \"records\": 208}": 58,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0036/history.pt.gz\", \"records\": 520}": 199,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0036/history.pt.gz\", \"records\": 312}": 43,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0036/history.pt.gz\", \"records\": 416}": 47
+        },
+        "demos": {
+          "49": 225,
+          "48": 223,
+          "47": 229,
+          "46": 223
+        }
+      },
+      "37": {
+        "total": 900,
+        "parents": {
+          "MT300": 431,
+          "G24849_practice_task_0037_G_000": 398,
+          "update_000008_task_0037:G_001": 71
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0037/history.pt.gz\"": 388,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0037/history.pt.gz\", \"records\": 153}": 398,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0037/history.pt.gz\", \"records\": 475}": 28,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0037/history.pt.gz\", \"records\": 416}": 17,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0037/history.pt.gz\", \"records\": 257}": 26,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0037/history.pt.gz\", \"records\": 180}": 26,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0037/history.pt.gz\", \"records\": 361}": 17
+        },
+        "demos": {
+          "49": 225,
+          "48": 247,
+          "47": 234,
+          "46": 194
+        }
+      },
+      "38": {
+        "total": 900,
+        "parents": {
+          "MT300": 198,
+          "G24849_practice_task_0038_G_000": 185,
+          "update_000002_task_0038:G_001": 133,
+          "update_000002_task_0038:G_000": 126,
+          "update_000002_task_0038:G_003": 122,
+          "update_000002_task_0038:G_002": 136
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0038/history.pt.gz\"": 198,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0038/history.pt.gz\", \"records\": 208}": 185,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0038/history.pt.gz\", \"records\": 624}": 69,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0038/history.pt.gz\", \"records\": 208}": 126,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0038/history.pt.gz\", \"records\": 520}": 122,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0038/history.pt.gz\", \"records\": 416}": 136,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0038/history.pt.gz\", \"records\": 312}": 64
+        },
+        "demos": {
+          "47": 240,
+          "48": 204,
+          "46": 225,
+          "49": 231
+        }
+      },
+      "42": {
+        "total": 900,
+        "parents": {
+          "MT300": 436,
+          "G24849_practice_task_0042_G_000": 433,
+          "update_000009_task_0042:G_001": 31
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0042/history.pt.gz\"": 410,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0042/history.pt.gz\", \"records\": 46}": 433,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0042/history.pt.gz\", \"records\": 45}": 13,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0042/history.pt.gz\", \"records\": 88}": 13,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0042/history.pt.gz\", \"records\": 67}": 6,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0042/history.pt.gz\", \"records\": 111}": 17,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0042/history.pt.gz\", \"records\": 131}": 8
+        },
+        "demos": {
+          "46": 250,
+          "49": 228,
+          "47": 220,
+          "48": 202
+        }
+      },
+      "43": {
+        "total": 900,
+        "parents": {
+          "MT300": 340,
+          "G24849_practice_task_0043_G_000": 303,
+          "update_000002_task_0043:G_004": 257
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0043/history.pt.gz\"": 112,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0043/history.pt.gz\", \"records\": 73}": 303,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0043/history.pt.gz\", \"records\": 217}": 257,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0043/history.pt.gz\", \"records\": 113}": 48,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0043/history.pt.gz\", \"records\": 183}": 64,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0043/history.pt.gz\", \"records\": 71}": 55,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000002_task_0043/history.pt.gz\", \"records\": 147}": 61
+        },
+        "demos": {
+          "48": 245,
+          "49": 256,
+          "46": 197,
+          "47": 202
+        }
+      },
+      "51": {
+        "total": 900,
+        "parents": {
+          "MT300": 276,
+          "G24849_practice_task_0051_G_000": 266,
+          "update_000003_task_0051:G_004": 175,
+          "update_000003_task_0051:G_000": 183
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0051/history.pt.gz\"": 141,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0051/history.pt.gz\", \"records\": 30}": 266,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0051/history.pt.gz\", \"records\": 148}": 175,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0051/history.pt.gz\", \"records\": 122}": 44,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0051/history.pt.gz\", \"records\": 29}": 183,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0051/history.pt.gz\", \"records\": 135}": 49,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0051/history.pt.gz\", \"records\": 42}": 42
+        },
+        "demos": {
+          "48": 262,
+          "49": 242,
+          "47": 220,
+          "46": 176
+        }
+      },
+      "55": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0055_G_000": 333,
+          "MT300": 311,
+          "update_000005_task_0055:G_004": 121,
+          "update_000005_task_0055:G_003": 135
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0055/history.pt.gz\", \"records\": 49}": 333,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0055/history.pt.gz\"": 226,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0055/history.pt.gz\", \"records\": 77}": 29,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0055/history.pt.gz\", \"records\": 148}": 121,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0055/history.pt.gz\", \"records\": 103}": 24,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0055/history.pt.gz\", \"records\": 125}": 135,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000005_task_0055/history.pt.gz\", \"records\": 50}": 32
+        },
+        "demos": {
+          "46": 226,
+          "47": 227,
+          "48": 232,
+          "49": 215
+        }
+      },
+      "56": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0056_G_000": 380,
+          "MT300": 429,
+          "update_000008_task_0056:G_001": 52,
+          "update_000008_task_0056:G_004": 39
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0056/history.pt.gz\", \"records\": 43}": 380,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0056/history.pt.gz\"": 403,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0056/history.pt.gz\", \"records\": 92}": 21,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0056/history.pt.gz\", \"records\": 112}": 18,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0056/history.pt.gz\", \"records\": 69}": 13,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0056/history.pt.gz\", \"records\": 136}": 39,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0056/history.pt.gz\", \"records\": 46}": 26
+        },
+        "demos": {
+          "48": 228,
+          "47": 210,
+          "46": 261,
+          "49": 201
+        }
+      },
+      "62": {
+        "total": 900,
+        "parents": {
+          "MT300": 434,
+          "G24849_practice_task_0062_G_000": 401,
+          "update_000008_task_0062:G_004": 65
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0062/history.pt.gz\"": 378,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0062/history.pt.gz\", \"records\": 44}": 401,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0062/history.pt.gz\", \"records\": 69}": 17,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0062/history.pt.gz\", \"records\": 135}": 65,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0062/history.pt.gz\", \"records\": 90}": 14,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0062/history.pt.gz\", \"records\": 114}": 13,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0062/history.pt.gz\", \"records\": 47}": 12
+        },
+        "demos": {
+          "49": 231,
+          "47": 211,
+          "46": 225,
+          "48": 233
+        }
+      },
+      "64": {
+        "total": 900,
+        "parents": {
+          "update_000001_task_0064:G_003": 233,
+          "G24849_practice_task_0064_G_000": 218,
+          "update_000001_task_0064:G_004": 228,
+          "MT300": 221
+        },
+        "histories": {
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0064/history.pt.gz\", \"records\": 121}": 233,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0064/history.pt.gz\", \"records\": 45}": 218,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0064/history.pt.gz\", \"records\": 158}": 228,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0064/history.pt.gz\", \"records\": 70}": 51,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0064/history.pt.gz\"": 56,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0064/history.pt.gz\", \"records\": 95}": 63,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000001_task_0064/history.pt.gz\", \"records\": 47}": 51
+        },
+        "demos": {
+          "46": 223,
+          "49": 226,
+          "48": 227,
+          "47": 224
+        }
+      },
+      "73": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0073_G_000": 358,
+          "MT300": 436,
+          "update_000007_task_0073:G_000": 106
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0073/history.pt.gz\", \"records\": 160}": 358,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0073/history.pt.gz\"": 361,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0073/history.pt.gz\", \"records\": 346}": 46,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0073/history.pt.gz\", \"records\": 118}": 60,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0073/history.pt.gz\", \"records\": 266}": 25,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0073/history.pt.gz\", \"records\": 232}": 25,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000007_task_0073/history.pt.gz\", \"records\": 163}": 25
+        },
+        "demos": {
+          "49": 200,
+          "46": 229,
+          "47": 252,
+          "48": 219
+        }
+      },
+      "95": {
+        "total": 900,
+        "parents": {
+          "G24849_practice_task_0095_G_000": 210,
+          "MT300": 213,
+          "update_000003_task_0095:G_001": 120,
+          "update_000003_task_0095:G_004": 118,
+          "update_000003_task_0095:G_002": 131,
+          "update_000003_task_0095:G_000": 108
+        },
+        "histories": {
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0095/history.pt.gz\", \"records\": 48}": 210,
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0095/history.pt.gz\"": 213,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0095/history.pt.gz\", \"records\": 126}": 120,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0095/history.pt.gz\", \"records\": 192}": 118,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0095/history.pt.gz\", \"records\": 148}": 131,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0095/history.pt.gz\", \"records\": 48}": 57,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000003_task_0095/history.pt.gz\", \"records\": 171}": 51
+        },
+        "demos": {
+          "46": 241,
+          "49": 213,
+          "47": 224,
+          "48": 222
+        }
+      },
+      "96": {
+        "total": 900,
+        "parents": {
+          "MT300": 329,
+          "G24849_practice_task_0096_G_000": 354,
+          "update_000006_task_0096:G_003": 104,
+          "update_000006_task_0096:G_000": 113
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0096/history.pt.gz\"": 287,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0096/history.pt.gz\", \"records\": 37}": 354,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0096/history.pt.gz\", \"records\": 52}": 42,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0096/history.pt.gz\", \"records\": 87}": 104,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0096/history.pt.gz\", \"records\": 34}": 31,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0096/history.pt.gz\", \"records\": 71}": 44,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000006_task_0096/history.pt.gz\", \"records\": 103}": 38
+        },
+        "demos": {
+          "48": 223,
+          "49": 209,
+          "46": 224,
+          "47": 244
+        }
+      },
+      "97": {
+        "total": 900,
+        "parents": {
+          "MT300": 386,
+          "G24849_practice_task_0097_G_000": 371,
+          "update_000008_task_0097:G_004": 32,
+          "update_000008_task_0097:G_002": 43,
+          "update_000008_task_0097:G_001": 40,
+          "update_000008_task_0097:G_003": 28
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0097/history.pt.gz\"": 373,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0097/history.pt.gz\", \"records\": 58}": 371,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0097/history.pt.gz\", \"records\": 176}": 32,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0097/history.pt.gz\", \"records\": 121}": 43,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0097/history.pt.gz\", \"records\": 89}": 40,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0097/history.pt.gz\", \"records\": 59}": 13,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000008_task_0097/history.pt.gz\", \"records\": 149}": 28
+        },
+        "demos": {
+          "48": 218,
+          "49": 221,
+          "47": 223,
+          "46": 238
+        }
+      },
+      "101": {
+        "total": 900,
+        "parents": {
+          "MT300": 438,
+          "G24849_practice_task_0101_G_000": 429,
+          "update_000009_task_0101:G_000": 33
+        },
+        "histories": {
+          "\"runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0101/history.pt.gz\"": 416,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/terminal24849_student_video_evidence_20261013/practice/student_data/G24849_practice/task_0101/history.pt.gz\", \"records\": 77}": 429,
+          "{\"episodes\": 2, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0101/history.pt.gz\", \"records\": 69}": 11,
+          "{\"episodes\": 5, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0101/history.pt.gz\", \"records\": 160}": 22,
+          "{\"episodes\": 3, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0101/history.pt.gz\", \"records\": 94}": 9,
+          "{\"episodes\": 4, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0101/history.pt.gz\", \"records\": 125}": 7,
+          "{\"episodes\": 6, \"path\": \"runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/RL_paths/update_000009_task_0101/history.pt.gz\", \"records\": 191}": 6
+        },
+        "demos": {
+          "49": 231,
+          "46": 229,
+          "47": 242,
+          "48": 198
+        }
+      }
+    },
+    "expected_equal_conditions_per_task": 900,
+    "source_context_events": {
+      "actual_frozen_G_frontend": 23478,
+      "original144_exact_frozen_MT_context": 8922
+    },
+    "online_windows": [
+      {
+        "block_start_cursor": 30249,
+        "block_terminal_cursor": 31149,
+        "label": "first36_updates",
+        "updates": [
+          30250,
+          30285
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.21606397273656816,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 30249,
+        "block_terminal_cursor": 31149,
+        "label": "last36_updates",
+        "updates": [
+          31114,
+          31149
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.1839742998648338,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 31149,
+        "block_terminal_cursor": 32049,
+        "label": "first36_updates",
+        "updates": [
+          31150,
+          31185
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.19099701718187134,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 31149,
+        "block_terminal_cursor": 32049,
+        "label": "last36_updates",
+        "updates": [
+          32014,
+          32049
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.17479062967645909,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 32049,
+        "block_terminal_cursor": 32949,
+        "label": "first36_updates",
+        "updates": [
+          32050,
+          32085
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.18494421481389306,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 32049,
+        "block_terminal_cursor": 32949,
+        "label": "last36_updates",
+        "updates": [
+          32914,
+          32949
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.17005365763967953,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 32949,
+        "block_terminal_cursor": 33849,
+        "label": "first36_updates",
+        "updates": [
+          32950,
+          32985
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.1727651064468066,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 32949,
+        "block_terminal_cursor": 33849,
+        "label": "last36_updates",
+        "updates": [
+          33814,
+          33849
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.16362116919905625,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 33849,
+        "block_terminal_cursor": 34749,
+        "label": "first36_updates",
+        "updates": [
+          33850,
+          33885
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.16611267029374074,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 33849,
+        "block_terminal_cursor": 34749,
+        "label": "last36_updates",
+        "updates": [
+          34714,
+          34749
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.15744895159847752,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 34749,
+        "block_terminal_cursor": 35649,
+        "label": "first36_updates",
+        "updates": [
+          34750,
+          34785
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.15853010429640968,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 34749,
+        "block_terminal_cursor": 35649,
+        "label": "last36_updates",
+        "updates": [
+          35614,
+          35649
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.1562411850576003,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 35649,
+        "block_terminal_cursor": 36549,
+        "label": "first36_updates",
+        "updates": [
+          35650,
+          35685
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.15537402494323438,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 35649,
+        "block_terminal_cursor": 36549,
+        "label": "last36_updates",
+        "updates": [
+          36514,
+          36549
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.14892184421943158,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 36549,
+        "block_terminal_cursor": 37449,
+        "label": "first36_updates",
+        "updates": [
+          36550,
+          36585
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.15199442421999265,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 36549,
+        "block_terminal_cursor": 37449,
+        "label": "last36_updates",
+        "updates": [
+          37414,
+          37449
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.14443472971662333,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 37449,
+        "block_terminal_cursor": 38349,
+        "label": "first36_updates",
+        "updates": [
+          37450,
+          37485
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.1471662175513807,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      },
+      {
+        "block_start_cursor": 37449,
+        "block_terminal_cursor": 38349,
+        "label": "last36_updates",
+        "updates": [
+          38314,
+          38349
+        ],
+        "events": 144,
+        "online_pre_update_BA": 0.14022168177153718,
+        "MT_energy_mean": 0.9999999995860789,
+        "checkpoint_readout": false
+      }
+    ],
+    "peak": {
+      "allocated_GiB": 13.54969072341919,
+      "reserved_GiB": 25.517578125,
+      "host_max_RSS_GiB": 26.216201782226562
+    },
+    "rank_summed_phases": {
+      "meta_read_seconds": 0.0,
+      "meta_read_frames": 0,
+      "teacher_cache_hits": 0,
+      "response_seconds": 0.0,
+      "response_observations": 0,
+      "response_cache_hits": 0,
+      "image_observations": 0,
+      "teaching_raw_prefix_host_seconds": 0.0,
+      "dual_meta_forward_host_seconds": 0.0,
+      "actual_H_raw_image_seconds": 0.0,
+      "native_response_prefix_host_seconds": 0.0,
+      "native_response_flow_host_seconds": 0.0,
+      "theta_forward_host_seconds": 0.0,
+      "G_shared_context_host_seconds": 0.0,
+      "G_candidate_endpoint_host_seconds": 0.0,
+      "teaching_raw_prefix_CUDA_stream_seconds": 0.0,
+      "dual_meta_forward_CUDA_stream_seconds": 0.0,
+      "native_response_prefix_CUDA_stream_seconds": 0.0,
+      "native_response_flow_CUDA_stream_seconds": 0.0,
+      "theta_forward_CUDA_stream_seconds": 0.0,
+      "G_shared_context_CUDA_stream_seconds": 0.0,
+      "G_candidate_endpoint_CUDA_stream_seconds": 0.0,
+      "theta_backward_host_seconds": 0.0,
+      "independent_baseline_backward_host_seconds": 0.0,
+      "theta_backward_CUDA_stream_seconds": 0.0,
+      "independent_baseline_backward_CUDA_stream_seconds": 0.0,
+      "endpoint_forward_host_seconds": 509.4810629150088,
+      "operator_loss_host_seconds": 456.19795284513384,
+      "endpoint_backward_host_seconds": 1508.5981516543834,
+      "endpoint_forward_CUDA_stream_seconds": 509.4453376483938,
+      "operator_loss_CUDA_stream_seconds": 456.3661977205272,
+      "endpoint_backward_CUDA_stream_seconds": 1521.999321178442
+    },
+    "synchronized_update_seconds": {
+      "count": 8100,
+      "minimum": 0.08751454300363548,
+      "mean": 0.11140047106127267,
+      "median": 0.1075521460006712,
+      "maximum": 0.5165529730002163
+    },
+    "sum_synchronized_update_seconds": 902.3438155963086,
+    "cumulative_final_counters_by_rank": {}
+  },
+  "final_warm": {
+    "files": [
+      "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/metrics/local_rank_0.jsonl",
+      "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/metrics/local_rank_1.jsonl"
+    ],
+    "logical_updates": 90,
+    "retained_condition_events": 360,
+    "task_exposures": {
+      "0": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "1": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "2": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "4": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "5": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "7": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "12": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "13": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "14": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "15": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "17": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "19": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "20": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "21": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "22": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "25": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "28": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "29": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "32": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "34": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "35": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "36": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "37": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "38": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "42": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "43": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "51": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "55": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "56": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "62": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "64": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "73": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "95": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "96": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "97": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      },
+      "101": {
+        "total": 10,
+        "parents": {},
+        "histories": {},
+        "demos": {}
+      }
+    },
+    "expected_equal_conditions_per_task": 10,
+    "source_context_events": {},
+    "online_windows": [],
+    "peak": {
+      "allocated_GiB": 11.670982837677002,
+      "reserved_GiB": 13.6015625,
+      "host_max_RSS_GiB": 21.86434555053711
+    },
+    "rank_summed_phases": {},
+    "synchronized_update_seconds": {
+      "count": 90,
+      "minimum": 3.822157059003075,
+      "mean": 13.618912212600279,
+      "median": 13.173630240497005,
+      "maximum": 30.87663741900178
+    },
+    "sum_synchronized_update_seconds": 1225.702099134025,
+    "cumulative_final_counters_by_rank": {
+      "0": {
+        "H_decode_seconds": 358.0128861309786,
+        "actual_path_cache_hits": 59
+      },
+      "1": {
+        "H_decode_seconds": 378.8898355989659,
+        "actual_path_cache_hits": 49
+      }
+    }
+  },
+  "RL_updates": {
+    "logical_updates": 9,
+    "current_conditions": 36,
+    "R5": true,
+    "one_theta_and_baseline_update_each": true,
+    "alternating_cycles": [
+      {
+        "update": 1,
+        "F_terminal": 31149,
+        "bank": 1,
+        "full_cycle_seconds": {
+          "count": 4,
+          "minimum": 571.7881817529997,
+          "mean": 571.8364764804992,
+          "median": 571.8462189134989,
+          "maximum": 571.8652863419993
+        },
+        "phases_by_rank": {
+          "total_collection_query_seconds": {
+            "count": 4,
+            "minimum": 154.14815226399514,
+            "mean": 267.94336325974837,
+            "median": 243.19160797199947,
+            "maximum": 431.2420848309994
+          },
+          "collector_ready_wait_seconds": {
+            "count": 4,
+            "minimum": 0.0,
+            "mean": 0.0,
+            "median": 0.0,
+            "maximum": 0.0
+          },
+          "theta_and_baseline_update_seconds": {
+            "count": 4,
+            "minimum": 4.717930806000368,
+            "mean": 168.644548819002,
+            "median": 192.73479057000077,
+            "maximum": 284.39068333000614
+          },
+          "psi_update_block_seconds": {
+            "count": 4,
+            "minimum": 131.84782711899607,
+            "mean": 131.85358209524748,
+            "median": 131.8517033514945,
+            "maximum": 131.86309455900482
+          },
+          "checkpoint_IO_seconds": {
+            "count": 4,
+            "minimum": 1.0546819160008454,
+            "mean": 1.064222420751321,
+            "median": 1.0671128465000947,
+            "maximum": 1.0679820740042487
+          }
+        }
+      },
+      {
+        "update": 2,
+        "F_terminal": 32049,
+        "bank": 2,
+        "full_cycle_seconds": {
+          "count": 4,
+          "minimum": 419.9344353359993,
+          "mean": 419.95166364374927,
+          "median": 419.9521861414978,
+          "maximum": 419.9678469560022
+        },
+        "phases_by_rank": {
+          "total_collection_query_seconds": {
+            "count": 4,
+            "minimum": 6.635810351996042,
+            "mean": 62.60447306675087,
+            "median": 15.379067540001415,
+            "maximum": 213.0239468350046
+          },
+          "collector_ready_wait_seconds": {
+            "count": 4,
+            "minimum": 0.003748235001694411,
+            "mean": 143.78259381725002,
+            "median": 187.96313294349966,
+            "maximum": 199.20036114699906
+          },
+          "theta_and_baseline_update_seconds": {
+            "count": 4,
+            "minimum": 23.885553395004536,
+            "mean": 23.89028208700074,
+            "median": 23.890997273501853,
+            "maximum": 23.893580405994726
+          },
+          "psi_update_block_seconds": {
+            "count": 4,
+            "minimum": 178.91281760700076,
+            "mean": 178.92263489524885,
+            "median": 178.91586438249942,
+            "maximum": 178.9459932089958
+          },
+          "checkpoint_IO_seconds": {
+            "count": 4,
+            "minimum": 1.0223062799996114,
+            "mean": 1.0465120947501418,
+            "median": 1.0543303900012688,
+            "maximum": 1.0550813189984183
+          }
+        }
+      },
+      {
+        "update": 3,
+        "F_terminal": 32949,
+        "bank": 3,
+        "full_cycle_seconds": {
+          "count": 4,
+          "minimum": 516.963931696002,
+          "mean": 516.9640475757515,
+          "median": 516.9640082315018,
+          "maximum": 516.9642421440003
+        },
+        "phases_by_rank": {
+          "total_collection_query_seconds": {
+            "count": 4,
+            "minimum": 163.12515568199888,
+            "mean": 290.433276603997,
+            "median": 318.8860546789947,
+            "maximum": 360.83584137599973
+          },
+          "collector_ready_wait_seconds": {
+            "count": 4,
+            "minimum": 0.031789874999958556,
+            "mean": 70.048900475751,
+            "median": 41.72819971250283,
+            "maximum": 196.70741260299837
+          },
+          "theta_and_baseline_update_seconds": {
+            "count": 4,
+            "minimum": 6.28622307900514,
+            "mean": 6.2929561995024415,
+            "median": 6.2916549340006895,
+            "maximum": 6.302291851003247
+          },
+          "psi_update_block_seconds": {
+            "count": 4,
+            "minimum": 145.87955310800317,
+            "mean": 145.8867106585003,
+            "median": 145.88269780100018,
+            "maximum": 145.9018939239977
+          },
+          "checkpoint_IO_seconds": {
+            "count": 4,
+            "minimum": 1.0107660529974964,
+            "mean": 1.0262530129984953,
+            "median": 1.031093855497602,
+            "maximum": 1.0320582880012807
+          }
+        }
+      },
+      {
+        "update": 4,
+        "F_terminal": 33849,
+        "bank": 4,
+        "full_cycle_seconds": {
+          "count": 4,
+          "minimum": 499.65935064000223,
+          "mean": 499.67794110150317,
+          "median": 499.6838208700028,
+          "maximum": 499.6847720260048
+        },
+        "phases_by_rank": {
+          "total_collection_query_seconds": {
+            "count": 4,
+            "minimum": 199.1883268160018,
+            "mean": 252.96998025999892,
+            "median": 231.2591037159982,
+            "maximum": 350.1733867919975
+          },
+          "collector_ready_wait_seconds": {
+            "count": 4,
+            "minimum": 0.003259270997659769,
+            "mean": 96.96511246200134,
+            "median": 118.67356382050275,
+            "maximum": 150.5100629360022
+          },
+          "theta_and_baseline_update_seconds": {
+            "count": 4,
+            "minimum": 5.211918444998446,
+            "mean": 5.228063311998994,
+            "median": 5.224547355497634,
+            "maximum": 5.251240092002263
+          },
+          "psi_update_block_seconds": {
+            "count": 4,
+            "minimum": 140.44963407799514,
+            "mean": 140.45664832574766,
+            "median": 140.45269667949833,
+            "maximum": 140.47156586599885
+          },
+          "checkpoint_IO_seconds": {
+            "count": 4,
+            "minimum": 0.9714965589955682,
+            "mean": 0.985003425499599,
+            "median": 0.9891855465029948,
+            "maximum": 0.990146049996838
+          }
+        }
+      },
+      {
+        "update": 5,
+        "F_terminal": 34749,
+        "bank": 5,
+        "full_cycle_seconds": {
+          "count": 4,
+          "minimum": 573.9817360169982,
+          "mean": 573.9819628085006,
+          "median": 573.9819332510015,
+          "maximum": 573.9822487150013
+        },
+        "phases_by_rank": {
+          "total_collection_query_seconds": {
+            "count": 4,
+            "minimum": 216.512490481,
+            "mean": 336.8491120189992,
+            "median": 362.8774174760001,
+            "maximum": 405.12912264299666
+          },
+          "collector_ready_wait_seconds": {
+            "count": 4,
+            "minimum": 0.004798469002707861,
+            "mean": 68.27238259275146,
+            "median": 42.41751993049911,
+            "maximum": 188.2496920410049
+          },
+          "theta_and_baseline_update_seconds": {
+            "count": 4,
+            "minimum": 5.944767239998328,
+            "mean": 5.947925660499095,
+            "median": 5.947456914000213,
+            "maximum": 5.9520215739976265
+          },
+          "psi_update_block_seconds": {
+            "count": 4,
+            "minimum": 158.6200053260036,
+            "mean": 158.62328328224794,
+            "median": 158.62182162099634,
+            "maximum": 158.62948456099548
+          },
+          "checkpoint_IO_seconds": {
+            "count": 4,
+            "minimum": 0.9927203929983079,
+            "mean": 1.0003662587514555,
+            "median": 1.0028318765034783,
+            "maximum": 1.0030808890005574
+          }
+        }
+      },
+      {
+        "update": 6,
+        "F_terminal": 35649,
+        "bank": 6,
+        "full_cycle_seconds": {
+          "count": 4,
+          "minimum": 439.4069551270004,
+          "mean": 439.42353753299903,
+          "median": 439.428807738499,
+          "maximum": 439.4295795279977
+        },
+        "phases_by_rank": {
+          "total_collection_query_seconds": {
+            "count": 4,
+            "minimum": 60.06489402599982,
+            "mean": 177.54459926824893,
+            "median": 177.31766378499742,
+            "maximum": 295.47817547700106
+          },
+          "collector_ready_wait_seconds": {
+            "count": 4,
+            "minimum": 0.020003938996524084,
+            "mean": 118.5796151172508,
+            "median": 118.06237016950399,
+            "maximum": 238.17371619099868
+          },
+          "theta_and_baseline_update_seconds": {
+            "count": 4,
+            "minimum": 4.381786433994421,
+            "mean": 4.399588995498561,
+            "median": 4.399147020500095,
+            "maximum": 4.418275506999635
+          },
+          "psi_update_block_seconds": {
+            "count": 4,
+            "minimum": 135.04998736299603,
+            "mean": 135.05834553874956,
+            "median": 135.05600716250046,
+            "maximum": 135.0713804670013
+          },
+          "checkpoint_IO_seconds": {
+            "count": 4,
+            "minimum": 1.3031415270015714,
+            "mean": 1.3143633272502484,
+            "median": 1.3179044850003265,
+            "maximum": 1.3185028119987692
+          }
+        }
+      },
+      {
+        "update": 7,
+        "F_terminal": 36549,
+        "bank": 7,
+        "full_cycle_seconds": {
+          "count": 4,
+          "minimum": 651.5919736289943,
+          "mean": 651.5957783839985,
+          "median": 651.5968004144997,
+          "maximum": 651.5975390780004
+        },
+        "phases_by_rank": {
+          "total_collection_query_seconds": {
+            "count": 4,
+            "minimum": 237.57638457100256,
+            "mean": 327.17426954775146,
+            "median": 307.57421252100175,
+            "maximum": 455.9722685779998
+          },
+          "collector_ready_wait_seconds": {
+            "count": 4,
+            "minimum": 0.02566104900324717,
+            "mean": 128.57268097049928,
+            "median": 148.1142586654969,
+            "maximum": 218.03654550200008
+          },
+          "theta_and_baseline_update_seconds": {
+            "count": 4,
+            "minimum": 8.6417143150029,
+            "mean": 8.648176363250968,
+            "median": 8.647213799999008,
+            "maximum": 8.656563538002956
+          },
+          "psi_update_block_seconds": {
+            "count": 4,
+            "minimum": 183.15260025099997,
+            "mean": 183.2152261275005,
+            "median": 183.2352732085019,
+            "maximum": 183.23775784199825
+          },
+          "checkpoint_IO_seconds": {
+            "count": 4,
+            "minimum": 0.9932544089970179,
+            "mean": 1.0222436639996886,
+            "median": 1.0314944314995955,
+            "maximum": 1.0327313840025454
+          }
+        }
+      },
+      {
+        "update": 8,
+        "F_terminal": 37449,
+        "bank": 8,
+        "full_cycle_seconds": {
+          "count": 4,
+          "minimum": 534.8347049389995,
+          "mean": 534.8495982125005,
+          "median": 534.8543641920005,
+          "maximum": 534.8549595270015
+        },
+        "phases_by_rank": {
+          "total_collection_query_seconds": {
+            "count": 4,
+            "minimum": 122.37963898199814,
+            "mean": 261.6354344752526,
+            "median": 287.4388997790047,
+            "maximum": 349.2842993610029
+          },
+          "collector_ready_wait_seconds": {
+            "count": 4,
+            "minimum": 0.0339385300030699,
+            "mean": 87.70274003850318,
+            "median": 61.9083755285028,
+            "maximum": 226.96027056700405
+          },
+          "theta_and_baseline_update_seconds": {
+            "count": 4,
+            "minimum": 8.187873564005713,
+            "mean": 8.193027233503017,
+            "median": 8.193930132503738,
+            "maximum": 8.196375104998879
+          },
+          "psi_update_block_seconds": {
+            "count": 4,
+            "minimum": 173.14013522899768,
+            "mean": 173.14414173624937,
+            "median": 173.14148888199998,
+            "maximum": 173.15345395199984
+          },
+          "checkpoint_IO_seconds": {
+            "count": 4,
+            "minimum": 1.1098975099957897,
+            "mean": 1.1237635737470555,
+            "median": 1.127836458497768,
+            "maximum": 1.1294838679968962
+          }
+        }
+      },
+      {
+        "update": 9,
+        "F_terminal": 38349,
+        "bank": 9,
+        "full_cycle_seconds": {
+          "count": 4,
+          "minimum": 815.4932797130023,
+          "mean": 815.4942535534992,
+          "median": 815.4941200864996,
+          "maximum": 815.4954943279954
+        },
+        "phases_by_rank": {
+          "total_collection_query_seconds": {
+            "count": 4,
+            "minimum": 126.58077239200065,
+            "mean": 321.6847064642516,
+            "median": 257.15894204800134,
+            "maximum": 645.840169369003
+          },
+          "collector_ready_wait_seconds": {
+            "count": 4,
+            "minimum": 0.023527720004494768,
+            "mean": 324.29020354975364,
+            "median": 388.87708527700306,
+            "maximum": 519.383115925004
+          },
+          "theta_and_baseline_update_seconds": {
+            "count": 4,
+            "minimum": 7.923304308998922,
+            "mean": 7.93352908199995,
+            "median": 7.929414720500063,
+            "maximum": 7.951982578000752
+          },
+          "psi_update_block_seconds": {
+            "count": 4,
+            "minimum": 157.19891274900147,
+            "mean": 157.20411796925146,
+            "median": 157.20533455400073,
+            "maximum": 157.2068900200029
+          },
+          "checkpoint_IO_seconds": {
+            "count": 4,
+            "minimum": 1.1010071720011183,
+            "mean": 1.1014373337511643,
+            "median": 1.1014373145007994,
+            "maximum": 1.10186753400194
+          }
+        }
+      }
+    ],
+    "physical": {
+      "physical_batch_histogram": {
+        "1": 6124,
+        "2": 262,
+        "3": 323,
+        "4": 322,
+        "5": 216,
+        "6": 215,
+        "7": 194,
+        "8": 223,
+        "9": 187,
+        "10": 215,
+        "11": 233,
+        "12": 302,
+        "13": 260,
+        "14": 298,
+        "15": 284,
+        "16": 663
+      },
+      "physical_batches": 10321,
+      "actual_mean_batch": 4.539967057455673,
+      "singleton_batch_fraction": 0.5933533572328262,
+      "runner_summed_seconds": {
+        "native_prefix_seconds": 999.3189191358542,
+        "native_flow_seconds": 5685.723135034037,
+        "env_operation_seconds": 10828.798724009728,
+        "env_wait_seconds": 1373.2671419968465,
+        "plans": 46857
+      },
+      "runtime_summed_metrics": {},
+      "peak": {
+        "allocated_GiB": 13.54969072341919,
+        "reserved_GiB": 25.517578125,
+        "host_max_RSS_GiB": 26.216201782226562
+      },
+      "overlapping_times_not_additive": true,
+      "configured_slots_not_actual_batch": true
+    }
+  },
+  "bank": {
+    "version": 9,
+    "registered_actual_nodes": 216,
+    "initial_actual_parents": 72,
+    "final_actual_parent_count": 149,
+    "final_parent_H_pairs": 252,
+    "final_contexts": 1008,
+    "unpracticed_generated_refs_excluded": 103,
+    "task_parent_counts": {
+      "0": 5,
+      "1": 5,
+      "2": 5,
+      "4": 4,
+      "5": 5,
+      "7": 6,
+      "12": 5,
+      "13": 4,
+      "14": 4,
+      "15": 3,
+      "17": 5,
+      "19": 2,
+      "20": 5,
+      "21": 5,
+      "22": 4,
+      "25": 3,
+      "28": 2,
+      "29": 4,
+      "32": 4,
+      "34": 5,
+      "35": 4,
+      "36": 4,
+      "37": 3,
+      "38": 6,
+      "42": 3,
+      "43": 3,
+      "51": 4,
+      "55": 4,
+      "56": 4,
+      "62": 3,
+      "64": 4,
+      "73": 3,
+      "95": 6,
+      "96": 4,
+      "97": 6,
+      "101": 3
+    },
+    "parent_H_counts": {
+      "0": {
+        "MT300": 2,
+        "G24849_practice_task_0000_G_000": 1,
+        "update_000004_task_0000:G_001": 1,
+        "update_000004_task_0000:G_002": 2,
+        "update_000004_task_0000:G_003": 1
+      },
+      "1": {
+        "MT300": 3,
+        "G24849_practice_task_0001_G_000": 1,
+        "update_000001_task_0001:G_001": 1,
+        "update_000001_task_0001:G_003": 1,
+        "update_000001_task_0001:G_004": 1
+      },
+      "2": {
+        "MT300": 2,
+        "G24849_practice_task_0002_G_000": 1,
+        "update_000006_task_0002:G_000": 1,
+        "update_000006_task_0002:G_002": 2,
+        "update_000006_task_0002:G_003": 1
+      },
+      "4": {
+        "MT300": 3,
+        "G24849_practice_task_0004_G_000": 1,
+        "update_000006_task_0004:G_001": 1,
+        "update_000006_task_0004:G_002": 2
+      },
+      "5": {
+        "MT300": 3,
+        "G24849_practice_task_0005_G_000": 1,
+        "update_000003_task_0005:G_002": 1,
+        "update_000003_task_0005:G_003": 1,
+        "update_000003_task_0005:G_004": 1
+      },
+      "7": {
+        "MT300": 1,
+        "G24849_practice_task_0007_G_000": 1,
+        "update_000005_task_0007:G_000": 2,
+        "update_000005_task_0007:G_001": 1,
+        "update_000005_task_0007:G_002": 1,
+        "update_000005_task_0007:G_004": 1
+      },
+      "12": {
+        "MT300": 3,
+        "G24849_practice_task_0012_G_000": 1,
+        "update_000007_task_0012:G_000": 1,
+        "update_000007_task_0012:G_002": 1,
+        "update_000007_task_0012:G_003": 1
+      },
+      "13": {
+        "MT300": 4,
+        "G24849_practice_task_0013_G_000": 1,
+        "update_000003_task_0013:G_000": 1,
+        "update_000003_task_0013:G_002": 1
+      },
+      "14": {
+        "MT300": 4,
+        "G24849_practice_task_0014_G_000": 1,
+        "update_000007_task_0014:G_003": 1,
+        "update_000007_task_0014:G_004": 1
+      },
+      "15": {
+        "MT300": 5,
+        "G24849_practice_task_0015_G_000": 1,
+        "update_000004_task_0015:G_000": 1
+      },
+      "17": {
+        "MT300": 2,
+        "G24849_practice_task_0017_G_000": 1,
+        "update_000009_task_0017:G_000": 1,
+        "update_000009_task_0017:G_001": 1,
+        "update_000009_task_0017:G_003": 2
+      },
+      "19": {
+        "MT300": 6,
+        "G24849_practice_task_0019_G_000": 1
+      },
+      "20": {
+        "MT300": 3,
+        "G24849_practice_task_0020_G_000": 1,
+        "update_000004_task_0020:G_000": 1,
+        "update_000004_task_0020:G_002": 1,
+        "update_000004_task_0020:G_004": 1
+      },
+      "21": {
+        "MT300": 3,
+        "G24849_practice_task_0021_G_000": 1,
+        "update_000001_task_0021:G_002": 1,
+        "update_000001_task_0021:G_003": 1,
+        "update_000001_task_0021:G_004": 1
+      },
+      "22": {
+        "MT300": 2,
+        "G24849_practice_task_0022_G_000": 1,
+        "update_000004_task_0022:G_001": 3,
+        "update_000004_task_0022:G_004": 1
+      },
+      "25": {
+        "MT300": 4,
+        "G24849_practice_task_0025_G_000": 1,
+        "update_000002_task_0025:G_000": 2
+      },
+      "28": {
+        "MT300": 6,
+        "G24849_practice_task_0028_G_000": 1
+      },
+      "29": {
+        "MT300": 3,
+        "G24849_practice_task_0029_G_000": 1,
+        "update_000005_task_0029:G_002": 1,
+        "update_000005_task_0029:G_003": 2
+      },
+      "32": {
+        "MT300": 3,
+        "G24849_practice_task_0032_G_000": 1,
+        "update_000007_task_0032:G_002": 2,
+        "update_000007_task_0032:G_003": 1
+      },
+      "34": {
+        "MT300": 2,
+        "G24849_practice_task_0034_G_000": 1,
+        "update_000009_task_0034:G_000": 1,
+        "update_000009_task_0034:G_001": 1,
+        "update_000009_task_0034:G_002": 2
+      },
+      "35": {
+        "MT300": 3,
+        "G24849_practice_task_0035_G_000": 1,
+        "update_000005_task_0035:G_001": 2,
+        "update_000005_task_0035:G_004": 1
+      },
+      "36": {
+        "MT300": 4,
+        "G24849_practice_task_0036_G_000": 1,
+        "update_000002_task_0036:G_003": 1,
+        "update_000002_task_0036:G_004": 1
+      },
+      "37": {
+        "MT300": 3,
+        "G24849_practice_task_0037_G_000": 1,
+        "update_000008_task_0037:G_001": 3
+      },
+      "38": {
+        "MT300": 1,
+        "G24849_practice_task_0038_G_000": 1,
+        "update_000002_task_0038:G_000": 1,
+        "update_000002_task_0038:G_001": 2,
+        "update_000002_task_0038:G_002": 1,
+        "update_000002_task_0038:G_003": 1
+      },
+      "42": {
+        "MT300": 3,
+        "G24849_practice_task_0042_G_000": 1,
+        "update_000009_task_0042:G_001": 3
+      },
+      "43": {
+        "MT300": 5,
+        "G24849_practice_task_0043_G_000": 1,
+        "update_000002_task_0043:G_004": 1
+      },
+      "51": {
+        "MT300": 4,
+        "G24849_practice_task_0051_G_000": 1,
+        "update_000003_task_0051:G_000": 1,
+        "update_000003_task_0051:G_004": 1
+      },
+      "55": {
+        "MT300": 4,
+        "G24849_practice_task_0055_G_000": 1,
+        "update_000005_task_0055:G_003": 1,
+        "update_000005_task_0055:G_004": 1
+      },
+      "56": {
+        "MT300": 2,
+        "G24849_practice_task_0056_G_000": 1,
+        "update_000008_task_0056:G_001": 3,
+        "update_000008_task_0056:G_004": 1
+      },
+      "62": {
+        "MT300": 5,
+        "G24849_practice_task_0062_G_000": 1,
+        "update_000008_task_0062:G_004": 1
+      },
+      "64": {
+        "MT300": 4,
+        "G24849_practice_task_0064_G_000": 1,
+        "update_000001_task_0064:G_003": 1,
+        "update_000001_task_0064:G_004": 1
+      },
+      "73": {
+        "MT300": 4,
+        "G24849_practice_task_0073_G_000": 1,
+        "update_000007_task_0073:G_000": 2
+      },
+      "95": {
+        "MT300": 1,
+        "G24849_practice_task_0095_G_000": 1,
+        "update_000003_task_0095:G_000": 2,
+        "update_000003_task_0095:G_001": 1,
+        "update_000003_task_0095:G_002": 1,
+        "update_000003_task_0095:G_004": 1
+      },
+      "96": {
+        "MT300": 2,
+        "G24849_practice_task_0096_G_000": 1,
+        "update_000006_task_0096:G_000": 3,
+        "update_000006_task_0096:G_003": 1
+      },
+      "97": {
+        "MT300": 2,
+        "G24849_practice_task_0097_G_000": 1,
+        "update_000008_task_0097:G_001": 1,
+        "update_000008_task_0097:G_002": 1,
+        "update_000008_task_0097:G_003": 1,
+        "update_000008_task_0097:G_004": 1
+      },
+      "101": {
+        "MT300": 2,
+        "G24849_practice_task_0101_G_000": 1,
+        "update_000009_task_0101:G_000": 4
+      }
+    },
+    "history_data_not_decompressed": true,
+    "query_excluded_from_H": true
+  },
+  "billing": {
+    "receipts": [
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/jobs/G_00030249/attempt_001/exit.json",
+        "job": "G_00030249",
+        "category": "initial_F_local_assembly",
+        "exit_code": 0,
+        "GPU_hours": 0.9625391274028354,
+        "elapsed_seconds": 866.2852146625519,
+        "physical_GPU_count": 4,
+        "start_utc": "2026-10-12T20:15:44.201702+00:00",
+        "end_utc": "2026-10-12T20:30:10.486924+00:00",
+        "code_commit": "1bcb2601a682505fcb8557db5d2d81fdd79a623c"
+      },
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/jobs/RL_00000009/attempt_001/exit.json",
+        "job": "RL_00000009",
+        "category": "failed_joint_attempt",
+        "exit_code": 1,
+        "GPU_hours": 1.6499886682298448,
+        "elapsed_seconds": 1484.9898014068604,
+        "physical_GPU_count": 4,
+        "start_utc": "2026-10-12T20:40:56.861628+00:00",
+        "end_utc": "2026-10-12T21:05:41.851430+00:00",
+        "code_commit": "1bcb2601a682505fcb8557db5d2d81fdd79a623c"
+      },
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/jobs/RL_00000009_collective_recovery/attempt_001/exit.json",
+        "job": "RL_00000009_collective_recovery",
+        "category": "successful_joint_recovery",
+        "exit_code": 0,
+        "GPU_hours": 5.004087723361121,
+        "elapsed_seconds": 4503.678951025009,
+        "physical_GPU_count": 4,
+        "start_utc": "2026-10-12T21:16:31.850432+00:00",
+        "end_utc": "2026-10-12T22:31:35.529375+00:00",
+        "code_commit": "6f6a8aa60f604f19c966d45ef632d63276d2cc02"
+      },
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/jobs/assembled_00000090/attempt_001/exit.json",
+        "job": "assembled_00000090",
+        "category": "initial_F_local_assembly",
+        "exit_code": 0,
+        "GPU_hours": 0.0700150916311476,
+        "elapsed_seconds": 63.01358246803284,
+        "physical_GPU_count": 4,
+        "start_utc": "2026-10-12T20:39:39.742513+00:00",
+        "end_utc": "2026-10-12T20:40:42.756099+00:00",
+        "code_commit": "1bcb2601a682505fcb8557db5d2d81fdd79a623c"
+      },
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/jobs/formal_RL9_worker00_continuation/attempt_001/exit.json",
+        "job": "formal_RL9_worker00_continuation",
+        "category": "formal400",
+        "exit_code": 0,
+        "GPU_hours": 1.489519066280789,
+        "elapsed_seconds": 5362.26863861084,
+        "physical_GPU_count": 1,
+        "start_utc": "2026-10-12T22:46:35.813476+00:00",
+        "end_utc": "2026-10-13T00:15:58.082121+00:00",
+        "code_commit": "6f6a8aa60f604f19c966d45ef632d63276d2cc02"
+      },
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/jobs/formal_RL9_worker00_group8_pilot/attempt_001/exit.json",
+        "job": "formal_RL9_worker00_group8_pilot",
+        "category": "formal400",
+        "exit_code": 0,
+        "GPU_hours": 0.24674161937501696,
+        "elapsed_seconds": 888.269829750061,
+        "physical_GPU_count": 1,
+        "start_utc": "2026-10-12T22:31:42.915679+00:00",
+        "end_utc": "2026-10-12T22:46:31.185489+00:00",
+        "code_commit": "6f6a8aa60f604f19c966d45ef632d63276d2cc02"
+      },
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/jobs/formal_RL9_worker01/attempt_001/exit.json",
+        "job": "formal_RL9_worker01",
+        "category": "formal400",
+        "exit_code": 0,
+        "GPU_hours": 1.706480736401346,
+        "elapsed_seconds": 6143.330651044846,
+        "physical_GPU_count": 1,
+        "start_utc": "2026-10-12T22:31:46.063407+00:00",
+        "end_utc": "2026-10-13T00:14:09.394097+00:00",
+        "code_commit": "6f6a8aa60f604f19c966d45ef632d63276d2cc02"
+      },
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/jobs/formal_RL9_worker02/attempt_001/exit.json",
+        "job": "formal_RL9_worker02",
+        "category": "formal400",
+        "exit_code": 0,
+        "GPU_hours": 1.7078529158565734,
+        "elapsed_seconds": 6148.270497083664,
+        "physical_GPU_count": 1,
+        "start_utc": "2026-10-12T22:31:49.147701+00:00",
+        "end_utc": "2026-10-13T00:14:17.418205+00:00",
+        "code_commit": "6f6a8aa60f604f19c966d45ef632d63276d2cc02"
+      },
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/jobs/formal_RL9_worker03/attempt_001/exit.json",
+        "job": "formal_RL9_worker03",
+        "category": "formal400",
+        "exit_code": 0,
+        "GPU_hours": 1.7663239894972906,
+        "elapsed_seconds": 6358.766362190247,
+        "physical_GPU_count": 1,
+        "start_utc": "2026-10-12T22:31:52.301841+00:00",
+        "end_utc": "2026-10-13T00:17:51.068211+00:00",
+        "code_commit": "6f6a8aa60f604f19c966d45ef632d63276d2cc02"
+      },
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/jobs/formal_RL9_worker04/attempt_001/exit.json",
+        "job": "formal_RL9_worker04",
+        "category": "formal400",
+        "exit_code": 0,
+        "GPU_hours": 1.7442034056451585,
+        "elapsed_seconds": 6279.132260322571,
+        "physical_GPU_count": 1,
+        "start_utc": "2026-10-12T22:31:55.518769+00:00",
+        "end_utc": "2026-10-13T00:16:34.651038+00:00",
+        "code_commit": "6f6a8aa60f604f19c966d45ef632d63276d2cc02"
+      },
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/jobs/formal_RL9_worker05/attempt_001/exit.json",
+        "job": "formal_RL9_worker05",
+        "category": "formal400",
+        "exit_code": 0,
+        "GPU_hours": 1.7156790524721146,
+        "elapsed_seconds": 6176.444588899612,
+        "physical_GPU_count": 1,
+        "start_utc": "2026-10-12T22:32:00.213057+00:00",
+        "end_utc": "2026-10-13T00:14:56.657656+00:00",
+        "code_commit": "6f6a8aa60f604f19c966d45ef632d63276d2cc02"
+      },
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/jobs/local_00000090/attempt_001/exit.json",
+        "job": "local_00000090",
+        "category": "initial_F_local_assembly",
+        "exit_code": 0,
+        "GPU_hours": 0.7942584272225698,
+        "elapsed_seconds": 1429.6651690006256,
+        "physical_GPU_count": 2,
+        "start_utc": "2026-10-12T20:15:36.039479+00:00",
+        "end_utc": "2026-10-12T20:39:25.704643+00:00",
+        "code_commit": "1bcb2601a682505fcb8557db5d2d81fdd79a623c"
+      }
+    ],
+    "GPU_hours": 18.857689823375807,
+    "failed_attempt_GPU_hours": 1.6499886682298448,
+    "categories": {
+      "initial_F_local_assembly": {
+        "jobs": 3,
+        "GPU_hours": 1.8268126462565528,
+        "summed_job_residence_seconds": 2358.9639661312103
+      },
+      "failed_joint_attempt": {
+        "jobs": 1,
+        "GPU_hours": 1.6499886682298448,
+        "summed_job_residence_seconds": 1484.9898014068604
+      },
+      "successful_joint_recovery": {
+        "jobs": 1,
+        "GPU_hours": 5.004087723361121,
+        "summed_job_residence_seconds": 4503.678951025009
+      },
+      "formal400": {
+        "jobs": 7,
+        "GPU_hours": 10.376800785528289,
+        "summed_job_residence_seconds": 37356.48282790184
+      }
+    },
+    "first_start_UTC": "2026-10-12T20:15:15.189088+00:00",
+    "actual_end_UTC": "2026-10-13T00:17:53.944061+00:00",
+    "whole_wall_seconds": 14558.754973,
+    "original_failed_owner_wall_seconds": 3026.722162852064,
+    "recovery_owner_wall_seconds": 10898.545760904439,
+    "formal400_wall_seconds": 6368.152532,
+    "failed_attempt_includes_retained_RL1_and_valid_partial_collection": true,
+    "earlier_roots_not_recounted": true
+  },
+  "retained_component_evidence": {
+    "source_component_import": {
+      "complete": true,
+      "wall_seconds": 0.5715643046423793,
+      "decoder_actual_parameter_tensors": 166,
+      "decoder_actual_parameters": 8761152,
+      "optimizer_named_states": 166,
+      "step_min": 24849,
+      "step_max": 24849,
+      "full_frontend_source_parameters": 496,
+      "frozen_excluded_parameters": 330,
+      "source_Actor_parameters": 212,
+      "endpoint_source_rank_rng": 4,
+      "endpoint_source_sampler": {
+        "next_update": 24849,
+        "logical_batch": 4,
+        "task_order": [
+          0,
+          1,
+          2,
+          4,
+          5,
+          7,
+          12,
+          13,
+          14,
+          15,
+          17,
+          19,
+          20,
+          21,
+          22,
+          25,
+          28,
+          29,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          42,
+          43,
+          51,
+          55,
+          56,
+          62,
+          64,
+          73,
+          95,
+          96,
+          97,
+          101
+        ]
+      },
+      "no_forward": true,
+      "no_GPU": true,
+      "no_environment_episode": true,
+      "full_Runtime_constructed": false
+    },
+    "original_first_G_optimizer": [
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/metrics/G_rank_2.jsonl",
+        "update": 24850,
+        "seconds": 0.3558109000005061,
+        "gradient_norm": 2.4549553394317627,
+        "Adam_step_min": 24850,
+        "Adam_step_max": 24850,
+        "endpoint_tensors": 166
+      },
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/metrics/G_rank_3.jsonl",
+        "update": 24850,
+        "seconds": 0.365654886001721,
+        "gradient_norm": 2.4549553394317627,
+        "Adam_step_min": 24850,
+        "Adam_step_max": 24850,
+        "endpoint_tensors": 166
+      },
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/metrics/G_rank_0.jsonl",
+        "update": 24850,
+        "seconds": 0.3762155470030848,
+        "gradient_norm": 2.4549553394317627,
+        "Adam_step_min": 24850,
+        "Adam_step_max": 24850,
+        "endpoint_tensors": 166
+      },
+      {
+        "file": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/metrics/G_rank_1.jsonl",
+        "update": 24850,
+        "seconds": 0.382852582995838,
+        "gradient_norm": 2.4549553394317627,
+        "Adam_step_min": 24850,
+        "Adam_step_max": 24850,
+        "endpoint_tensors": 166
+      }
+    ],
+    "original_complete_RL1": {
+      "complete": true,
+      "checkpoint": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000001",
+      "theta_next_update": 1,
+      "F_next_update": 31149,
+      "bank_version": 1,
+      "world_size": 4,
+      "F_parameter_names": 166,
+      "F_Adam_steps": 31149,
+      "theta_Adam_states": 201,
+      "baseline_Adam_states": 4,
+      "full_G_tensors": 505,
+      "theta_tensors": 212,
+      "rank_RNGs": 4,
+      "new_forward": 0,
+      "new_environment_episodes": 0
+    },
+    "no_import_test_reexecuted": true
+  },
+  "CPU_wall_seconds": 6.019682024605572,
+  "new_GPU_forward": 0,
+  "new_model_forward": 0,
+  "new_environment_episodes": 0,
+  "new_training_updates": 0,
+  "scope": "raw saved training/manifest/state/bank/cost/physical metrics; no control outcomes, query probabilities or STOP reanalysis",
+  "limitations": [
+    "online losses are pre-update sampled all36 windows, not CP endpoint readouts or closed-loop evidence",
+    "bank completeness uses retained path/prefix metadata; histories were not decompressed",
+    "frozen frontend/source checked by explicit optimizer scope/identity and all actual gradient metrics, no per-tensor equality scan",
+    "runner/environment/native phase times overlap and should not be summed as wall",
+    "formal group8 pilot had no completed comparable peer at its decision boundary; group4 is not proven optimum"
+  ]
+}

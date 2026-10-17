@@ -1,0 +1,26 @@
+{
+  "libero_10": {
+    "MT": 11,
+    "no_video": 9,
+    "video0": 7,
+    "video1": 12
+  },
+  "libero_goal": {
+    "MT": 25,
+    "no_video": 24,
+    "video0": 25,
+    "video1": 25
+  },
+  "libero_object": {
+    "MT": 15,
+    "no_video": 14,
+    "video0": 15,
+    "video1": 15
+  },
+  "libero_spatial": {
+    "MT": 16,
+    "no_video": 15,
+    "video0": 14,
+    "video1": 19
+  }
+}

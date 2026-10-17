@@ -1,0 +1,31 @@
+{
+  "bank": "runs/source_policy_space_compiler_20261015/control_operator_from144_seed7/bank.json",
+  "endpoint_update": 1170,
+  "limits": {
+    "added_peak_GiB": 12,
+    "control_steps": 179840,
+    "dummy_steps": 5120,
+    "engineering_extra_attempts": 16,
+    "optimizer_updates": 10800,
+    "parameter_pairs": 86400,
+    "physical_submissions": 512,
+    "total_steps": 184960
+  },
+  "logical_batch": {
+    "points": 2,
+    "tasks": 4
+  },
+  "maximum_global_update": 10944,
+  "parent_query_cursor": 112,
+  "parent_root": "runs/source_policy_space_compiler_20261015/control_space_seed7",
+  "parent_update": 144,
+  "phase": "operator_from144",
+  "phase_query_consumption": 0,
+  "reference_root": "runs/source_policy_space_compiler_20261015/reference_seed7",
+  "schema": "ember_source_control_operator_from144_r8_seed7_v1",
+  "seed": 7,
+  "train_wall_seconds": {
+    "first_check": 300,
+    "maximum": 900
+  }
+}

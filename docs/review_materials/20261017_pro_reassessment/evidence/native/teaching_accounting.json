@@ -1,0 +1,35 @@
+{
+  "formal_reads": 720,
+  "profile_reads": 16,
+  "final_reads": 36,
+  "successful_journaled_reads": 772,
+  "failed_pre_FM_reads_reconstructed": 8,
+  "failed_pre_FM_frame_equivalent": 272,
+  "total_reads_including_failed": 780,
+  "total_frame_equivalent": 25700,
+  "journaled_frame_equivalent": 25428,
+  "unique_keys": 756,
+  "actual_M_builds": 0,
+  "actual_prefix_frames_built": 0,
+  "actual_prefix_frames_reread": 0,
+  "paid_shared_cache": {
+    "capacity": 1073741824,
+    "charged_bytes": 617130072,
+    "dependency_charged_bytes": 617130072,
+    "dependency_entries": 2200,
+    "dependency_index_read_only": true,
+    "held_read": false,
+    "historical_source_practice_episodes": 144,
+    "historical_source_practice_steps": 40377,
+    "local": {
+      "charged_bytes": 0,
+      "rows": []
+    },
+    "new_payload_copy": false,
+    "old_SQLite_modified": false,
+    "original_sampled_frames": 59114,
+    "originals": 1800,
+    "zero_interaction": false
+  },
+  "failure_reconstruction_basis": "both four-rank pre-FM traces passed memory/model for same visit0 as successful profile; retained receipts, not zero teaching"
+}

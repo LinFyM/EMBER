@@ -1,0 +1,66 @@
+{
+  "practice_success": {
+    "rows": 242,
+    "reference_successes": 138,
+    "candidate_successes": 131,
+    "retained": 117,
+    "gained": 14,
+    "lost": 21,
+    "churn_count": 35,
+    "success_set_jaccard": 0.7697368421052632,
+    "practice_steps": 74391
+  },
+  "budget_stop": {
+    "rows": 158,
+    "reference_successes": 15,
+    "candidate_successes": 12,
+    "retained": 10,
+    "gained": 2,
+    "lost": 5,
+    "churn_count": 7,
+    "success_set_jaccard": 0.5882352941176471,
+    "practice_steps": 161792
+  },
+  "J1": {
+    "rows": 169,
+    "reference_successes": 106,
+    "candidate_successes": 101,
+    "retained": 90,
+    "gained": 11,
+    "lost": 16,
+    "churn_count": 27,
+    "success_set_jaccard": 0.7692307692307693,
+    "practice_steps": 31417
+  },
+  "J2plus": {
+    "rows": 231,
+    "reference_successes": 47,
+    "candidate_successes": 42,
+    "retained": 37,
+    "gained": 5,
+    "lost": 10,
+    "churn_count": 15,
+    "success_set_jaccard": 0.7115384615384616,
+    "practice_steps": 204766
+  },
+  "refresh_parameters": {
+    "edits": 132,
+    "edit_mean": 2.6113580327856015e-09,
+    "edit_max": 1.9288476952611127e-08,
+    "zero_edits": 0,
+    "final_MT_relative_mean": 4.440850991280628e-09,
+    "final_MT_relative_max": 5.24813901422374e-08,
+    "identity_conditions": 0,
+    "incoming_MT_edits": 72
+  },
+  "formal_parameters": {
+    "edits": 881,
+    "edit_mean": 7.975142209197215e-09,
+    "edit_max": 2.4804853413925405e-07,
+    "zero_edits": 0,
+    "final_MT_relative_mean": 1.6017711308766662e-08,
+    "final_MT_relative_max": 2.4796385680605653e-07,
+    "identity_conditions": 0,
+    "incoming_MT_edits": 400
+  }
+}

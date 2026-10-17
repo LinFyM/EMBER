@@ -1,0 +1,119 @@
+{
+  "rows": [
+    {
+      "update": 90,
+      "projection": "energy.4.weight",
+      "weight_RMS": 0.0003026766935363412,
+      "from_fresh_RMS": 0.0003026766935363412,
+      "adjacent_delta_RMS": null
+    },
+    {
+      "update": 90,
+      "projection": "reader.image.weight",
+      "weight_RMS": 0.012773538008332253,
+      "from_fresh_RMS": 2.7958257931004482e-09,
+      "adjacent_delta_RMS": null
+    },
+    {
+      "update": 90,
+      "projection": "encoder.image.weight",
+      "weight_RMS": 0.012738171964883804,
+      "from_fresh_RMS": 3.544539595168317e-08,
+      "adjacent_delta_RMS": null
+    },
+    {
+      "update": 90,
+      "projection": "action_projection.weight",
+      "weight_RMS": 0.09661290794610977,
+      "from_fresh_RMS": 4.3840077523782384e-07,
+      "adjacent_delta_RMS": null
+    },
+    {
+      "update": 180,
+      "projection": "energy.4.weight",
+      "weight_RMS": 0.0005447255680337548,
+      "from_fresh_RMS": 0.0005447255680337548,
+      "adjacent_delta_RMS": 0.00028620075318031013
+    },
+    {
+      "update": 180,
+      "projection": "reader.image.weight",
+      "weight_RMS": 0.012773538008332253,
+      "from_fresh_RMS": 1.0605243794259422e-08,
+      "adjacent_delta_RMS": 8.761682046554142e-09
+    },
+    {
+      "update": 180,
+      "projection": "encoder.image.weight",
+      "weight_RMS": 0.012738171964883804,
+      "from_fresh_RMS": 1.1410212863438574e-07,
+      "adjacent_delta_RMS": 9.523925825760671e-08
+    },
+    {
+      "update": 180,
+      "projection": "action_projection.weight",
+      "weight_RMS": 0.09661295264959335,
+      "from_fresh_RMS": 1.5633067960152403e-06,
+      "adjacent_delta_RMS": 1.3042267710261513e-06
+    },
+    {
+      "update": 270,
+      "projection": "energy.4.weight",
+      "weight_RMS": 0.0009081454481929541,
+      "from_fresh_RMS": 0.0009081454481929541,
+      "adjacent_delta_RMS": 0.0004209857142996043
+    },
+    {
+      "update": 270,
+      "projection": "reader.image.weight",
+      "weight_RMS": 0.012773538008332253,
+      "from_fresh_RMS": 4.210562920548e-08,
+      "adjacent_delta_RMS": 3.3054494252837685e-08
+    },
+    {
+      "update": 270,
+      "projection": "encoder.image.weight",
+      "weight_RMS": 0.012738171964883804,
+      "from_fresh_RMS": 4.275302103451395e-07,
+      "adjacent_delta_RMS": 3.301799722521537e-07
+    },
+    {
+      "update": 270,
+      "projection": "action_projection.weight",
+      "weight_RMS": 0.09661321341991425,
+      "from_fresh_RMS": 4.9240129555983e-06,
+      "adjacent_delta_RMS": 3.7020879517513094e-06
+    },
+    {
+      "update": 360,
+      "projection": "energy.4.weight",
+      "weight_RMS": 0.0012795799411833286,
+      "from_fresh_RMS": 0.0012795799411833286,
+      "adjacent_delta_RMS": 0.00039582204772159457
+    },
+    {
+      "update": 360,
+      "projection": "reader.image.weight",
+      "weight_RMS": 0.012773538008332253,
+      "from_fresh_RMS": 8.961009712038503e-08,
+      "adjacent_delta_RMS": 4.845805179343188e-08
+    },
+    {
+      "update": 360,
+      "projection": "encoder.image.weight",
+      "weight_RMS": 0.012738171964883804,
+      "from_fresh_RMS": 9.052516247720632e-07,
+      "adjacent_delta_RMS": 4.888556190962845e-07
+    },
+    {
+      "update": 360,
+      "projection": "action_projection.weight",
+      "weight_RMS": 0.09661367535591125,
+      "from_fresh_RMS": 9.826933819567785e-06,
+      "adjacent_delta_RMS": 5.189205239730654e-06
+    }
+  ],
+  "initial_identity": "actual ExperienceCompiler fixed CPU fork_rng seed20261010; source policy not loaded",
+  "scope": "four projections used in previous main analysis; no model forward or new gradients",
+  "ability_claim": false
+}

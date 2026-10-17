@@ -1,0 +1,54 @@
+{
+  "arms": {
+    "video0": {
+      "updates": 16,
+      "accepted": 7,
+      "changed_conditions": 6,
+      "practice_before": 66,
+      "practice_after": 77,
+      "new_initial_success": 61,
+      "stop_reasons": {
+        "budget": 6,
+        "two_no_acceptable_proposals": 2
+      }
+    },
+    "video1": {
+      "updates": 16,
+      "accepted": 6,
+      "changed_conditions": 5,
+      "practice_before": 66,
+      "practice_after": 72,
+      "new_initial_success": 71,
+      "stop_reasons": {
+        "budget": 5,
+        "two_no_acceptable_proposals": 3
+      }
+    },
+    "no_video": {
+      "updates": 16,
+      "accepted": 8,
+      "changed_conditions": 6,
+      "practice_before": 66,
+      "practice_after": 80,
+      "new_initial_success": 62,
+      "stop_reasons": {
+        "budget": 6,
+        "two_no_acceptable_proposals": 2
+      }
+    }
+  },
+  "total_updates": 48,
+  "total_accepted": 21,
+  "all_actual_native_full_units": 24,
+  "native_chunk_sizes": {
+    "4": 162,
+    "8": 5,
+    "16": 5
+  },
+  "maximum_recorded_GPU_reserved_GiB": 29.181640625,
+  "all_first_native_extra_profile_starts_zero": true,
+  "maximum_trust_points": 80,
+  "maximum_unit_seconds": 1042.2596547680005,
+  "minimum_unit_seconds": 227.86257517600006,
+  "all_conditions_two_updates": true
+}

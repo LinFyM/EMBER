@@ -1,0 +1,144 @@
+{
+  "authority": "Owner2026-10-11 retire obsolete architecture training states",
+  "utc": "2026-10-11T06:43:17.142252+00:00",
+  "retired_run": "runs/parameter_conditioned_compiler_20261009",
+  "reason": "retired compiler; no current canonical source/config readers; current source+MT/rank8 data consumers use no old optimizer/RNG",
+  "kept": "all ecp.safetensors weights; all original manifests/metrics/raw rows/configs/analyses/completion",
+  "availability": "weights-only; all affected checkpoints no longer exact-resume",
+  "files": [
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000000/trainer_state.pt",
+      "bytes": 3153
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000045/trainer_state.pt",
+      "bytes": 177583435
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000090/trainer_state.pt",
+      "bytes": 177583435
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000135/trainer_state.pt",
+      "bytes": 177583435
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000180/trainer_state.pt",
+      "bytes": 177583435
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000225/trainer_state.pt",
+      "bytes": 177583499
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000270/trainer_state.pt",
+      "bytes": 177583499
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000315/trainer_state.pt",
+      "bytes": 177583499
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000360/trainer_state.pt",
+      "bytes": 177583499
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000000/rank_00_state.pt",
+      "bytes": 14933
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000045/rank_00_state.pt",
+      "bytes": 14933
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000090/rank_00_state.pt",
+      "bytes": 14933
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000135/rank_00_state.pt",
+      "bytes": 14933
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000180/rank_00_state.pt",
+      "bytes": 14933
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000180/rank_01_state.pt",
+      "bytes": 14869
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000180/rank_02_state.pt",
+      "bytes": 14869
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000180/rank_03_state.pt",
+      "bytes": 14933
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000225/rank_00_state.pt",
+      "bytes": 14933
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000225/rank_01_state.pt",
+      "bytes": 14869
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000225/rank_02_state.pt",
+      "bytes": 14869
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000225/rank_03_state.pt",
+      "bytes": 14933
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000270/rank_00_state.pt",
+      "bytes": 14933
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000270/rank_01_state.pt",
+      "bytes": 14869
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000270/rank_02_state.pt",
+      "bytes": 14869
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000270/rank_03_state.pt",
+      "bytes": 14933
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000315/rank_00_state.pt",
+      "bytes": 14933
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000315/rank_01_state.pt",
+      "bytes": 14869
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000315/rank_02_state.pt",
+      "bytes": 14869
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000315/rank_03_state.pt",
+      "bytes": 14933
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000360/rank_00_state.pt",
+      "bytes": 14933
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000360/rank_01_state.pt",
+      "bytes": 14869
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000360/rank_02_state.pt",
+      "bytes": 14869
+    },
+    {
+      "path": "runs/parameter_conditioned_compiler_20261009/training/checkpoints/macro_00000360/rank_03_state.pt",
+      "bytes": 14933
+    }
+  ],
+  "deleted_bytes": 1421028641,
+  "all_deleted": true
+}

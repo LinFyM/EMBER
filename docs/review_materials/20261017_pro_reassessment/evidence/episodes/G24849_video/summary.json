@@ -1,0 +1,2318 @@
+{
+  "id": "G24849_video",
+  "rows": 5184,
+  "successes": 3417,
+  "groups": {
+    "default/MT": {
+      "rows": 576,
+      "successes": 340
+    },
+    "default/G432": {
+      "rows": 576,
+      "successes": 337
+    },
+    "default/G864": {
+      "rows": 576,
+      "successes": 341
+    },
+    "default/G1296": {
+      "rows": 576,
+      "successes": 348
+    },
+    "default/G8883": {
+      "rows": 576,
+      "successes": 362
+    },
+    "default/G24849": {
+      "rows": 576,
+      "successes": 425
+    },
+    "default/E": {
+      "rows": 576,
+      "successes": 455
+    },
+    "default/G24849_other": {
+      "rows": 576,
+      "successes": 414
+    },
+    "default/G24849_wrong": {
+      "rows": 576,
+      "successes": 395
+    }
+  },
+  "per_task": [
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "0",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "1",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "101",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "12",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "13",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "14",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "15",
+      "rows": 16,
+      "successes": 9
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "17",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "19",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "2",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "20",
+      "rows": 16,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "21",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "22",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "25",
+      "rows": 16,
+      "successes": 6
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "28",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "29",
+      "rows": 16,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "32",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "34",
+      "rows": 16,
+      "successes": 10
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "35",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "36",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "37",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "38",
+      "rows": 16,
+      "successes": 2
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "4",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "42",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "43",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "5",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "51",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "55",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "56",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "62",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "64",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "7",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "73",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "95",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "96",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "E",
+      "task": "97",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "0",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "1",
+      "rows": 16,
+      "successes": 6
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "101",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "12",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "13",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "14",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "15",
+      "rows": 16,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "17",
+      "rows": 16,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "19",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "2",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "20",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "21",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "22",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "25",
+      "rows": 16,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "28",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "29",
+      "rows": 16,
+      "successes": 2
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "32",
+      "rows": 16,
+      "successes": 4
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "34",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "35",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "36",
+      "rows": 16,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "37",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "38",
+      "rows": 16,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "4",
+      "rows": 16,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "42",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "43",
+      "rows": 16,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "5",
+      "rows": 16,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "51",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "55",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "56",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "62",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "64",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "7",
+      "rows": 16,
+      "successes": 4
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "73",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "95",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "96",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G1296",
+      "task": "97",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "0",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "1",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "101",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "12",
+      "rows": 16,
+      "successes": 10
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "13",
+      "rows": 16,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "14",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "15",
+      "rows": 16,
+      "successes": 6
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "17",
+      "rows": 16,
+      "successes": 9
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "19",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "2",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "20",
+      "rows": 16,
+      "successes": 9
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "21",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "22",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "25",
+      "rows": 16,
+      "successes": 2
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "28",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "29",
+      "rows": 16,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "32",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "34",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "35",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "36",
+      "rows": 16,
+      "successes": 10
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "37",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "38",
+      "rows": 16,
+      "successes": 5
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "4",
+      "rows": 16,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "42",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "43",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "5",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "51",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "55",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "56",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "62",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "64",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "7",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "73",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "95",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "96",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849",
+      "task": "97",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "0",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "1",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "101",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "12",
+      "rows": 16,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "13",
+      "rows": 16,
+      "successes": 9
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "14",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "15",
+      "rows": 16,
+      "successes": 5
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "17",
+      "rows": 16,
+      "successes": 10
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "19",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "2",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "20",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "21",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "22",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "25",
+      "rows": 16,
+      "successes": 4
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "28",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "29",
+      "rows": 16,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "32",
+      "rows": 16,
+      "successes": 10
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "34",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "35",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "36",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "37",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "38",
+      "rows": 16,
+      "successes": 2
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "4",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "42",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "43",
+      "rows": 16,
+      "successes": 9
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "5",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "51",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "55",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "56",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "62",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "64",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "7",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "73",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "95",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "96",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_other",
+      "task": "97",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "0",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "1",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "101",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "12",
+      "rows": 16,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "13",
+      "rows": 16,
+      "successes": 6
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "14",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "15",
+      "rows": 16,
+      "successes": 2
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "17",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "19",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "2",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "20",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "21",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "22",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "25",
+      "rows": 16,
+      "successes": 4
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "28",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "29",
+      "rows": 16,
+      "successes": 4
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "32",
+      "rows": 16,
+      "successes": 9
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "34",
+      "rows": 16,
+      "successes": 9
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "35",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "36",
+      "rows": 16,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "37",
+      "rows": 16,
+      "successes": 6
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "38",
+      "rows": 16,
+      "successes": 2
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "4",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "42",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "43",
+      "rows": 16,
+      "successes": 10
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "5",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "51",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "55",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "56",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "62",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "64",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "7",
+      "rows": 16,
+      "successes": 9
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "73",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "95",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "96",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G24849_wrong",
+      "task": "97",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "0",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "1",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "101",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "12",
+      "rows": 16,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "13",
+      "rows": 16,
+      "successes": 9
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "14",
+      "rows": 16,
+      "successes": 10
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "15",
+      "rows": 16,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "17",
+      "rows": 16,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "19",
+      "rows": 16,
+      "successes": 5
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "2",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "20",
+      "rows": 16,
+      "successes": 4
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "21",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "22",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "25",
+      "rows": 16,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "28",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "29",
+      "rows": 16,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "32",
+      "rows": 16,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "34",
+      "rows": 16,
+      "successes": 10
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "35",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "36",
+      "rows": 16,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "37",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "38",
+      "rows": 16,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "4",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "42",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "43",
+      "rows": 16,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "5",
+      "rows": 16,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "51",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "55",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "56",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "62",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "64",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "7",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "73",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "95",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "96",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G432",
+      "task": "97",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "0",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "1",
+      "rows": 16,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "101",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "12",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "13",
+      "rows": 16,
+      "successes": 9
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "14",
+      "rows": 16,
+      "successes": 10
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "15",
+      "rows": 16,
+      "successes": 4
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "17",
+      "rows": 16,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "19",
+      "rows": 16,
+      "successes": 4
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "2",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "20",
+      "rows": 16,
+      "successes": 9
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "21",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "22",
+      "rows": 16,
+      "successes": 9
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "25",
+      "rows": 16,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "28",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "29",
+      "rows": 16,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "32",
+      "rows": 16,
+      "successes": 2
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "34",
+      "rows": 16,
+      "successes": 10
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "35",
+      "rows": 16,
+      "successes": 10
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "36",
+      "rows": 16,
+      "successes": 5
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "37",
+      "rows": 16,
+      "successes": 6
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "38",
+      "rows": 16,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "4",
+      "rows": 16,
+      "successes": 9
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "42",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "43",
+      "rows": 16,
+      "successes": 10
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "5",
+      "rows": 16,
+      "successes": 5
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "51",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "55",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "56",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "62",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "64",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "7",
+      "rows": 16,
+      "successes": 6
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "73",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "95",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "96",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G864",
+      "task": "97",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "0",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "1",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "101",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "12",
+      "rows": 16,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "13",
+      "rows": 16,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "14",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "15",
+      "rows": 16,
+      "successes": 2
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "17",
+      "rows": 16,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "19",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "2",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "20",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "21",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "22",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "25",
+      "rows": 16,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "28",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "29",
+      "rows": 16,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "32",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "34",
+      "rows": 16,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "35",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "36",
+      "rows": 16,
+      "successes": 10
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "37",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "38",
+      "rows": 16,
+      "successes": 2
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "4",
+      "rows": 16,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "42",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "43",
+      "rows": 16,
+      "successes": 9
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "5",
+      "rows": 16,
+      "successes": 6
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "51",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "55",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "56",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "62",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "64",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "7",
+      "rows": 16,
+      "successes": 6
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "73",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "95",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "96",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "G8883",
+      "task": "97",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "0",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "1",
+      "rows": 16,
+      "successes": 4
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "101",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "12",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "13",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "14",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "15",
+      "rows": 16,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "17",
+      "rows": 16,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "19",
+      "rows": 16,
+      "successes": 6
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "2",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "20",
+      "rows": 16,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "21",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "22",
+      "rows": 16,
+      "successes": 10
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "25",
+      "rows": 16,
+      "successes": 2
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "28",
+      "rows": 16,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "29",
+      "rows": 16,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "32",
+      "rows": 16,
+      "successes": 2
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "34",
+      "rows": 16,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "35",
+      "rows": 16,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "36",
+      "rows": 16,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "37",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "38",
+      "rows": 16,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "4",
+      "rows": 16,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "42",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "43",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "5",
+      "rows": 16,
+      "successes": 6
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "51",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "55",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "56",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "62",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "64",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "7",
+      "rows": 16,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "73",
+      "rows": 16,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "95",
+      "rows": 16,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "96",
+      "rows": 16,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "MT",
+      "task": "97",
+      "rows": 16,
+      "successes": 16
+    }
+  ],
+  "missing_global_task_id": 0,
+  "omitted_nonscalar_fields": {
+    "source_kernel_identity": 1152
+  },
+  "noise_note": "A row uses the first noise_schedule_length entries of its exact schedule. Schedules share only exactly equal prefixes; no new RNG is generated."
+}

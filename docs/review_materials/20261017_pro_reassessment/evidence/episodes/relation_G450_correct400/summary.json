@@ -1,0 +1,76 @@
+{
+  "id": "relation_G450_correct400",
+  "rows": 400,
+  "successes": 126,
+  "groups": {
+    "default/relation_G450_correct400": {
+      "rows": 400,
+      "successes": 126
+    }
+  },
+  "per_task": [
+    {
+      "panel": "default",
+      "arm": "relation_G450_correct400",
+      "task": "11",
+      "rows": 50,
+      "successes": 33
+    },
+    {
+      "panel": "default",
+      "arm": "relation_G450_correct400",
+      "task": "16",
+      "rows": 50,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "relation_G450_correct400",
+      "task": "23",
+      "rows": 50,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "relation_G450_correct400",
+      "task": "26",
+      "rows": 50,
+      "successes": 37
+    },
+    {
+      "panel": "default",
+      "arm": "relation_G450_correct400",
+      "task": "3",
+      "rows": 50,
+      "successes": 30
+    },
+    {
+      "panel": "default",
+      "arm": "relation_G450_correct400",
+      "task": "31",
+      "rows": 50,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "relation_G450_correct400",
+      "task": "39",
+      "rows": 50,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "relation_G450_correct400",
+      "task": "6",
+      "rows": 50,
+      "successes": 11
+    }
+  ],
+  "missing_global_task_id": 0,
+  "omitted_nonscalar_fields": {
+    "continuous_control_trace": 400,
+    "occupancy_trajectory": 400,
+    "stage_predicates": 400
+  },
+  "noise_note": "A row uses the first noise_schedule_length entries of its exact schedule. Schedules share only exactly equal prefixes; no new RNG is generated."
+}

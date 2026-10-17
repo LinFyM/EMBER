@@ -1,0 +1,29 @@
+{
+  "bank": "runs/source_policy_space_compiler_20261015/control_linear64_seed7/bank.json",
+  "basis_checkpoint": "runs/source_policy_space_compiler_20261015/control_linear64_seed7/basis/state.pt",
+  "code_dim": 64,
+  "fit": {
+    "mean_subtracted": false,
+    "method": "weighted_uncentered_small_Gram_FP64",
+    "optimizer_updates": 0,
+    "other_total_weight": 0.5,
+    "selected_weight": 0.5,
+    "task_weight": "equal36"
+  },
+  "limits": {
+    "added_peak_GiB": 4,
+    "closed_form_fits": 1,
+    "control_steps": 179840,
+    "dummy_steps": 5120,
+    "engineering_extra_attempts": 16,
+    "optimizer_updates": 0,
+    "physical_submissions": 512,
+    "total_steps": 184960
+  },
+  "operator_root": "runs/source_policy_space_compiler_20261015/control_operator_from144_seed7",
+  "parent_root": "runs/source_policy_space_compiler_20261015/control_space_seed7",
+  "phase": "linear64",
+  "reference_root": "runs/source_policy_space_compiler_20261015/reference_seed7",
+  "schema": "ember_source_control_linear64_r8_seed7_v1",
+  "seed": 7
+}

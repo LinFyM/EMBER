@@ -1,0 +1,29 @@
+{
+  "FP32_numerical_oracle": {
+    "arithmetic": "FP32",
+    "epsilon": 0.01,
+    "finite_direction_relative_RMS": 0.003227890469133854,
+    "no_optimizer": true,
+    "same_actual_input_and_noise": true
+  },
+  "actual_noise_seed": 8879022893292272079,
+  "adjoint_relative_error": 0.002263597428350986,
+  "checkpoint_binding_relative_error": 0.0,
+  "code_git": "0791d711a13736140dd67f1a1157379f4b70375d",
+  "finite_difference_only_for_numerical_oracle": true,
+  "finite_direction_relative_RMS": 2.3625905513763428,
+  "full_factor_count": 76,
+  "lhs": 0.8774278813441554,
+  "native_flow_steps": 10,
+  "native_latent": [
+    50,
+    32
+  ],
+  "response": [
+    5,
+    7
+  ],
+  "rhs": 0.8754417378483813,
+  "task_id": 0,
+  "teacher_demo": 29
+}

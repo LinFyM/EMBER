@@ -1,0 +1,29 @@
+{
+  "bank": "runs/source_policy_space_compiler_20261015/control_space_seed7/bank.json",
+  "checkpoint_nodes": [
+    36,
+    72,
+    108,
+    144
+  ],
+  "limits": {
+    "added_peak_GiB": 12,
+    "control_steps": 211840,
+    "dummy_steps": 5920,
+    "engineering_extra_attempts": 16,
+    "observation_queries": 4032,
+    "optimizer_updates": 144,
+    "physical_submissions": 592,
+    "response_pairs": 8064,
+    "total_steps": 217760
+  },
+  "logical_batch": {
+    "points": 2,
+    "queries": 7,
+    "tasks": 4
+  },
+  "reference_root": "runs/source_policy_space_compiler_20261015/reference_seed7",
+  "schema": "ember_source_control_space_r8_seed7_v1",
+  "seed": 7,
+  "updates": 144
+}

@@ -1,0 +1,192 @@
+{
+  "source": "runs/video_guided_proposal_writer_20261013/nonheld_takeover_feasibility/results.json",
+  "scope": "posthoc read of fixed preregistered 12 slots; no new execution or rule fitting",
+  "target_rule": "task4/34=P;17/25=E, fixed before takeover results from standard query16; tie parent",
+  "all_registered_slots": {
+    "n": 12,
+    "P_success": 3,
+    "E_success": 3,
+    "selected_T_success": 3,
+    "outcomes": {
+      "both_success": 3,
+      "both_fail": 9
+    }
+  },
+  "original_failure_slots": {
+    "n": 8,
+    "P_success": 0,
+    "E_success": 0,
+    "selected_T_success": 0,
+    "outcomes": {
+      "both_fail": 8
+    }
+  },
+  "actual_replay_failure_slots": {
+    "n": 10,
+    "P_success": 1,
+    "E_success": 1,
+    "selected_T_success": 1,
+    "outcomes": {
+      "both_success": 1,
+      "both_fail": 9
+    }
+  },
+  "rows": [
+    {
+      "identity": "task_0004_state_001_slot_0",
+      "task": 4,
+      "original_role": "recorded_success",
+      "replay_success": false,
+      "fraction": 0.5,
+      "outcome": "both_success",
+      "first_chunk_normalized_action_RMS": 0.34146595001220703,
+      "P_success": true,
+      "E_success": true,
+      "selected_T": "P",
+      "selected_T_success": true
+    },
+    {
+      "identity": "task_0004_state_013_slot_0",
+      "task": 4,
+      "original_role": "recorded_failure",
+      "replay_success": false,
+      "fraction": 0.25,
+      "outcome": "both_fail",
+      "first_chunk_normalized_action_RMS": 0.014935221523046494,
+      "P_success": false,
+      "E_success": false,
+      "selected_T": "P",
+      "selected_T_success": false
+    },
+    {
+      "identity": "task_0004_state_013_slot_1",
+      "task": 4,
+      "original_role": "recorded_failure",
+      "replay_success": false,
+      "fraction": 0.75,
+      "outcome": "both_fail",
+      "first_chunk_normalized_action_RMS": 0.01296385657042265,
+      "P_success": false,
+      "E_success": false,
+      "selected_T": "P",
+      "selected_T_success": false
+    },
+    {
+      "identity": "task_0017_state_005_slot_0",
+      "task": 17,
+      "original_role": "recorded_success",
+      "replay_success": true,
+      "fraction": 0.5,
+      "outcome": "both_success",
+      "first_chunk_normalized_action_RMS": 0.030565684661269188,
+      "P_success": true,
+      "E_success": true,
+      "selected_T": "E",
+      "selected_T_success": true
+    },
+    {
+      "identity": "task_0017_state_001_slot_0",
+      "task": 17,
+      "original_role": "recorded_failure",
+      "replay_success": false,
+      "fraction": 0.25,
+      "outcome": "both_fail",
+      "first_chunk_normalized_action_RMS": 0.016343167051672935,
+      "P_success": false,
+      "E_success": false,
+      "selected_T": "E",
+      "selected_T_success": false
+    },
+    {
+      "identity": "task_0017_state_001_slot_1",
+      "task": 17,
+      "original_role": "recorded_failure",
+      "replay_success": false,
+      "fraction": 0.75,
+      "outcome": "both_fail",
+      "first_chunk_normalized_action_RMS": 0.032100312411785126,
+      "P_success": false,
+      "E_success": false,
+      "selected_T": "E",
+      "selected_T_success": false
+    },
+    {
+      "identity": "task_0025_state_033_slot_0",
+      "task": 25,
+      "original_role": "recorded_success",
+      "replay_success": false,
+      "fraction": 0.5,
+      "outcome": "both_fail",
+      "first_chunk_normalized_action_RMS": 0.017019083723425865,
+      "P_success": false,
+      "E_success": false,
+      "selected_T": "E",
+      "selected_T_success": false
+    },
+    {
+      "identity": "task_0025_state_004_slot_0",
+      "task": 25,
+      "original_role": "recorded_failure",
+      "replay_success": false,
+      "fraction": 0.25,
+      "outcome": "both_fail",
+      "first_chunk_normalized_action_RMS": 0.0356396809220314,
+      "P_success": false,
+      "E_success": false,
+      "selected_T": "E",
+      "selected_T_success": false
+    },
+    {
+      "identity": "task_0025_state_004_slot_1",
+      "task": 25,
+      "original_role": "recorded_failure",
+      "replay_success": false,
+      "fraction": 0.75,
+      "outcome": "both_fail",
+      "first_chunk_normalized_action_RMS": 0.006277128122746944,
+      "P_success": false,
+      "E_success": false,
+      "selected_T": "E",
+      "selected_T_success": false
+    },
+    {
+      "identity": "task_0034_state_007_slot_0",
+      "task": 34,
+      "original_role": "recorded_success",
+      "replay_success": true,
+      "fraction": 0.5,
+      "outcome": "both_success",
+      "first_chunk_normalized_action_RMS": 0.013284669257700443,
+      "P_success": true,
+      "E_success": true,
+      "selected_T": "P",
+      "selected_T_success": true
+    },
+    {
+      "identity": "task_0034_state_012_slot_0",
+      "task": 34,
+      "original_role": "recorded_failure",
+      "replay_success": false,
+      "fraction": 0.25,
+      "outcome": "both_fail",
+      "first_chunk_normalized_action_RMS": 0.011313379742205143,
+      "P_success": false,
+      "E_success": false,
+      "selected_T": "P",
+      "selected_T_success": false
+    },
+    {
+      "identity": "task_0034_state_012_slot_1",
+      "task": 34,
+      "original_role": "recorded_failure",
+      "replay_success": false,
+      "fraction": 0.75,
+      "outcome": "both_fail",
+      "first_chunk_normalized_action_RMS": 0.0019548276904970407,
+      "P_success": false,
+      "E_success": false,
+      "selected_T": "P",
+      "selected_T_success": false
+    }
+  ]
+}

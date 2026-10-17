@@ -1,0 +1,511 @@
+{
+  "all_shared_parameters_frozen": true,
+  "arms": [
+    "practice",
+    "same_task_other",
+    "cross_suite_wrong"
+  ],
+  "bounded_stop": "36 saved G practice plus72 fixed-G control generations and1152 G query; no automatic shared learning/held/Test",
+  "checkpoint_selection": "fixed completed24849; no selection by these controls",
+  "compilation": {
+    "bootstrap": "same actual MT episode before first G",
+    "generation": "deterministic_MT_centered_endpoint",
+    "native_policy_flow_steps": 10,
+    "parameter_decoder_calls": 1,
+    "proposal_attempts": 32,
+    "proposals_per_decision": 1,
+    "response_observations": 16
+  },
+  "constant_operator_lower_bound": 0.9408251332343335,
+  "design": "docs/designs/video_guided_proposal_writer_20261010.md#19",
+  "estimate_evidence": "old early576 2.904GPUh including failures; restore32 332s; six dynamic workers, live load/Long uncertain",
+  "expected_G_generations": 72,
+  "expected_new_episodes": 1188,
+  "expected_new_practice_episodes": 36,
+  "expected_new_query_episodes": 1152,
+  "fixed_G_update": 24849,
+  "frozen_frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+  "full_endpoint_resume_source": "runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/checkpoints/update_00008883",
+  "git": {
+    "commit": "c60bd4941394ffaef3946962800fb22ba21f10c1",
+    "branch": "",
+    "dirty_paths": [],
+    "origin_main": "c60bd4941394ffaef3946962800fb22ba21f10c1"
+  },
+  "inference_components": {
+    "endpoint_checkpoint": "runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/refinement_from8883_20261013/checkpoints/update_00024849",
+    "endpoint_complete": "runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/refinement_from8883_20261013/complete.json",
+    "frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432"
+  },
+  "initial_training_source": "cb27adfca6f6ffc36d3f4d2b6550da5a692c1438",
+  "initial_wall_estimate_minutes": [
+    60,
+    120
+  ],
+  "limits": {
+    "GPU_hours": null,
+    "GPU_hours_hard_cap_active": false,
+    "added_peak_GiB": 32
+  },
+  "mt_checkpoint": "legacy_runs/coverage_retraining_20260920/training/mtbc/checkpoints/step_00000300/lora.safetensors",
+  "new_G_generation": 0,
+  "new_local_updates": 0,
+  "new_shared_updates": 0,
+  "new_teaching_forward": 0,
+  "previous_root": "runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/refinement_from8883_20261013/query16_terminal",
+  "previous_student_version": "G24849_frozen_refinement_terminal_direct_query",
+  "readout_checkpoint": "runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/refinement_from8883_20261013/checkpoints/update_00024849",
+  "schema_version": "ember_terminal_student_video_evidence_v1",
+  "source": {
+    "checkpoint": "runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+    "data_protocol": "configs/libero_24_8_8_coverage_v1/protocol.json",
+    "evaluation_config": "configs/libero_24_8_8_coverage_v1/evaluation.json",
+    "lora_contract": "configs/pi05_lora_rank128_aligned.json",
+    "normalization": "configs/pi05_source_corpus_v1/source_normalization.json",
+    "tokenizer": "models/tokenizers/openpi/paligemma_tokenizer.model"
+  },
+  "stage": "fixed24849_student_video_evidence",
+  "strict_reference_reuse": true,
+  "student_refresh": {
+    "G_update": 24849,
+    "MT_bootstrap_reference_reused": true,
+    "condition_mapping": {
+      "0": {
+        "noise_root": 459892399,
+        "path_ordinal": 0,
+        "practice_noise_root": 2241625414,
+        "practice_state_id": 44,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0000/path.json",
+        "teacher_demo": 47
+      },
+      "1": {
+        "noise_root": 1457535642,
+        "path_ordinal": 0,
+        "practice_noise_root": 755332898,
+        "practice_state_id": 32,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0001/path.json",
+        "teacher_demo": 46
+      },
+      "101": {
+        "noise_root": 4011925420,
+        "path_ordinal": 0,
+        "practice_noise_root": 546570290,
+        "practice_state_id": 21,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0101/path.json",
+        "teacher_demo": 49
+      },
+      "12": {
+        "noise_root": 1971652471,
+        "path_ordinal": 0,
+        "practice_noise_root": 611733535,
+        "practice_state_id": 19,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0012/path.json",
+        "teacher_demo": 46
+      },
+      "13": {
+        "noise_root": 2634520567,
+        "path_ordinal": 0,
+        "practice_noise_root": 2990048358,
+        "practice_state_id": 22,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0013/path.json",
+        "teacher_demo": 47
+      },
+      "14": {
+        "noise_root": 2702189139,
+        "path_ordinal": 0,
+        "practice_noise_root": 3234156909,
+        "practice_state_id": 13,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0014/path.json",
+        "teacher_demo": 49
+      },
+      "15": {
+        "noise_root": 3134110255,
+        "path_ordinal": 0,
+        "practice_noise_root": 1116078322,
+        "practice_state_id": 5,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0015/path.json",
+        "teacher_demo": 46
+      },
+      "17": {
+        "noise_root": 491933162,
+        "path_ordinal": 0,
+        "practice_noise_root": 3983866062,
+        "practice_state_id": 43,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0017/path.json",
+        "teacher_demo": 46
+      },
+      "19": {
+        "noise_root": 2549974223,
+        "path_ordinal": 0,
+        "practice_noise_root": 2605828120,
+        "practice_state_id": 26,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0019/path.json",
+        "teacher_demo": 48
+      },
+      "2": {
+        "noise_root": 1371000894,
+        "path_ordinal": 0,
+        "practice_noise_root": 68646660,
+        "practice_state_id": 46,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0002/path.json",
+        "teacher_demo": 49
+      },
+      "20": {
+        "noise_root": 605677596,
+        "path_ordinal": 0,
+        "practice_noise_root": 13077647,
+        "practice_state_id": 43,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0020/path.json",
+        "teacher_demo": 47
+      },
+      "21": {
+        "noise_root": 927894161,
+        "path_ordinal": 0,
+        "practice_noise_root": 592671068,
+        "practice_state_id": 22,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0021/path.json",
+        "teacher_demo": 46
+      },
+      "22": {
+        "noise_root": 768218878,
+        "path_ordinal": 0,
+        "practice_noise_root": 3393853917,
+        "practice_state_id": 48,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0022/path.json",
+        "teacher_demo": 48
+      },
+      "25": {
+        "noise_root": 1533089467,
+        "path_ordinal": 0,
+        "practice_noise_root": 2653551037,
+        "practice_state_id": 32,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0025/path.json",
+        "teacher_demo": 49
+      },
+      "28": {
+        "noise_root": 762849976,
+        "path_ordinal": 0,
+        "practice_noise_root": 1752925077,
+        "practice_state_id": 36,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0028/path.json",
+        "teacher_demo": 48
+      },
+      "29": {
+        "noise_root": 2496063224,
+        "path_ordinal": 0,
+        "practice_noise_root": 2558341480,
+        "practice_state_id": 49,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0029/path.json",
+        "teacher_demo": 46
+      },
+      "32": {
+        "noise_root": 142477133,
+        "path_ordinal": 0,
+        "practice_noise_root": 1668637234,
+        "practice_state_id": 22,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0032/path.json",
+        "teacher_demo": 48
+      },
+      "34": {
+        "noise_root": 407661824,
+        "path_ordinal": 0,
+        "practice_noise_root": 3077801416,
+        "practice_state_id": 45,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0034/path.json",
+        "teacher_demo": 47
+      },
+      "35": {
+        "noise_root": 1261279551,
+        "path_ordinal": 0,
+        "practice_noise_root": 3892778237,
+        "practice_state_id": 21,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0035/path.json",
+        "teacher_demo": 46
+      },
+      "36": {
+        "noise_root": 390665017,
+        "path_ordinal": 0,
+        "practice_noise_root": 2852221128,
+        "practice_state_id": 46,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0036/path.json",
+        "teacher_demo": 49
+      },
+      "37": {
+        "noise_root": 2167466345,
+        "path_ordinal": 0,
+        "practice_noise_root": 3879259350,
+        "practice_state_id": 27,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0037/path.json",
+        "teacher_demo": 47
+      },
+      "38": {
+        "noise_root": 3520629005,
+        "path_ordinal": 0,
+        "practice_noise_root": 3819847999,
+        "practice_state_id": 43,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0038/path.json",
+        "teacher_demo": 47
+      },
+      "4": {
+        "noise_root": 4212817938,
+        "path_ordinal": 0,
+        "practice_noise_root": 1955360341,
+        "practice_state_id": 21,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0004/path.json",
+        "teacher_demo": 47
+      },
+      "42": {
+        "noise_root": 4174427086,
+        "path_ordinal": 0,
+        "practice_noise_root": 2275865530,
+        "practice_state_id": 34,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0042/path.json",
+        "teacher_demo": 46
+      },
+      "43": {
+        "noise_root": 1399911069,
+        "path_ordinal": 0,
+        "practice_noise_root": 3319356314,
+        "practice_state_id": 41,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0043/path.json",
+        "teacher_demo": 48
+      },
+      "5": {
+        "noise_root": 2402288566,
+        "path_ordinal": 0,
+        "practice_noise_root": 4063616468,
+        "practice_state_id": 11,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0005/path.json",
+        "teacher_demo": 49
+      },
+      "51": {
+        "noise_root": 1817007131,
+        "path_ordinal": 0,
+        "practice_noise_root": 1540449162,
+        "practice_state_id": 39,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0051/path.json",
+        "teacher_demo": 48
+      },
+      "55": {
+        "noise_root": 3030164803,
+        "path_ordinal": 0,
+        "practice_noise_root": 660323540,
+        "practice_state_id": 2,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0055/path.json",
+        "teacher_demo": 46
+      },
+      "56": {
+        "noise_root": 514544845,
+        "path_ordinal": 0,
+        "practice_noise_root": 322243710,
+        "practice_state_id": 4,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0056/path.json",
+        "teacher_demo": 46
+      },
+      "62": {
+        "noise_root": 1800907802,
+        "path_ordinal": 0,
+        "practice_noise_root": 1426569756,
+        "practice_state_id": 19,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0062/path.json",
+        "teacher_demo": 48
+      },
+      "64": {
+        "noise_root": 4240230728,
+        "path_ordinal": 0,
+        "practice_noise_root": 3233085131,
+        "practice_state_id": 28,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0064/path.json",
+        "teacher_demo": 47
+      },
+      "7": {
+        "noise_root": 3726971777,
+        "path_ordinal": 0,
+        "practice_noise_root": 3753125290,
+        "practice_state_id": 46,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0007/path.json",
+        "teacher_demo": 46
+      },
+      "73": {
+        "noise_root": 3305701171,
+        "path_ordinal": 0,
+        "practice_noise_root": 2799469245,
+        "practice_state_id": 38,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0073/path.json",
+        "teacher_demo": 46
+      },
+      "95": {
+        "noise_root": 2632556250,
+        "path_ordinal": 0,
+        "practice_noise_root": 4087193732,
+        "practice_state_id": 35,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0095/path.json",
+        "teacher_demo": 47
+      },
+      "96": {
+        "noise_root": 3235813699,
+        "path_ordinal": 0,
+        "practice_noise_root": 1116858845,
+        "practice_state_id": 26,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0096/path.json",
+        "teacher_demo": 49
+      },
+      "97": {
+        "noise_root": 1111798218,
+        "path_ordinal": 0,
+        "practice_noise_root": 1806489241,
+        "practice_state_id": 14,
+        "source_path": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16/student_data/G864_deterministic_endpoint_first_students/task_0097/path.json",
+        "teacher_demo": 47
+      }
+    },
+    "fresh_training_did_not_consume_student_bank": true,
+    "parameters_and_H_single_source": true,
+    "post_generation_practice": false,
+    "post_refresh_G_only": false,
+    "query_states_per_parameter": 16,
+    "readonly_E_query": true,
+    "readonly_previous_G_query": false,
+    "readout_mode": "endpoint_query_only",
+    "saved_endpoint_source": "runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/refinement_from8883_20261013/complete.json",
+    "task_count": 36,
+    "valid_proposal_rule": "one deterministic full endpoint; invalid is failure; no success resampling",
+    "version": "G24849_frozen_refinement_terminal_direct_query"
+  },
+  "substantial_teacher_fit_retained": false,
+  "teacher": {
+    "action_demos": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45
+    ],
+    "capture_history": "only predetermined first MT selection row; all other selection/report score+first-native only",
+    "choice": "maximum registered selection success count, ties earliest including MT",
+    "counts_are_unpruned_upper_bounds": true,
+    "independent_report_not_in_H_or_gradient": true,
+    "internal_unfitted_demos": [
+      46,
+      47,
+      48,
+      49
+    ],
+    "loss": "native demoFM + 1e-3 fixed-initialMT prox",
+    "maximum_updates": 800,
+    "proximal_target": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/initial.safetensors",
+    "readonly_reuse": true,
+    "readout_updates": [
+      0,
+      200,
+      400,
+      600,
+      800
+    ],
+    "report_per_arm": 16,
+    "saturation_stop": 16,
+    "save_interval": 100,
+    "selection_folds": [
+      8,
+      8
+    ],
+    "selection_folds_are_historical_metadata": true,
+    "selection_order": "MT then ascending actual checkpoints; readout before next unstarted teacher segment",
+    "selection_per_node": 16,
+    "source_root": "runs/video_guided_proposal_writer_20261012/deterministic_endpoint_learning864_query16",
+    "trajectory": "one per task, continuous optimizer/RNG"
+  },
+  "training_source": "7179d581299f3b3be069847e3084989b874431df",
+  "training_tasks": [
+    0,
+    1,
+    2,
+    4,
+    5,
+    7,
+    12,
+    13,
+    14,
+    15,
+    17,
+    19,
+    20,
+    21,
+    22,
+    25,
+    28,
+    29,
+    32,
+    34,
+    35,
+    36,
+    37,
+    38,
+    42,
+    43,
+    51,
+    55,
+    56,
+    62,
+    64,
+    73,
+    95,
+    96,
+    97,
+    101
+  ],
+  "updates": {},
+  "readout_code": {
+    "commit": "c60bd4941394ffaef3946962800fb22ba21f10c1",
+    "branch": "",
+    "dirty_paths": [],
+    "origin_main": "c60bd4941394ffaef3946962800fb22ba21f10c1"
+  },
+  "source_identity": {
+    "frontend_checkpoint": "runs/video_guided_proposal_writer_20261012/coordinate_memory_read864_query16/block_memory_candidate/checkpoints/G/update_00000432",
+    "endpoint_checkpoint": "runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/refinement_from8883_20261013/checkpoints/update_00024849",
+    "endpoint_training_code": "7179d581299f3b3be069847e3084989b874431df",
+    "readout_consumer_code": "c60bd4941394ffaef3946962800fb22ba21f10c1"
+  }
+}

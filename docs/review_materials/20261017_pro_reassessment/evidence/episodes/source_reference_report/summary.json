@@ -1,0 +1,526 @@
+{
+  "id": "source_reference_report",
+  "rows": 1296,
+  "successes": 793,
+  "groups": {
+    "default/source": {
+      "rows": 648,
+      "successes": 248
+    },
+    "default/selected": {
+      "rows": 648,
+      "successes": 545
+    }
+  },
+  "per_task": [
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "0",
+      "rows": 18,
+      "successes": 17
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "1",
+      "rows": 18,
+      "successes": 17
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "101",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "12",
+      "rows": 18,
+      "successes": 17
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "13",
+      "rows": 18,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "14",
+      "rows": 18,
+      "successes": 17
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "15",
+      "rows": 18,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "17",
+      "rows": 18,
+      "successes": 17
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "19",
+      "rows": 18,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "2",
+      "rows": 18,
+      "successes": 17
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "20",
+      "rows": 18,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "21",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "22",
+      "rows": 18,
+      "successes": 15
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "25",
+      "rows": 18,
+      "successes": 11
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "28",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "29",
+      "rows": 18,
+      "successes": 2
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "32",
+      "rows": 18,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "34",
+      "rows": 18,
+      "successes": 12
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "35",
+      "rows": 18,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "36",
+      "rows": 18,
+      "successes": 17
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "37",
+      "rows": 18,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "38",
+      "rows": 18,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "4",
+      "rows": 18,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "42",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "43",
+      "rows": 18,
+      "successes": 17
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "5",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "51",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "55",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "56",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "62",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "64",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "7",
+      "rows": 18,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "73",
+      "rows": 18,
+      "successes": 13
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "95",
+      "rows": 18,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "96",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "selected",
+      "task": "97",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "0",
+      "rows": 18,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "1",
+      "rows": 18,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "101",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "12",
+      "rows": 18,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "13",
+      "rows": 18,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "14",
+      "rows": 18,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "15",
+      "rows": 18,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "17",
+      "rows": 18,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "19",
+      "rows": 18,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "2",
+      "rows": 18,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "20",
+      "rows": 18,
+      "successes": 2
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "21",
+      "rows": 18,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "22",
+      "rows": 18,
+      "successes": 3
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "25",
+      "rows": 18,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "28",
+      "rows": 18,
+      "successes": 14
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "29",
+      "rows": 18,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "32",
+      "rows": 18,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "34",
+      "rows": 18,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "35",
+      "rows": 18,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "36",
+      "rows": 18,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "37",
+      "rows": 18,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "38",
+      "rows": 18,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "4",
+      "rows": 18,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "42",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "43",
+      "rows": 18,
+      "successes": 8
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "5",
+      "rows": 18,
+      "successes": 1
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "51",
+      "rows": 18,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "55",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "56",
+      "rows": 18,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "62",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "64",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "7",
+      "rows": 18,
+      "successes": 0
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "73",
+      "rows": 18,
+      "successes": 7
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "95",
+      "rows": 18,
+      "successes": 16
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "96",
+      "rows": 18,
+      "successes": 18
+    },
+    {
+      "panel": "default",
+      "arm": "source",
+      "task": "97",
+      "rows": 18,
+      "successes": 17
+    }
+  ],
+  "missing_global_task_id": 0,
+  "omitted_nonscalar_fields": {
+    "RGB": 1296
+  },
+  "noise_note": "A row uses the first noise_schedule_length entries of its exact schedule. Schedules share only exactly equal prefixes; no new RNG is generated."
+}

@@ -1,0 +1,34 @@
+[
+  {
+    "source": "runs/parameter_edit_credit_diagnostic_20261009/evaluation/results.json",
+    "actual_J": 5
+  },
+  {
+    "source": "runs/parameter_edit_credit_diagnostic_20261009/evaluation/results.json",
+    "actual_J": 1
+  },
+  {
+    "source": "runs/parameter_edit_credit_diagnostic_20261009/evaluation/results.json",
+    "actual_J": 1
+  },
+  {
+    "source": "runs/parameter_edit_credit_diagnostic_20261009/evaluation/results.json",
+    "actual_J": 1
+  },
+  {
+    "source": "runs/parameter_edit_credit_diagnostic_20261009/evaluation/results.json",
+    "actual_J": 2
+  },
+  {
+    "source": "runs/parameter_edit_credit_diagnostic_20261009/evaluation/results.json",
+    "actual_J": 2
+  },
+  {
+    "source": "runs/parameter_edit_credit_diagnostic_20261009/evaluation/results.json",
+    "actual_J": 1
+  },
+  {
+    "source": "runs/parameter_edit_credit_diagnostic_20261009/evaluation/results.json",
+    "actual_J": 2
+  }
+]

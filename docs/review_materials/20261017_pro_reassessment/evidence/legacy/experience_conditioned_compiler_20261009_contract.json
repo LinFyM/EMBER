@@ -1,0 +1,167 @@
+{
+  "FM_queries_per_condition": 28,
+  "FM_query_episode_intervals": [
+    7,
+    4
+  ],
+  "MT": {
+    "bytes": 21147856,
+    "path": "legacy_runs/coverage_retraining_20260920/training/mtbc/checkpoints/step_00000300/lora.safetensors",
+    "use": "trainable complete decoder initialization and fixed probe"
+  },
+  "SDE_normalization": "1/4 * 1/2 * N/min(16,N) * 10/2; all50x32",
+  "SDE_queries_per_condition": 2,
+  "Test_opened": false,
+  "asset_root": "workspace_assets/projects/EMBER",
+  "baseline": {
+    "input": "detached Q mean256 + actual pre-query proprio8",
+    "optimizer": "fresh AdamW lr3e-5 wd0 after actor credit",
+    "output_init": "zero",
+    "return_target": "own query success",
+    "width": 64
+  },
+  "command": [
+    "runs/experience_conditioned_compiler_20261009/frozen_76c136a3/src/ember/experience_compiler/run.py",
+    "train",
+    "--asset-root",
+    "workspace_assets/projects/EMBER",
+    "--run-root",
+    "runs/experience_conditioned_compiler_20261009",
+    "--output",
+    "runs/experience_conditioned_compiler_20261009/training",
+    "--microbatch",
+    "28",
+    "--pg-microbatch",
+    "32",
+    "--frame-chunk",
+    "64",
+    "--native-frame-chunk",
+    "64",
+    "--decoder-chunk",
+    "65536",
+    "--experience-chunk",
+    "201",
+    "--cpu-threads",
+    "8",
+    "--physical-gpus",
+    "0,6"
+  ],
+  "condition_revisions": "actual success/budget endpoints; no fixed J",
+  "conditions_per_update": 4,
+  "derivative": "raw environment E/H stopped; all learned readings/Q/revisions/decoder live; semi-gradient practice distribution",
+  "git": {
+    "branch": "",
+    "commit": "76c136a308d3a1814483ad3d3ac7b6a820b5cb2a",
+    "dirty_paths": [],
+    "pushed_ref": "origin/main"
+  },
+  "held_offline_gradients": false,
+  "meta_updates": 54,
+  "optimization": {
+    "clip": 1.0,
+    "initialization": "fresh",
+    "lr": 3e-05,
+    "scheduler": "constant",
+    "weight_decay": 0.0
+  },
+  "output": "runs/experience_conditioned_compiler_20261009/training",
+  "physical": {
+    "decoder_chunk": 65536,
+    "experience_chunk": 201,
+    "frame_chunk": 64,
+    "microbatch": 28,
+    "native_frame_chunk": 64,
+    "pg_microbatch": 32
+  },
+  "physical_gpus": [
+    0,
+    6
+  ],
+  "practice_step_budget": 1024,
+  "resume": null,
+  "schema_version": "ember_experience_conditioned_compiler_v1",
+  "source": {
+    "checkpoint": "repo/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+    "checkpoint_manifest": {
+      "bytes": 2007,
+      "path": "repo/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000/checkpoint_manifest.json",
+      "schema_version": "ember_pi05_source_checkpoint_v1"
+    },
+    "frozen_policy_subdir": "policy",
+    "model_files": [
+      {
+        "bytes": 2422,
+        "path": "policy/config.json"
+      },
+      {
+        "bytes": 9354050752,
+        "path": "policy/model.safetensors"
+      }
+    ],
+    "model_path": "repo/runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000/policy",
+    "optimizer_step": 1000,
+    "source_run": "repo/runs/outputs/pi05_source_aligned_seed7_1k_20260915",
+    "source_run_contract": {
+      "bytes": 11169,
+      "path": "repo/runs/outputs/pi05_source_aligned_seed7_1k_20260915/run_contract.json",
+      "schema_version": "ember_pi05_source_launch_v1"
+    },
+    "source_run_summary": {
+      "bytes": 3182,
+      "path": "repo/runs/outputs/pi05_source_aligned_seed7_1k_20260915/run_summary.json",
+      "schema_version": "ember_pi05_source_run_summary_v1"
+    },
+    "source_training_commit": "b8ea00e9fbb86742ef076bac9dd35c5314cd5aed"
+  },
+  "source_configuration": {
+    "checkpoint": "runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+    "data_protocol": "configs/libero_24_8_8_coverage_v1/protocol.json",
+    "evaluation_config": "configs/libero_24_8_8_coverage_v1/evaluation.json",
+    "lora_contract": "configs/pi05_lora_v1.json",
+    "normalization": "configs/pi05_source_corpus_v1/source_normalization.json",
+    "tokenizer": "models/tokenizers/openpi/paligemma_tokenizer.model"
+  },
+  "stage": "experience_conditioned_compiler_20261009",
+  "start_update": 0,
+  "task_ids": [
+    0,
+    1,
+    2,
+    4,
+    5,
+    7,
+    12,
+    13,
+    14,
+    15,
+    17,
+    19,
+    20,
+    21,
+    22,
+    25,
+    28,
+    29,
+    32,
+    34,
+    35,
+    36,
+    37,
+    38,
+    42,
+    43,
+    51,
+    55,
+    56,
+    62,
+    64,
+    73,
+    95,
+    96,
+    97,
+    101
+  ],
+  "topology_migration": false,
+  "warm_updates": 128,
+  "world_size": 2
+}

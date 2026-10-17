@@ -1,0 +1,644 @@
+{
+  "scope": "Existing review evidence only; no model, environment, training, or new evaluation.",
+  "checked": "JSON/JSONL/CSV parsing; indexed paths; all projected episode outcome and pairing scalars against originals; exact noise schedule reconstruction; group/task counts; curated links; new export private-path and credential-shaped text scan.",
+  "existing_artifact_entries": 146,
+  "episode_collections": 34,
+  "episode_records_including_reused_references_and_selection_pool": 40552,
+  "rows_with_exact_original_policy_noise_schedule_verified": 40552,
+  "parsed_files": {
+    "json": 120,
+    "csv": 35,
+    "jsonl": 208
+  },
+  "curated_markdown_links": "passed",
+  "historical_code_index": "29 groups, 67 commit references; paths exist and commits are ancestors of scientific base b55226ed and pre-delivery origin/main.",
+  "remote_delivery": "See current progress and the final delivery commit; local validation alone is not remote accessibility verification.",
+  "no_claims": [
+    "No new scientific validation",
+    "No independent simulation replay",
+    "No complete tensor/gradient revalidation",
+    "No weight or dataset upload",
+    "No restored retired training states"
+  ],
+  "collections": [
+    {
+      "id": "G24849_video",
+      "rows": 5184,
+      "groups": {
+        "default/MT": {
+          "rows": 576,
+          "successes": 340
+        },
+        "default/G432": {
+          "rows": 576,
+          "successes": 337
+        },
+        "default/G864": {
+          "rows": 576,
+          "successes": 341
+        },
+        "default/G1296": {
+          "rows": 576,
+          "successes": 348
+        },
+        "default/G8883": {
+          "rows": 576,
+          "successes": 362
+        },
+        "default/G24849": {
+          "rows": 576,
+          "successes": 425
+        },
+        "default/E": {
+          "rows": 576,
+          "successes": 455
+        },
+        "default/G24849_other": {
+          "rows": 576,
+          "successes": 414
+        },
+        "default/G24849_wrong": {
+          "rows": 576,
+          "successes": 395
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "full_RL9",
+      "rows": 1200,
+      "groups": {
+        "default/MT": {
+          "rows": 400,
+          "successes": 153
+        },
+        "default/legacy_RL9": {
+          "rows": 400,
+          "successes": 147
+        },
+        "default/RL9_F38349": {
+          "rows": 400,
+          "successes": 165
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "firstG_RL9",
+      "rows": 400,
+      "groups": {
+        "default/first_G_from_same_MT_bootstrap": {
+          "rows": 400,
+          "successes": 165
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "selector_B18",
+      "rows": 400,
+      "groups": {
+        "default/selected": {
+          "rows": 400,
+          "successes": 163
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "value_Phi180",
+      "rows": 400,
+      "groups": {
+        "default/value_Phi180": {
+          "rows": 400,
+          "successes": 167
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "G_function_match",
+      "rows": 1952,
+      "groups": {
+        "seen/F_only": {
+          "rows": 576,
+          "successes": 404
+        },
+        "seen/full_G": {
+          "rows": 576,
+          "successes": 339
+        },
+        "validation/F_only": {
+          "rows": 400,
+          "successes": 159
+        },
+        "validation/full_G": {
+          "rows": 400,
+          "successes": 150
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "operator_D_C72",
+      "rows": 1952,
+      "groups": {
+        "seen/operator_only": {
+          "rows": 576,
+          "successes": 414
+        },
+        "seen/operator_plus_native": {
+          "rows": 576,
+          "successes": 393
+        },
+        "validation/operator_only": {
+          "rows": 400,
+          "successes": 175
+        },
+        "validation/operator_plus_native": {
+          "rows": 400,
+          "successes": 158
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "operator_D144",
+      "rows": 976,
+      "groups": {
+        "seen/operator_only": {
+          "rows": 576,
+          "successes": 414
+        },
+        "validation/operator_only": {
+          "rows": 400,
+          "successes": 168
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "N4_corrected",
+      "rows": 512,
+      "groups": {
+        "default/video0": {
+          "rows": 128,
+          "successes": 64
+        },
+        "default/video1": {
+          "rows": 128,
+          "successes": 70
+        },
+        "default/no_video": {
+          "rows": 128,
+          "successes": 74
+        },
+        "default/MT": {
+          "rows": 128,
+          "successes": 67
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "N16",
+      "rows": 512,
+      "groups": {
+        "default/no_video": {
+          "rows": 128,
+          "successes": 62
+        },
+        "default/video0": {
+          "rows": 128,
+          "successes": 61
+        },
+        "default/video1": {
+          "rows": 128,
+          "successes": 71
+        },
+        "default/MT": {
+          "rows": 128,
+          "successes": 67
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "source_reference_report",
+      "rows": 1296,
+      "groups": {
+        "default/source": {
+          "rows": 648,
+          "successes": 248
+        },
+        "default/selected": {
+          "rows": 648,
+          "successes": 545
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "source_reference_selection",
+      "rows": 9664,
+      "groups": {
+        "default/source_reference_selection": {
+          "rows": 9664,
+          "successes": 6415
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "source_family_adjacent",
+      "rows": 8608,
+      "groups": {
+        "seen/Reader1800": {
+          "rows": 576,
+          "successes": 413
+        },
+        "seen/Reader900": {
+          "rows": 576,
+          "successes": 334
+        },
+        "seen/U36": {
+          "rows": 576,
+          "successes": 484
+        },
+        "seen/factor_credit1090": {
+          "rows": 576,
+          "successes": 290
+        },
+        "seen/factor_credit1180": {
+          "rows": 576,
+          "successes": 306
+        },
+        "seen/reference": {
+          "rows": 576,
+          "successes": 502
+        },
+        "seen/source": {
+          "rows": 576,
+          "successes": 218
+        },
+        "seen/source_weight1180": {
+          "rows": 576,
+          "successes": 244
+        },
+        "validation/D144": {
+          "rows": 400,
+          "successes": 168
+        },
+        "validation/D72": {
+          "rows": 400,
+          "successes": 175
+        },
+        "validation/G165": {
+          "rows": 400,
+          "successes": 165
+        },
+        "validation/MT153": {
+          "rows": 400,
+          "successes": 153
+        },
+        "validation/Reader1800": {
+          "rows": 400,
+          "successes": 111
+        },
+        "validation/Reader900": {
+          "rows": 400,
+          "successes": 117
+        },
+        "validation/factor_credit1090": {
+          "rows": 400,
+          "successes": 121
+        },
+        "validation/factor_credit1180": {
+          "rows": 400,
+          "successes": 128
+        },
+        "validation/psi180": {
+          "rows": 400,
+          "successes": 119
+        },
+        "validation/source_weight1180": {
+          "rows": 400,
+          "successes": 57
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "source_task_exclusion",
+      "rows": 512,
+      "groups": {
+        "default/U28": {
+          "rows": 128,
+          "successes": 37
+        },
+        "default/U36": {
+          "rows": 128,
+          "successes": 98
+        },
+        "default/reference": {
+          "rows": 128,
+          "successes": 105
+        },
+        "default/source": {
+          "rows": 128,
+          "successes": 23
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "native_first_write",
+      "rows": 1152,
+      "groups": {
+        "seen/Reader900": {
+          "rows": 144,
+          "successes": 89
+        },
+        "seen/first_best": {
+          "rows": 144,
+          "successes": 73
+        },
+        "seen/full": {
+          "rows": 144,
+          "successes": 79
+        },
+        "seen/functional93": {
+          "rows": 144,
+          "successes": 93
+        },
+        "seen/native_operator180": {
+          "rows": 144,
+          "successes": 64
+        },
+        "seen/random_search86": {
+          "rows": 144,
+          "successes": 86
+        },
+        "seen/reference": {
+          "rows": 144,
+          "successes": 127
+        },
+        "seen/source": {
+          "rows": 144,
+          "successes": 58
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "functional_no_video",
+      "rows": 144,
+      "groups": {
+        "default/no_video": {
+          "rows": 144,
+          "successes": 59
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "source_ED144",
+      "rows": 576,
+      "groups": {
+        "default/source_ED144": {
+          "rows": 576,
+          "successes": 216
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "source_operator1170",
+      "rows": 576,
+      "groups": {
+        "default/source_operator1170": {
+          "rows": 576,
+          "successes": 224
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "G38349_seen",
+      "rows": 1152,
+      "groups": {
+        "default/MT300": {
+          "rows": 576,
+          "successes": 340
+        },
+        "default/G_000": {
+          "rows": 576,
+          "successes": 427
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "experience_conditioned_compiler_20261009_meta27",
+      "rows": 96,
+      "groups": {
+        "meta27/end": {
+          "rows": 48,
+          "successes": 30
+        },
+        "meta27/initial": {
+          "rows": 48,
+          "successes": 33
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "experience_conditioned_compiler_20261009_meta54",
+      "rows": 144,
+      "groups": {
+        "meta54/end": {
+          "rows": 48,
+          "successes": 28
+        },
+        "meta54/initial": {
+          "rows": 48,
+          "successes": 28
+        },
+        "meta54/null": {
+          "rows": 48,
+          "successes": 28
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "experience_conditioned_compiler_20261009_formal",
+      "rows": 400,
+      "groups": {
+        "formal/end": {
+          "rows": 400,
+          "successes": 135
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "parameter_conditioned_compiler_20261009_train180",
+      "rows": 144,
+      "groups": {
+        "train180/MT": {
+          "rows": 48,
+          "successes": 27
+        },
+        "train180/end": {
+          "rows": 48,
+          "successes": 25
+        },
+        "train180/null": {
+          "rows": 48,
+          "successes": 25
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "parameter_conditioned_compiler_20261009_train360",
+      "rows": 144,
+      "groups": {
+        "train360/MT": {
+          "rows": 48,
+          "successes": 27
+        },
+        "train360/end": {
+          "rows": 48,
+          "successes": 25
+        },
+        "train360/null": {
+          "rows": 48,
+          "successes": 25
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "parameter_conditioned_compiler_20261009_formal180",
+      "rows": 400,
+      "groups": {
+        "formal180/end": {
+          "rows": 400,
+          "successes": 127
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "parameter_compiler_fullreadout_20261009_formal360",
+      "rows": 400,
+      "groups": {
+        "formal360/end": {
+          "rows": 400,
+          "successes": 130
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "parameter_edit_credit_diagnostic_20261009_diagnostic",
+      "rows": 72,
+      "groups": {
+        "diagnostic/E+": {
+          "rows": 24,
+          "successes": 13
+        },
+        "diagnostic/E0": {
+          "rows": 24,
+          "successes": 13
+        },
+        "diagnostic/I": {
+          "rows": 24,
+          "successes": 13
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "functional_revision_learning_20261010_train180",
+      "rows": 48,
+      "groups": {
+        "train180/end": {
+          "rows": 48,
+          "successes": 29
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "functional_revision_learning_20261010_train360",
+      "rows": 48,
+      "groups": {
+        "train360/end": {
+          "rows": 48,
+          "successes": 25
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "functional_revision_learning_20261010_formal360",
+      "rows": 400,
+      "groups": {
+        "formal360/end": {
+          "rows": 400,
+          "successes": 143
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "relation_G360_correct400",
+      "rows": 400,
+      "groups": {
+        "default/relation_G360_correct400": {
+          "rows": 400,
+          "successes": 131
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "relation_G450_correct400",
+      "rows": 400,
+      "groups": {
+        "default/relation_G450_correct400": {
+          "rows": 400,
+          "successes": 126
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "relation_G450_seen144",
+      "rows": 144,
+      "groups": {
+        "default/relation_G450_seen144": {
+          "rows": 144,
+          "successes": 84
+        }
+      },
+      "source_record_comparison": "passed"
+    },
+    {
+      "id": "relation_F450_seen144",
+      "rows": 144,
+      "groups": {
+        "default/relation_F450_seen144": {
+          "rows": 144,
+          "successes": 66
+        }
+      },
+      "source_record_comparison": "passed"
+    }
+  ],
+  "curated_and_exported_report_markdown_links": "passed after portable-link normalization"
+}

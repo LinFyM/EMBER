@@ -1,0 +1,43 @@
+{
+  "complete": true,
+  "consumed_UTC": "2026-10-13T00:29:16.537670+00:00",
+  "executor_session": "[operational-id]",
+  "science_receiver": "[operational-id]",
+  "scope": "completed §20 originals; no new scientific calculation beyond bounded CPU consumption",
+  "training_initial_code": "1bcb2601a682505fcb8557db5d2d81fdd79a623c",
+  "recovery_and_formal_code": "6f6a8aa60f604f19c966d45ef632d63276d2cc02",
+  "consumption_source_main": "ebf92b6fddf50edfbe8ec975a03cf711bd3158c9",
+  "full_checkpoint": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000009",
+  "formal_rows": 400,
+  "strict_single_checkpoint": true,
+  "legacy_comparison_not_single_factor": true,
+  "actual_new_episodes": 3566,
+  "actual_new_environment_steps": 910556,
+  "actual_GPU_hours": 18.857689823375807,
+  "failure_GPU_hours": 1.6499886682298448,
+  "owned_GPU_processes_after_exit": {
+    "GPU-node-A": 0,
+    "GPU-node-B": 0
+  },
+  "root_allocated_KiB": 51695504,
+  "root_allocated_GiB": 49.30067443847656,
+  "original_peak_budget_GiB": 96,
+  "storage_authority": "launch receipts storage-node/data1 independent quota; no large copy or new GPU launch in consumption",
+  "held_history_check": "all 400 adaptation boundary metadata and actual formal worker final-state exclusion assertion; no repeated H decompression",
+  "preserved_failure": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/coordinator/full_writer24849_RL9_validation400_01/exit.json",
+  "successful_owner": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/coordinator/full_writer24849_collective_recovery_02/exit.json",
+  "original_formal_results_unchanged": true,
+  "Test_enabled": false,
+  "automatic_successor": false,
+  "checks": {
+    "safe_open_header_full_selected_LoRA_shapes": true,
+    "paired_actual_scene_env_native_RNG": true,
+    "four_rank_RNG_complete_F_theta_baseline_optimizers": true,
+    "actual54k_F_events_task_parent_H_video_mapping": true
+  },
+  "new_forward": 0,
+  "new_GPU_computation": 0,
+  "new_environment_episodes_in_consumption": 0,
+  "documentation_commit": "d9100c214f649cb97416f1b9e937ee2055b41edc",
+  "main_matches_origin_clean": true
+}

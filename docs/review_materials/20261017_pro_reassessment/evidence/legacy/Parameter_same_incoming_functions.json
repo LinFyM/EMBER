@@ -1,0 +1,3296 @@
+{
+  "schema_version": "ember_parameter_edit_scientific_analysis_v1",
+  "complete": true,
+  "groups": {
+    "J1": {
+      "conditions": 4,
+      "pairs": {
+        "I_to_E+": {
+          "rows": 12,
+          "reference_successes": 9,
+          "candidate_successes": 8,
+          "retained": 8,
+          "gained": 0,
+          "lost": 1,
+          "churn_count": 1,
+          "churn_fraction": 0.08333333333333333,
+          "success_set_jaccard": 0.8888888888888888,
+          "retained_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo16",
+              32
+            ],
+            [
+              "libero_10",
+              2,
+              "train_task032_demo16",
+              34
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              34
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              34
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              32
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              34
+            ]
+          ],
+          "gained_keys": [],
+          "lost_keys": [
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              33
+            ]
+          ],
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  32
+                ],
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 3,
+              "rows": 6,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  34
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 3,
+              "reference_successes": 3,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  32
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  33
+                ]
+              ]
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  32
+                ],
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_object",
+              "rows": 6,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  34
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 3,
+              "reference_successes": 3,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  32
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  33
+                ]
+              ]
+            }
+          ],
+          "reference_breadth": 3,
+          "candidate_breadth": 3
+        },
+        "E0_to_E+": {
+          "rows": 12,
+          "reference_successes": 10,
+          "candidate_successes": 8,
+          "retained": 7,
+          "gained": 1,
+          "lost": 3,
+          "churn_count": 4,
+          "churn_fraction": 0.3333333333333333,
+          "success_set_jaccard": 0.6363636363636364,
+          "retained_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo16",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              34
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              34
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              32
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              34
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo16",
+              34
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              33
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              33
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              33
+            ]
+          ],
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 3,
+              "reference_successes": 1,
+              "candidate_successes": 2,
+              "retained": 1,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  32
+                ]
+              ],
+              "gained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  34
+                ]
+              ],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 3,
+              "rows": 6,
+              "reference_successes": 6,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 2,
+              "churn_count": 2,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  34
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  33
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  33
+                ]
+              ]
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 3,
+              "reference_successes": 3,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  32
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  33
+                ]
+              ]
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 3,
+              "reference_successes": 1,
+              "candidate_successes": 2,
+              "retained": 1,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  32
+                ]
+              ],
+              "gained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  34
+                ]
+              ],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_object",
+              "rows": 6,
+              "reference_successes": 6,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 2,
+              "churn_count": 2,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  34
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  33
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  33
+                ]
+              ]
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 3,
+              "reference_successes": 3,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  32
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  33
+                ]
+              ]
+            }
+          ],
+          "reference_breadth": 3,
+          "candidate_breadth": 3
+        },
+        "I_to_E0": {
+          "rows": 12,
+          "reference_successes": 9,
+          "candidate_successes": 10,
+          "retained": 8,
+          "gained": 2,
+          "lost": 1,
+          "churn_count": 3,
+          "churn_fraction": 0.25,
+          "success_set_jaccard": 0.7272727272727273,
+          "retained_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo16",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              34
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              34
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              32
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              33
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              34
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              33
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              33
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo16",
+              34
+            ]
+          ],
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 1,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  32
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  34
+                ]
+              ]
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 3,
+              "rows": 6,
+              "reference_successes": 4,
+              "candidate_successes": 6,
+              "retained": 4,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  34
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  33
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  33
+                ]
+              ],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 3,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  32
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  33
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 1,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  32
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  34
+                ]
+              ]
+            },
+            {
+              "suite": "libero_object",
+              "rows": 6,
+              "reference_successes": 4,
+              "candidate_successes": 6,
+              "retained": 4,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  34
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  33
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  33
+                ]
+              ],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 3,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  32
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  33
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "reference_breadth": 3,
+          "candidate_breadth": 3
+        }
+      }
+    },
+    "Jge2": {
+      "conditions": 4,
+      "pairs": {
+        "I_to_E+": {
+          "rows": 12,
+          "reference_successes": 4,
+          "candidate_successes": 5,
+          "retained": 3,
+          "gained": 2,
+          "lost": 1,
+          "churn_count": 3,
+          "churn_fraction": 0.25,
+          "success_set_jaccard": 0.5,
+          "retained_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo44",
+              34
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo06",
+              32
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo15",
+              32
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo06",
+              33
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo15",
+              34
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo44",
+              32
+            ]
+          ],
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 1,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  32
+                ]
+              ]
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 0,
+              "rows": 6,
+              "reference_successes": 2,
+              "candidate_successes": 4,
+              "retained": 2,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  32
+                ]
+              ],
+              "gained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  33
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  34
+                ]
+              ],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 3,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null,
+              "retained_keys": [],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 1,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  32
+                ]
+              ]
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 6,
+              "reference_successes": 2,
+              "candidate_successes": 4,
+              "retained": 2,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  32
+                ]
+              ],
+              "gained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  33
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  34
+                ]
+              ],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 3,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null,
+              "retained_keys": [],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "reference_breadth": 2,
+          "candidate_breadth": 2
+        },
+        "E0_to_E+": {
+          "rows": 12,
+          "reference_successes": 3,
+          "candidate_successes": 5,
+          "retained": 1,
+          "gained": 4,
+          "lost": 2,
+          "churn_count": 6,
+          "churn_fraction": 0.5,
+          "success_set_jaccard": 0.14285714285714285,
+          "retained_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo44",
+              34
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo06",
+              32
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo06",
+              33
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo15",
+              32
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo15",
+              34
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo44",
+              32
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo06",
+              34
+            ]
+          ],
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 1,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  32
+                ]
+              ]
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 0,
+              "rows": 6,
+              "reference_successes": 1,
+              "candidate_successes": 4,
+              "retained": 0,
+              "gained": 4,
+              "lost": 1,
+              "churn_count": 5,
+              "churn_fraction": 0.8333333333333334,
+              "success_set_jaccard": 0.0,
+              "retained_keys": [],
+              "gained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  33
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  34
+                ]
+              ],
+              "lost_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  34
+                ]
+              ]
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 3,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null,
+              "retained_keys": [],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 1,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  32
+                ]
+              ]
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 6,
+              "reference_successes": 1,
+              "candidate_successes": 4,
+              "retained": 0,
+              "gained": 4,
+              "lost": 1,
+              "churn_count": 5,
+              "churn_fraction": 0.8333333333333334,
+              "success_set_jaccard": 0.0,
+              "retained_keys": [],
+              "gained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  33
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  34
+                ]
+              ],
+              "lost_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  34
+                ]
+              ]
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 3,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null,
+              "retained_keys": [],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "reference_breadth": 2,
+          "candidate_breadth": 2
+        },
+        "I_to_E0": {
+          "rows": 12,
+          "reference_successes": 4,
+          "candidate_successes": 3,
+          "retained": 2,
+          "gained": 1,
+          "lost": 2,
+          "churn_count": 3,
+          "churn_fraction": 0.25,
+          "success_set_jaccard": 0.4,
+          "retained_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo44",
+              32
+            ],
+            [
+              "libero_10",
+              2,
+              "train_task032_demo44",
+              34
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo06",
+              34
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo06",
+              32
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo15",
+              32
+            ]
+          ],
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  32
+                ],
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 0,
+              "rows": 6,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 0,
+              "gained": 1,
+              "lost": 2,
+              "churn_count": 3,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.0,
+              "retained_keys": [],
+              "gained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  34
+                ]
+              ],
+              "lost_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  32
+                ]
+              ]
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 3,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null,
+              "retained_keys": [],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  32
+                ],
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 6,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 0,
+              "gained": 1,
+              "lost": 2,
+              "churn_count": 3,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.0,
+              "retained_keys": [],
+              "gained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  34
+                ]
+              ],
+              "lost_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  32
+                ]
+              ]
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 3,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null,
+              "retained_keys": [],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "reference_breadth": 2,
+          "candidate_breadth": 2
+        }
+      }
+    },
+    "practice_success": {
+      "conditions": 6,
+      "pairs": {
+        "I_to_E+": {
+          "rows": 18,
+          "reference_successes": 11,
+          "candidate_successes": 12,
+          "retained": 10,
+          "gained": 2,
+          "lost": 1,
+          "churn_count": 3,
+          "churn_fraction": 0.16666666666666666,
+          "success_set_jaccard": 0.7692307692307693,
+          "retained_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo16",
+              32
+            ],
+            [
+              "libero_10",
+              2,
+              "train_task032_demo16",
+              34
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo06",
+              32
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo15",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              34
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              34
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              32
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              34
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo06",
+              33
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo15",
+              34
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              33
+            ]
+          ],
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  32
+                ],
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 0,
+              "rows": 6,
+              "reference_successes": 2,
+              "candidate_successes": 4,
+              "retained": 2,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  32
+                ]
+              ],
+              "gained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  33
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  34
+                ]
+              ],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 3,
+              "rows": 6,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  34
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 3,
+              "reference_successes": 3,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  32
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  33
+                ]
+              ]
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  32
+                ],
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 6,
+              "reference_successes": 2,
+              "candidate_successes": 4,
+              "retained": 2,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  32
+                ]
+              ],
+              "gained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  33
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  34
+                ]
+              ],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_object",
+              "rows": 6,
+              "reference_successes": 4,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  34
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 3,
+              "reference_successes": 3,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  32
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  33
+                ]
+              ]
+            }
+          ],
+          "reference_breadth": 4,
+          "candidate_breadth": 4
+        },
+        "E0_to_E+": {
+          "rows": 18,
+          "reference_successes": 11,
+          "candidate_successes": 12,
+          "retained": 7,
+          "gained": 5,
+          "lost": 4,
+          "churn_count": 9,
+          "churn_fraction": 0.5,
+          "success_set_jaccard": 0.4375,
+          "retained_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo16",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              34
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              34
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              32
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              34
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo16",
+              34
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo06",
+              32
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo06",
+              33
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo15",
+              32
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo15",
+              34
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo06",
+              34
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              33
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              33
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              33
+            ]
+          ],
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 3,
+              "reference_successes": 1,
+              "candidate_successes": 2,
+              "retained": 1,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  32
+                ]
+              ],
+              "gained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  34
+                ]
+              ],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 0,
+              "rows": 6,
+              "reference_successes": 1,
+              "candidate_successes": 4,
+              "retained": 0,
+              "gained": 4,
+              "lost": 1,
+              "churn_count": 5,
+              "churn_fraction": 0.8333333333333334,
+              "success_set_jaccard": 0.0,
+              "retained_keys": [],
+              "gained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  33
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  34
+                ]
+              ],
+              "lost_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  34
+                ]
+              ]
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 3,
+              "rows": 6,
+              "reference_successes": 6,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 2,
+              "churn_count": 2,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  34
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  33
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  33
+                ]
+              ]
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 3,
+              "reference_successes": 3,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  32
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  33
+                ]
+              ]
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 3,
+              "reference_successes": 1,
+              "candidate_successes": 2,
+              "retained": 1,
+              "gained": 1,
+              "lost": 0,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  32
+                ]
+              ],
+              "gained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  34
+                ]
+              ],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 6,
+              "reference_successes": 1,
+              "candidate_successes": 4,
+              "retained": 0,
+              "gained": 4,
+              "lost": 1,
+              "churn_count": 5,
+              "churn_fraction": 0.8333333333333334,
+              "success_set_jaccard": 0.0,
+              "retained_keys": [],
+              "gained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  33
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  34
+                ]
+              ],
+              "lost_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  34
+                ]
+              ]
+            },
+            {
+              "suite": "libero_object",
+              "rows": 6,
+              "reference_successes": 6,
+              "candidate_successes": 4,
+              "retained": 4,
+              "gained": 0,
+              "lost": 2,
+              "churn_count": 2,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  34
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  33
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  33
+                ]
+              ]
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 3,
+              "reference_successes": 3,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  32
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  33
+                ]
+              ]
+            }
+          ],
+          "reference_breadth": 4,
+          "candidate_breadth": 4
+        },
+        "I_to_E0": {
+          "rows": 18,
+          "reference_successes": 11,
+          "candidate_successes": 11,
+          "retained": 8,
+          "gained": 3,
+          "lost": 3,
+          "churn_count": 6,
+          "churn_fraction": 0.3333333333333333,
+          "success_set_jaccard": 0.5714285714285714,
+          "retained_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo16",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              34
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              32
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              34
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              32
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              33
+            ],
+            [
+              "libero_spatial",
+              0,
+              "train_task000_demo29",
+              34
+            ]
+          ],
+          "gained_keys": [
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo06",
+              34
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo04",
+              33
+            ],
+            [
+              "libero_object",
+              3,
+              "train_task013_demo16",
+              33
+            ]
+          ],
+          "lost_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo16",
+              34
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo06",
+              32
+            ],
+            [
+              "libero_goal",
+              0,
+              "train_task020_demo15",
+              32
+            ]
+          ],
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 1,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  32
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  34
+                ]
+              ]
+            },
+            {
+              "suite": "libero_goal",
+              "task_id": 0,
+              "rows": 6,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 0,
+              "gained": 1,
+              "lost": 2,
+              "churn_count": 3,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.0,
+              "retained_keys": [],
+              "gained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  34
+                ]
+              ],
+              "lost_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  32
+                ]
+              ]
+            },
+            {
+              "suite": "libero_object",
+              "task_id": 3,
+              "rows": 6,
+              "reference_successes": 4,
+              "candidate_successes": 6,
+              "retained": 4,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  34
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  33
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  33
+                ]
+              ],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 3,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  32
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  33
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 1,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  32
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo16",
+                  34
+                ]
+              ]
+            },
+            {
+              "suite": "libero_goal",
+              "rows": 6,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 0,
+              "gained": 1,
+              "lost": 2,
+              "churn_count": 3,
+              "churn_fraction": 0.5,
+              "success_set_jaccard": 0.0,
+              "retained_keys": [],
+              "gained_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  34
+                ]
+              ],
+              "lost_keys": [
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo06",
+                  32
+                ],
+                [
+                  "libero_goal",
+                  0,
+                  "train_task020_demo15",
+                  32
+                ]
+              ]
+            },
+            {
+              "suite": "libero_object",
+              "rows": 6,
+              "reference_successes": 4,
+              "candidate_successes": 6,
+              "retained": 4,
+              "gained": 2,
+              "lost": 0,
+              "churn_count": 2,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.6666666666666666,
+              "retained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  34
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  32
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  34
+                ]
+              ],
+              "gained_keys": [
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo04",
+                  33
+                ],
+                [
+                  "libero_object",
+                  3,
+                  "train_task013_demo16",
+                  33
+                ]
+              ],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 3,
+              "reference_successes": 3,
+              "candidate_successes": 3,
+              "retained": 3,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  32
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  33
+                ],
+                [
+                  "libero_spatial",
+                  0,
+                  "train_task000_demo29",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "reference_breadth": 4,
+          "candidate_breadth": 4
+        }
+      }
+    },
+    "practice_budget": {
+      "conditions": 2,
+      "pairs": {
+        "I_to_E+": {
+          "rows": 6,
+          "reference_successes": 2,
+          "candidate_successes": 1,
+          "retained": 1,
+          "gained": 0,
+          "lost": 1,
+          "churn_count": 1,
+          "churn_fraction": 0.16666666666666666,
+          "success_set_jaccard": 0.5,
+          "retained_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo44",
+              34
+            ]
+          ],
+          "gained_keys": [],
+          "lost_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo44",
+              32
+            ]
+          ],
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 1,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  32
+                ]
+              ]
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 3,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null,
+              "retained_keys": [],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 1,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  32
+                ]
+              ]
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 3,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null,
+              "retained_keys": [],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "reference_breadth": 1,
+          "candidate_breadth": 1
+        },
+        "E0_to_E+": {
+          "rows": 6,
+          "reference_successes": 2,
+          "candidate_successes": 1,
+          "retained": 1,
+          "gained": 0,
+          "lost": 1,
+          "churn_count": 1,
+          "churn_fraction": 0.16666666666666666,
+          "success_set_jaccard": 0.5,
+          "retained_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo44",
+              34
+            ]
+          ],
+          "gained_keys": [],
+          "lost_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo44",
+              32
+            ]
+          ],
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 1,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  32
+                ]
+              ]
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 3,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null,
+              "retained_keys": [],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 1,
+              "retained": 1,
+              "gained": 0,
+              "lost": 1,
+              "churn_count": 1,
+              "churn_fraction": 0.3333333333333333,
+              "success_set_jaccard": 0.5,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  32
+                ]
+              ]
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 3,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null,
+              "retained_keys": [],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "reference_breadth": 1,
+          "candidate_breadth": 1
+        },
+        "I_to_E0": {
+          "rows": 6,
+          "reference_successes": 2,
+          "candidate_successes": 2,
+          "retained": 2,
+          "gained": 0,
+          "lost": 0,
+          "churn_count": 0,
+          "churn_fraction": 0.0,
+          "success_set_jaccard": 1.0,
+          "retained_keys": [
+            [
+              "libero_10",
+              2,
+              "train_task032_demo44",
+              32
+            ],
+            [
+              "libero_10",
+              2,
+              "train_task032_demo44",
+              34
+            ]
+          ],
+          "gained_keys": [],
+          "lost_keys": [],
+          "per_task": [
+            {
+              "suite": "libero_10",
+              "task_id": 2,
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  32
+                ],
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_spatial",
+              "task_id": 0,
+              "rows": 3,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null,
+              "retained_keys": [],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "per_suite": [
+            {
+              "suite": "libero_10",
+              "rows": 3,
+              "reference_successes": 2,
+              "candidate_successes": 2,
+              "retained": 2,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": 1.0,
+              "retained_keys": [
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  32
+                ],
+                [
+                  "libero_10",
+                  2,
+                  "train_task032_demo44",
+                  34
+                ]
+              ],
+              "gained_keys": [],
+              "lost_keys": []
+            },
+            {
+              "suite": "libero_spatial",
+              "rows": 3,
+              "reference_successes": 0,
+              "candidate_successes": 0,
+              "retained": 0,
+              "gained": 0,
+              "lost": 0,
+              "churn_count": 0,
+              "churn_fraction": 0.0,
+              "success_set_jaccard": null,
+              "retained_keys": [],
+              "gained_keys": [],
+              "lost_keys": []
+            }
+          ],
+          "reference_breadth": 1,
+          "candidate_breadth": 1
+        }
+      }
+    }
+  },
+  "FM_means": {
+    "I": 0.1129440562799573,
+    "E+": 0.11314484942704439,
+    "E0": 0.11311388108879328
+  },
+  "FM_front5_means": {
+    "I": 0.13067644834518433,
+    "E+": 0.12999344989657402,
+    "E0": 0.13003716245293617
+  },
+  "FM_to_control_conflicts": [
+    "train_task000_demo29",
+    "train_task032_demo44"
+  ],
+  "boundary": "directed previously seen train panel; fixed final event and same incoming; not held/general ability/video causal evidence"
+}

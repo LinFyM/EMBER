@@ -1,0 +1,376 @@
+{
+  "formal_tasks": [
+    {
+      "row_count": 50,
+      "successes": 19,
+      "suite": "libero_10",
+      "task_id": 1,
+      "MT": {
+        "reference_successes": 24,
+        "retained": 15,
+        "gained": 4,
+        "lost": 9
+      },
+      "T2340": {
+        "reference_successes": 24,
+        "retained": 9,
+        "gained": 10,
+        "lost": 15
+      },
+      "experience135": {
+        "reference_successes": 19,
+        "retained": 13,
+        "gained": 6,
+        "lost": 6
+      },
+      "parameter180": {
+        "reference_successes": 15,
+        "retained": 9,
+        "gained": 10,
+        "lost": 6
+      },
+      "parameter360": {
+        "reference_successes": 27,
+        "retained": 16,
+        "gained": 3,
+        "lost": 11
+      }
+    },
+    {
+      "row_count": 50,
+      "successes": 0,
+      "suite": "libero_10",
+      "task_id": 9,
+      "MT": {
+        "reference_successes": 0,
+        "retained": 0,
+        "gained": 0,
+        "lost": 0
+      },
+      "T2340": {
+        "reference_successes": 0,
+        "retained": 0,
+        "gained": 0,
+        "lost": 0
+      },
+      "experience135": {
+        "reference_successes": 0,
+        "retained": 0,
+        "gained": 0,
+        "lost": 0
+      },
+      "parameter180": {
+        "reference_successes": 0,
+        "retained": 0,
+        "gained": 0,
+        "lost": 0
+      },
+      "parameter360": {
+        "reference_successes": 0,
+        "retained": 0,
+        "gained": 0,
+        "lost": 0
+      }
+    },
+    {
+      "row_count": 50,
+      "successes": 1,
+      "suite": "libero_goal",
+      "task_id": 3,
+      "MT": {
+        "reference_successes": 0,
+        "retained": 0,
+        "gained": 1,
+        "lost": 0
+      },
+      "T2340": {
+        "reference_successes": 0,
+        "retained": 0,
+        "gained": 1,
+        "lost": 0
+      },
+      "experience135": {
+        "reference_successes": 1,
+        "retained": 0,
+        "gained": 1,
+        "lost": 1
+      },
+      "parameter180": {
+        "reference_successes": 0,
+        "retained": 0,
+        "gained": 1,
+        "lost": 0
+      },
+      "parameter360": {
+        "reference_successes": 0,
+        "retained": 0,
+        "gained": 1,
+        "lost": 0
+      }
+    },
+    {
+      "row_count": 50,
+      "successes": 35,
+      "suite": "libero_goal",
+      "task_id": 6,
+      "MT": {
+        "reference_successes": 35,
+        "retained": 33,
+        "gained": 2,
+        "lost": 2
+      },
+      "T2340": {
+        "reference_successes": 36,
+        "retained": 28,
+        "gained": 7,
+        "lost": 8
+      },
+      "experience135": {
+        "reference_successes": 32,
+        "retained": 28,
+        "gained": 7,
+        "lost": 4
+      },
+      "parameter180": {
+        "reference_successes": 34,
+        "retained": 32,
+        "gained": 3,
+        "lost": 2
+      },
+      "parameter360": {
+        "reference_successes": 33,
+        "retained": 29,
+        "gained": 6,
+        "lost": 4
+      }
+    },
+    {
+      "row_count": 50,
+      "successes": 34,
+      "suite": "libero_object",
+      "task_id": 1,
+      "MT": {
+        "reference_successes": 36,
+        "retained": 31,
+        "gained": 3,
+        "lost": 5
+      },
+      "T2340": {
+        "reference_successes": 45,
+        "retained": 31,
+        "gained": 3,
+        "lost": 14
+      },
+      "experience135": {
+        "reference_successes": 29,
+        "retained": 23,
+        "gained": 11,
+        "lost": 6
+      },
+      "parameter180": {
+        "reference_successes": 29,
+        "retained": 25,
+        "gained": 9,
+        "lost": 4
+      },
+      "parameter360": {
+        "reference_successes": 26,
+        "retained": 22,
+        "gained": 12,
+        "lost": 4
+      }
+    },
+    {
+      "row_count": 50,
+      "successes": 10,
+      "suite": "libero_object",
+      "task_id": 6,
+      "MT": {
+        "reference_successes": 10,
+        "retained": 8,
+        "gained": 2,
+        "lost": 2
+      },
+      "T2340": {
+        "reference_successes": 5,
+        "retained": 2,
+        "gained": 8,
+        "lost": 3
+      },
+      "experience135": {
+        "reference_successes": 14,
+        "retained": 8,
+        "gained": 2,
+        "lost": 6
+      },
+      "parameter180": {
+        "reference_successes": 10,
+        "retained": 3,
+        "gained": 7,
+        "lost": 7
+      },
+      "parameter360": {
+        "reference_successes": 7,
+        "retained": 2,
+        "gained": 8,
+        "lost": 5
+      }
+    },
+    {
+      "row_count": 50,
+      "successes": 39,
+      "suite": "libero_spatial",
+      "task_id": 3,
+      "MT": {
+        "reference_successes": 41,
+        "retained": 36,
+        "gained": 3,
+        "lost": 5
+      },
+      "T2340": {
+        "reference_successes": 45,
+        "retained": 37,
+        "gained": 2,
+        "lost": 8
+      },
+      "experience135": {
+        "reference_successes": 38,
+        "retained": 33,
+        "gained": 6,
+        "lost": 5
+      },
+      "parameter180": {
+        "reference_successes": 39,
+        "retained": 36,
+        "gained": 3,
+        "lost": 3
+      },
+      "parameter360": {
+        "reference_successes": 36,
+        "retained": 34,
+        "gained": 5,
+        "lost": 2
+      }
+    },
+    {
+      "row_count": 50,
+      "successes": 5,
+      "suite": "libero_spatial",
+      "task_id": 6,
+      "MT": {
+        "reference_successes": 7,
+        "retained": 4,
+        "gained": 1,
+        "lost": 3
+      },
+      "T2340": {
+        "reference_successes": 6,
+        "retained": 2,
+        "gained": 3,
+        "lost": 4
+      },
+      "experience135": {
+        "reference_successes": 2,
+        "retained": 1,
+        "gained": 4,
+        "lost": 1
+      },
+      "parameter180": {
+        "reference_successes": 0,
+        "retained": 0,
+        "gained": 5,
+        "lost": 0
+      },
+      "parameter360": {
+        "reference_successes": 1,
+        "retained": 0,
+        "gained": 5,
+        "lost": 1
+      }
+    }
+  ],
+  "paired_uncertainty": {
+    "MT": {
+      "delta_percentage_points": -2.5,
+      "paired_normal_CI95_percentage_points": [
+        -5.6660977559134205,
+        0.6660977559134202
+      ],
+      "discordant_rows": 42,
+      "McNemar_exact_two_sided_p": 0.16414940178310644,
+      "descriptive_development_panel_not_independent_confirmation": true
+    },
+    "T2340": {
+      "delta_percentage_points": -4.5,
+      "paired_normal_CI95_percentage_points": [
+        -9.022623022096802,
+        0.022623022096800866
+      ],
+      "discordant_rows": 86,
+      "McNemar_exact_two_sided_p": 0.06615259746138928,
+      "descriptive_development_panel_not_independent_confirmation": true
+    },
+    "experience135": {
+      "delta_percentage_points": 2.0,
+      "paired_normal_CI95_percentage_points": [
+        -1.9759507039197555,
+        5.9759507039197555
+      ],
+      "discordant_rows": 66,
+      "McNemar_exact_two_sided_p": 0.38905246054779274,
+      "descriptive_development_panel_not_independent_confirmation": true
+    },
+    "parameter180": {
+      "delta_percentage_points": 4.0,
+      "paired_normal_CI95_percentage_points": [
+        0.22477338428538857,
+        7.775226615714612
+      ],
+      "discordant_rows": 60,
+      "McNemar_exact_two_sided_p": 0.051893895928921435,
+      "descriptive_development_panel_not_independent_confirmation": true
+    },
+    "parameter360": {
+      "delta_percentage_points": 3.25,
+      "paired_normal_CI95_percentage_points": [
+        -0.7481567940739897,
+        7.24815679407399
+      ],
+      "discordant_rows": 67,
+      "McNemar_exact_two_sided_p": 0.14207137942637568,
+      "descriptive_development_panel_not_independent_confirmation": true
+    }
+  },
+  "training_function": {
+    "1-9": {
+      "events": 36,
+      "events_with_success_support": 24,
+      "keep_MSE_mean_on_supported_events": 0.0,
+      "keep_MSE_median_on_supported_events": 0.0,
+      "keep_nonzero_events": 0,
+      "paired_FM_mean": 0.0,
+      "paired_FM_nonzero_events": 0,
+      "scope": "actual same-own-observation/noise full-ten-step first5x7 MSE; no final/held counterfactual forward"
+    },
+    "172-180": {
+      "events": 36,
+      "events_with_success_support": 25,
+      "keep_MSE_mean_on_supported_events": 3.5855178138279088e-09,
+      "keep_MSE_median_on_supported_events": 0.0,
+      "keep_nonzero_events": 2,
+      "paired_FM_mean": -3.854941057726238e-19,
+      "paired_FM_nonzero_events": 2,
+      "scope": "actual same-own-observation/noise full-ten-step first5x7 MSE; no final/held counterfactual forward"
+    },
+    "352-360": {
+      "events": 36,
+      "events_with_success_support": 26,
+      "keep_MSE_mean_on_supported_events": 2.042566918631111e-07,
+      "keep_MSE_median_on_supported_events": 1.857287799111873e-07,
+      "keep_nonzero_events": 21,
+      "paired_FM_mean": 3.983104039756975e-07,
+      "paired_FM_nonzero_events": 11,
+      "scope": "actual same-own-observation/noise full-ten-step first5x7 MSE; no final/held counterfactual forward"
+    }
+  }
+}

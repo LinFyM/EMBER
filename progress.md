@@ -1,3 +1,9 @@
+## 2026-10-17 Pro交接材料已整理并本地核验；研究实施保持停止
+
+Owner要求整理完整当前情况、要求、推理与证据并交一份详细prompt，由Pro独立思考。已形成[统一入口](docs/review_materials/20261017_pro_reassessment/README.md)、Owner要求、完整推理/错误回顾、证据地图、代码索引和可直接转交的完整prompt。两个只读子任务分别审计旧方法与近期source/practice原件，main独占整理与Git。当前没有在途实验或active design，不再自行选择后继架构。
+
+复用已在Git的旧专家/实验包，新增146项现有证据或投影、34组40,552条结果记录（含重复引用参照和选点池，不能计为独立新增episode）。已逐行核成败/配对字段/原policy-noise序列、分组/任务计数，解析JSON/JSONL/CSV并检查阅读链接；29组67个历史代码提交及目标路径可从科学基点b55226ed/原origin到达。原大权重/数据/连续H不上传，已退役训练状态与未实施controls明确列出。当前准备推送并从GitHub回读；远端可访问性尚不以本地核验代替。0新科研实现、模型forward、环境/GPU、采集、训练或评测。
+
 ## 2026-10-17 共享A0主张复核：T已有对应机制，覆盖与信用缺口不能由几何补齐
 
 Owner明确先不开实验，并指出共享A在T中已经采用。main亲读T原设计§1–4、实际TargetWrite/最终A-B消费者和原selected controls/Test记录；T的共享A同时受执行、key与公共native信用，rank128、训练后B0非零，与当前rank8/source恒等实践起点分开。correct161/公共103/other150及真实得失保留，历史Test115/MT121的旧scene配对限制保持；只复核历史汇总，未读取新Test样本或新增评测/标签。

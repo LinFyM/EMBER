@@ -1,0 +1,962 @@
+[
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 4,
+    "condition": {
+      "condition_id": "train_task000_demo43",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "pick up the black bowl between the plate and the ramekin and place it on the plate",
+      "seed": 6924217510202537008,
+      "suite": "libero_spatial",
+      "suite_task_id": 0,
+      "task_id": 0,
+      "teacher_demo": 43
+    },
+    "metrics": {
+      "actual_J": 4,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 6924217510202537008,
+      "data_endpoints": 4,
+      "edit_seconds": 7.593780781608075,
+      "environment_steps": 793,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 690,
+      "full_video_equivalent_reads": 4.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 20,
+      "null_full_video_equivalent_reads": 4.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 80,
+      "null_replay_reads": 4,
+      "null_replay_seconds": 0.19218052085489035,
+      "physical_slot_batch": 16,
+      "practice_success": true,
+      "read_frames": 80,
+      "rereads": 3,
+      "resets": 4,
+      "state_reuses": 0,
+      "stop_reason": "own_success",
+      "tail_environment_steps": 0,
+      "teacher_feature_cost": {
+        "cache_hits": 3,
+        "frames": 20,
+        "seconds": 1.2784590451046824
+      },
+      "teacher_frames": 20,
+      "wall_seconds": 467.6655688919127
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 1,
+    "condition": {
+      "condition_id": "train_task000_demo29",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "pick up the black bowl between the plate and the ramekin and place it on the plate",
+      "seed": 4080522335680729777,
+      "suite": "libero_spatial",
+      "suite_task_id": 0,
+      "task_id": 0,
+      "teacher_demo": 29
+    },
+    "metrics": {
+      "actual_J": 1,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 4080522335680729777,
+      "data_endpoints": 1,
+      "edit_seconds": 4.81646517617628,
+      "environment_steps": 80,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 0,
+      "full_video_equivalent_reads": 1.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 26,
+      "null_full_video_equivalent_reads": 1.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 26,
+      "null_replay_reads": 1,
+      "null_replay_seconds": 0.051002145279198885,
+      "physical_slot_batch": 16,
+      "practice_success": true,
+      "read_frames": 26,
+      "rereads": 0,
+      "resets": 1,
+      "state_reuses": 0,
+      "stop_reason": "own_success",
+      "tail_environment_steps": 0,
+      "teacher_feature_cost": {
+        "cache_hits": 0,
+        "frames": 26,
+        "seconds": 1.5671196579933167
+      },
+      "teacher_frames": 26,
+      "wall_seconds": 79.39026771020144
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 5,
+    "condition": {
+      "condition_id": "train_task001_demo02",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "pick up the black bowl next to the ramekin and place it on the plate",
+      "seed": 890308588471144454,
+      "suite": "libero_spatial",
+      "suite_task_id": 1,
+      "task_id": 1,
+      "teacher_demo": 2
+    },
+    "metrics": {
+      "actual_J": 5,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 890308588471144454,
+      "data_endpoints": 5,
+      "edit_seconds": 10.455767879728228,
+      "environment_steps": 1024,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 1024,
+      "full_video_equivalent_reads": 5.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 29,
+      "null_full_video_equivalent_reads": 5.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 145,
+      "null_replay_reads": 5,
+      "null_replay_seconds": 0.3278468050993979,
+      "physical_slot_batch": 16,
+      "practice_success": false,
+      "read_frames": 145,
+      "rereads": 4,
+      "resets": 5,
+      "state_reuses": 0,
+      "stop_reason": "step_budget",
+      "tail_environment_steps": 104,
+      "teacher_feature_cost": {
+        "cache_hits": 4,
+        "frames": 29,
+        "seconds": 1.7272968390025198
+      },
+      "teacher_frames": 29,
+      "wall_seconds": 556.0188872180879
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 5,
+    "condition": {
+      "condition_id": "train_task001_demo23",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "pick up the black bowl next to the ramekin and place it on the plate",
+      "seed": 534493208351935272,
+      "suite": "libero_spatial",
+      "suite_task_id": 1,
+      "task_id": 1,
+      "teacher_demo": 23
+    },
+    "metrics": {
+      "actual_J": 5,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 534493208351935272,
+      "data_endpoints": 5,
+      "edit_seconds": 6.08731105318293,
+      "environment_steps": 1024,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 1024,
+      "full_video_equivalent_reads": 5.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 23,
+      "null_full_video_equivalent_reads": 5.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 115,
+      "null_replay_reads": 5,
+      "null_replay_seconds": 0.2548473998904228,
+      "physical_slot_batch": 16,
+      "practice_success": false,
+      "read_frames": 115,
+      "rereads": 4,
+      "resets": 5,
+      "state_reuses": 0,
+      "stop_reason": "step_budget",
+      "tail_environment_steps": 104,
+      "teacher_feature_cost": {
+        "cache_hits": 4,
+        "frames": 23,
+        "seconds": 1.4441815000027418
+      },
+      "teacher_frames": 23,
+      "wall_seconds": 592.141538484022
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 2,
+    "condition": {
+      "condition_id": "train_task012_demo20",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "pick up the salad dressing and place it in the basket",
+      "seed": 2841281987161992435,
+      "suite": "libero_object",
+      "suite_task_id": 2,
+      "task_id": 12,
+      "teacher_demo": 20
+    },
+    "metrics": {
+      "actual_J": 2,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 2841281987161992435,
+      "data_endpoints": 2,
+      "edit_seconds": 9.831663336139172,
+      "environment_steps": 412,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 290,
+      "full_video_equivalent_reads": 2.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 30,
+      "null_full_video_equivalent_reads": 2.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 60,
+      "null_replay_reads": 2,
+      "null_replay_seconds": 0.13444481790065765,
+      "physical_slot_batch": 16,
+      "practice_success": true,
+      "read_frames": 60,
+      "rereads": 1,
+      "resets": 2,
+      "state_reuses": 0,
+      "stop_reason": "own_success",
+      "tail_environment_steps": 0,
+      "teacher_feature_cost": {
+        "cache_hits": 1,
+        "frames": 30,
+        "seconds": 1.8243704931810498
+      },
+      "teacher_frames": 30,
+      "wall_seconds": 307.93322083959356
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 3,
+    "condition": {
+      "condition_id": "train_task012_demo38",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "pick up the salad dressing and place it in the basket",
+      "seed": 7175193220830616277,
+      "suite": "libero_object",
+      "suite_task_id": 2,
+      "task_id": 12,
+      "teacher_demo": 38
+    },
+    "metrics": {
+      "actual_J": 3,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 7175193220830616277,
+      "data_endpoints": 3,
+      "edit_seconds": 5.111613258719444,
+      "environment_steps": 789,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 580,
+      "full_video_equivalent_reads": 3.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 28,
+      "null_full_video_equivalent_reads": 3.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 84,
+      "null_replay_reads": 3,
+      "null_replay_seconds": 0.16442605899646878,
+      "physical_slot_batch": 16,
+      "practice_success": true,
+      "read_frames": 84,
+      "rereads": 2,
+      "resets": 3,
+      "state_reuses": 0,
+      "stop_reason": "own_success",
+      "tail_environment_steps": 0,
+      "teacher_feature_cost": {
+        "cache_hits": 2,
+        "frames": 28,
+        "seconds": 1.6996697271242738
+      },
+      "teacher_frames": 28,
+      "wall_seconds": 492.40234811836854
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 1,
+    "condition": {
+      "condition_id": "train_task013_demo16",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "pick up the bbq sauce and place it in the basket",
+      "seed": 3966998008403705539,
+      "suite": "libero_object",
+      "suite_task_id": 3,
+      "task_id": 13,
+      "teacher_demo": 16
+    },
+    "metrics": {
+      "actual_J": 1,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 3966998008403705539,
+      "data_endpoints": 1,
+      "edit_seconds": 4.128999417647719,
+      "environment_steps": 156,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 0,
+      "full_video_equivalent_reads": 1.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 29,
+      "null_full_video_equivalent_reads": 1.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 29,
+      "null_replay_reads": 1,
+      "null_replay_seconds": 0.05934563325718045,
+      "physical_slot_batch": 16,
+      "practice_success": true,
+      "read_frames": 29,
+      "rereads": 0,
+      "resets": 1,
+      "state_reuses": 0,
+      "stop_reason": "own_success",
+      "tail_environment_steps": 0,
+      "teacher_feature_cost": {
+        "cache_hits": 0,
+        "frames": 29,
+        "seconds": 1.8308253758586943
+      },
+      "teacher_frames": 29,
+      "wall_seconds": 42.829427029937506
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 1,
+    "condition": {
+      "condition_id": "train_task013_demo04",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "pick up the bbq sauce and place it in the basket",
+      "seed": 7598108602604346676,
+      "suite": "libero_object",
+      "suite_task_id": 3,
+      "task_id": 13,
+      "teacher_demo": 4
+    },
+    "metrics": {
+      "actual_J": 1,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 7598108602604346676,
+      "data_endpoints": 1,
+      "edit_seconds": 8.47771831182763,
+      "environment_steps": 153,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 0,
+      "full_video_equivalent_reads": 1.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 34,
+      "null_full_video_equivalent_reads": 1.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 34,
+      "null_replay_reads": 1,
+      "null_replay_seconds": 0.05986606189981103,
+      "physical_slot_batch": 16,
+      "practice_success": true,
+      "read_frames": 34,
+      "rereads": 0,
+      "resets": 1,
+      "state_reuses": 0,
+      "stop_reason": "own_success",
+      "tail_environment_steps": 0,
+      "teacher_feature_cost": {
+        "cache_hits": 0,
+        "frames": 34,
+        "seconds": 1.9450012650340796
+      },
+      "teacher_frames": 34,
+      "wall_seconds": 115.58544899476692
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 2,
+    "condition": {
+      "condition_id": "train_task020_demo15",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "open the middle drawer of the cabinet",
+      "seed": 872386931264928312,
+      "suite": "libero_goal",
+      "suite_task_id": 0,
+      "task_id": 20,
+      "teacher_demo": 15
+    },
+    "metrics": {
+      "actual_J": 2,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 872386931264928312,
+      "data_endpoints": 2,
+      "edit_seconds": 6.328430127352476,
+      "environment_steps": 436,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 310,
+      "full_video_equivalent_reads": 2.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 29,
+      "null_full_video_equivalent_reads": 2.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 58,
+      "null_replay_reads": 2,
+      "null_replay_seconds": 0.1137803248129785,
+      "physical_slot_batch": 16,
+      "practice_success": true,
+      "read_frames": 58,
+      "rereads": 1,
+      "resets": 2,
+      "state_reuses": 0,
+      "stop_reason": "own_success",
+      "tail_environment_steps": 0,
+      "teacher_feature_cost": {
+        "cache_hits": 1,
+        "frames": 29,
+        "seconds": 1.46871319366619
+      },
+      "teacher_frames": 29,
+      "wall_seconds": 81.21116639487445
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 1,
+    "condition": {
+      "condition_id": "train_task020_demo06",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "open the middle drawer of the cabinet",
+      "seed": 171097992781210188,
+      "suite": "libero_goal",
+      "suite_task_id": 0,
+      "task_id": 20,
+      "teacher_demo": 6
+    },
+    "metrics": {
+      "actual_J": 1,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 171097992781210188,
+      "data_endpoints": 1,
+      "edit_seconds": 7.239590662065893,
+      "environment_steps": 133,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 0,
+      "full_video_equivalent_reads": 1.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 25,
+      "null_full_video_equivalent_reads": 1.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 25,
+      "null_replay_reads": 1,
+      "null_replay_seconds": 0.058352772146463394,
+      "physical_slot_batch": 16,
+      "practice_success": true,
+      "read_frames": 25,
+      "rereads": 0,
+      "resets": 1,
+      "state_reuses": 0,
+      "stop_reason": "own_success",
+      "tail_environment_steps": 0,
+      "teacher_feature_cost": {
+        "cache_hits": 0,
+        "frames": 25,
+        "seconds": 1.4732977449893951
+      },
+      "teacher_frames": 25,
+      "wall_seconds": 156.0062102722004
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 1,
+    "condition": {
+      "condition_id": "train_task021_demo12",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "put the bowl on the stove",
+      "seed": 1540940661428800853,
+      "suite": "libero_goal",
+      "suite_task_id": 1,
+      "task_id": 21,
+      "teacher_demo": 12
+    },
+    "metrics": {
+      "actual_J": 1,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 1540940661428800853,
+      "data_endpoints": 1,
+      "edit_seconds": 4.838531360030174,
+      "environment_steps": 105,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 0,
+      "full_video_equivalent_reads": 1.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 23,
+      "null_full_video_equivalent_reads": 1.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 23,
+      "null_replay_reads": 1,
+      "null_replay_seconds": 0.055551018100231886,
+      "physical_slot_batch": 16,
+      "practice_success": true,
+      "read_frames": 23,
+      "rereads": 0,
+      "resets": 1,
+      "state_reuses": 0,
+      "stop_reason": "own_success",
+      "tail_environment_steps": 0,
+      "teacher_feature_cost": {
+        "cache_hits": 0,
+        "frames": 23,
+        "seconds": 1.4146840199828148
+      },
+      "teacher_frames": 23,
+      "wall_seconds": 60.01118613965809
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 1,
+    "condition": {
+      "condition_id": "train_task021_demo01",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "put the bowl on the stove",
+      "seed": 768501151828837268,
+      "suite": "libero_goal",
+      "suite_task_id": 1,
+      "task_id": 21,
+      "teacher_demo": 1
+    },
+    "metrics": {
+      "actual_J": 1,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 768501151828837268,
+      "data_endpoints": 1,
+      "edit_seconds": 2.508761112112552,
+      "environment_steps": 98,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 0,
+      "full_video_equivalent_reads": 1.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 21,
+      "null_full_video_equivalent_reads": 1.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 21,
+      "null_replay_reads": 1,
+      "null_replay_seconds": 0.051746420096606016,
+      "physical_slot_batch": 16,
+      "practice_success": true,
+      "read_frames": 21,
+      "rereads": 0,
+      "resets": 1,
+      "state_reuses": 0,
+      "stop_reason": "own_success",
+      "tail_environment_steps": 0,
+      "teacher_feature_cost": {
+        "cache_hits": 0,
+        "frames": 21,
+        "seconds": 1.2598619130440056
+      },
+      "teacher_frames": 21,
+      "wall_seconds": 30.00995290884748
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 1,
+    "condition": {
+      "condition_id": "train_task032_demo16",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "turn on the stove and put the moka pot on it",
+      "seed": 5529156815968025877,
+      "suite": "libero_10",
+      "suite_task_id": 2,
+      "task_id": 32,
+      "teacher_demo": 16
+    },
+    "metrics": {
+      "actual_J": 1,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 5529156815968025877,
+      "data_endpoints": 1,
+      "edit_seconds": 6.762013617902994,
+      "environment_steps": 288,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 0,
+      "full_video_equivalent_reads": 1.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 60,
+      "null_full_video_equivalent_reads": 1.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 60,
+      "null_replay_reads": 1,
+      "null_replay_seconds": 0.07055517984554172,
+      "physical_slot_batch": 16,
+      "practice_success": true,
+      "read_frames": 60,
+      "rereads": 0,
+      "resets": 1,
+      "state_reuses": 0,
+      "stop_reason": "own_success",
+      "tail_environment_steps": 0,
+      "teacher_feature_cost": {
+        "cache_hits": 0,
+        "frames": 60,
+        "seconds": 3.664130295626819
+      },
+      "teacher_frames": 60,
+      "wall_seconds": 267.8734694728628
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 2,
+    "condition": {
+      "condition_id": "train_task032_demo44",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "turn on the stove and put the moka pot on it",
+      "seed": 7869098524525970334,
+      "suite": "libero_10",
+      "suite_task_id": 2,
+      "task_id": 32,
+      "teacher_demo": 44
+    },
+    "metrics": {
+      "actual_J": 2,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 7869098524525970334,
+      "data_endpoints": 2,
+      "edit_seconds": 5.996254287660122,
+      "environment_steps": 1024,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 1024,
+      "full_video_equivalent_reads": 2.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 52,
+      "null_full_video_equivalent_reads": 2.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 104,
+      "null_replay_reads": 2,
+      "null_replay_seconds": 0.13573848083615303,
+      "physical_slot_batch": 16,
+      "practice_success": false,
+      "read_frames": 104,
+      "rereads": 1,
+      "resets": 2,
+      "state_reuses": 0,
+      "stop_reason": "step_budget",
+      "tail_environment_steps": 494,
+      "teacher_feature_cost": {
+        "cache_hits": 1,
+        "frames": 52,
+        "seconds": 3.1922128084115684
+      },
+      "teacher_frames": 52,
+      "wall_seconds": 548.8794917617925
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 2,
+    "condition": {
+      "condition_id": "train_task034_demo32",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "put the white mug on the left plate and put the yellow and white mug on the right plate",
+      "seed": 4253547299527638177,
+      "suite": "libero_10",
+      "suite_task_id": 4,
+      "task_id": 34,
+      "teacher_demo": 32
+    },
+    "metrics": {
+      "actual_J": 2,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 4253547299527638177,
+      "data_endpoints": 2,
+      "edit_seconds": 10.698779080528766,
+      "environment_steps": 1024,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 1024,
+      "full_video_equivalent_reads": 2.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 49,
+      "null_full_video_equivalent_reads": 2.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 98,
+      "null_replay_reads": 2,
+      "null_replay_seconds": 0.14663660386577249,
+      "physical_slot_batch": 16,
+      "practice_success": false,
+      "read_frames": 98,
+      "rereads": 1,
+      "resets": 2,
+      "state_reuses": 0,
+      "stop_reason": "step_budget",
+      "tail_environment_steps": 494,
+      "teacher_feature_cost": {
+        "cache_hits": 1,
+        "frames": 49,
+        "seconds": 2.347137977834791
+      },
+      "teacher_frames": 49,
+      "wall_seconds": 254.71795816579834
+    }
+  },
+  {
+    "source": "runs/parameter_conditioned_compiler_20261009/evaluation/train180/results.json",
+    "actual_J": 1,
+    "condition": {
+      "condition_id": "train_task034_demo09",
+      "final_state_ids": [
+        32,
+        33,
+        34
+      ],
+      "language": "put the white mug on the left plate and put the yellow and white mug on the right plate",
+      "seed": 2920481410882894305,
+      "suite": "libero_10",
+      "suite_task_id": 4,
+      "task_id": 34,
+      "teacher_demo": 9
+    },
+    "metrics": {
+      "actual_J": 1,
+      "behavior_actor_uses_teaching": true,
+      "condition_seed": 2920481410882894305,
+      "data_endpoints": 1,
+      "edit_seconds": 1.4967589690349996,
+      "environment_steps": 430,
+      "excluded_states": [
+        32,
+        33,
+        34
+      ],
+      "failure_environment_steps": 0,
+      "full_video_equivalent_reads": 1.0,
+      "initial_reads": 1,
+      "masked_experience": false,
+      "native_teacher_encoded_frames": 0,
+      "null_full_video_equivalent_reads": 1.0,
+      "null_native_feature_cost": {
+        "cache_hit": true,
+        "native_encoded_frames": 0,
+        "native_encoder_seconds": 0.0
+      },
+      "null_read_frames": 54,
+      "null_replay_reads": 1,
+      "null_replay_seconds": 0.0690836631692946,
+      "physical_slot_batch": 16,
+      "practice_success": true,
+      "read_frames": 54,
+      "rereads": 0,
+      "resets": 1,
+      "state_reuses": 0,
+      "stop_reason": "own_success",
+      "tail_environment_steps": 0,
+      "teacher_feature_cost": {
+        "cache_hits": 1,
+        "frames": 0,
+        "seconds": 0.0
+      },
+      "teacher_frames": 54,
+      "wall_seconds": 297.75010638684034
+    }
+  }
+]

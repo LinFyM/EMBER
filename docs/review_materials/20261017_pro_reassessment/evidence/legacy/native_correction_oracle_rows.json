@@ -1,0 +1,3074 @@
+[
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 16,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 17,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 18,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 0,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 2,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 4,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 7,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_spatial",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 2,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 4,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 6,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 8,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_object",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 0,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 1,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 2,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 8,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_goal",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 4,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": true,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 5,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": true
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 6,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 7,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 8,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 32,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 33,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 34,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  },
+  {
+    "suite": "libero_10",
+    "task_id": 9,
+    "init_state_id": 35,
+    "teacher_demo": 19,
+    "source_success": false,
+    "oracle_success": false
+  }
+]

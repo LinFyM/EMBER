@@ -1,0 +1,26 @@
+{
+  "observed_UTC": "2026-10-12T18:10:29.644191+00:00",
+  "source": "runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/refinement_from8883_20261013/analysis/post_completion_gpu_preflight.json",
+  "bad_nodes": {},
+  "ymdai_GPU_processes": [],
+  "no_new_GPU_launch": true,
+  "new_root_bytes_before_CPU_result": 337231872,
+  "peak_admission_bytes_estimate": 8589934592,
+  "result_consumer_command": [
+    "env",
+    "PYTHONDONTWRITEBYTECODE=1",
+    "PYTHONPATH=repo/src",
+    "repo/.venv/bin/python",
+    "runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/refinement_from8883_20261013/analysis/completion_20261013/consume.py"
+  ],
+  "earlier_CPU_attempt": {
+    "error": "ModuleNotFoundError: ember; command lacked PYTHONPATH",
+    "model_forward": 0,
+    "episode": 0,
+    "GPU_hours": 0,
+    "canonical_source_change": false
+  },
+  "owner_callback_accepted_and_actual_turn_received": true,
+  "original8883_threshold_and_old864_stop_unchanged": true,
+  "pending_main_CPU_original_archived": "runs/video_guided_proposal_writer_20261012/frozen_context_decoder_fit/query16_terminal8883/analysis/main_scientific_readout/terminal8883_fixed_choice_bound.json"
+}

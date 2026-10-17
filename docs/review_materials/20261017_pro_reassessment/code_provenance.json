@@ -1,0 +1,582 @@
+{
+  "repository": "LinFyM/EMBER",
+  "verified_ancestor_of": "b55226ed",
+  "groups": [
+    {
+      "family": "T2340",
+      "roles": "训练 e2afbfd7；物化 cb535c1e",
+      "commits": [
+        {
+          "commit": "e2afbfd7c997e3f792921600608efa2fa3c1b25a",
+          "path": "src/ember/operator_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/e2afbfd7c997e3f792921600608efa2fa3c1b25a/src/ember/operator_writer",
+          "subject": "Resume control1890 into bounded 2340 window"
+        },
+        {
+          "commit": "cb535c1e477dc48ca90fc8d2a11225c0f8847173",
+          "path": "src/ember/operator_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/cb535c1e477dc48ca90fc8d2a11225c0f8847173/src/ember/operator_writer",
+          "subject": "Merge remote-tracking branch 'origin/main' into codex/demonstration-transfer"
+        }
+      ]
+    },
+    {
+      "family": "Native Correction / oracle",
+      "roles": "Writer；真实纠正构造；oracle读取",
+      "commits": [
+        {
+          "commit": "09c1a0d6c15d48ea103b8bd5bac807d3251c088d",
+          "path": "src/ember/writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/09c1a0d6c15d48ea103b8bd5bac807d3251c088d/src/ember/writer",
+          "subject": "Freeze native correction Writer learning nodes after admitted profile"
+        },
+        {
+          "commit": "f39d594fa6e1e014288dbcef2d91495400af38c3",
+          "path": "src/ember/writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/f39d594fa6e1e014288dbcef2d91495400af38c3/src/ember/writer",
+          "subject": "Register native corrective transfer oracle and bounded diagnostic"
+        },
+        {
+          "commit": "2c0a8dde5b3f123d67343c97ce2dc2f131f5be0a",
+          "path": "src/ember/writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/2c0a8dde5b3f123d67343c97ce2dc2f131f5be0a/src/ember/writer",
+          "subject": "Admit sealed native correction oracles to the canonical training evaluator"
+        }
+      ]
+    },
+    {
+      "family": "LocalField",
+      "roles": "学习；物化/评估",
+      "commits": [
+        {
+          "commit": "50dafb05dfd2f7a395be7dfd8a7212b92e775beb",
+          "path": "src/ember/writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/50dafb05dfd2f7a395be7dfd8a7212b92e775beb/src/ember/writer",
+          "subject": "Freeze local field joint learning nodes after full native profile"
+        },
+        {
+          "commit": "46aaf22d2ed5badf8db2e66475875a9608d70c2f",
+          "path": "src/ember/writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/46aaf22d2ed5badf8db2e66475875a9608d70c2f/src/ember/writer",
+          "subject": "docs: record completed paired local field training"
+        }
+      ]
+    },
+    {
+      "family": "ProcessPullback",
+      "roles": "学习；读取；free-q/free-AB；learned outlet",
+      "commits": [
+        {
+          "commit": "d6defa69fa851a5d6c5e1092139e5b008f0a09dd",
+          "path": "src/ember/writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/d6defa69fa851a5d6c5e1092139e5b008f0a09dd/src/ember/writer",
+          "subject": "Schedule checkpoint-boundary evaluation within the registered fresh900 run"
+        },
+        {
+          "commit": "f5d9db78fb7b36fd6d1b4afd8118dc32f1811c2e",
+          "path": "src/ember/writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/f5d9db78fb7b36fd6d1b4afd8118dc32f1811c2e/src/ember/writer",
+          "subject": "Record four-GPU evaluation preparation and deferred auxiliary decision"
+        },
+        {
+          "commit": "adc31a15bfc63f4494b92baab789991c2782261d",
+          "path": "src/ember/writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/adc31a15bfc63f4494b92baab789991c2782261d/src/ember/writer",
+          "subject": "Add frozen terminal900 video controls with strict paired provenance"
+        },
+        {
+          "commit": "85ecfd18c13becbafab4d3d3a7e674955e20070f",
+          "path": "src/ember/writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/85ecfd18c13becbafab4d3d3a7e674955e20070f/src/ember/writer",
+          "subject": "Use executable formal profile registration labels"
+        }
+      ]
+    },
+    {
+      "family": "G/F",
+      "roles": "关系监督、真实功能信用",
+      "commits": [
+        {
+          "commit": "85614d9c1a146d27dbb36fb833b700037fe4b63e",
+          "path": "src/ember/relation_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/85614d9c1a146d27dbb36fb833b700037fe4b63e/src/ember/relation_writer",
+          "subject": "Toggle only actual PEFT tuner layers for the source feedback query"
+        }
+      ]
+    },
+    {
+      "family": "P/Q",
+      "roles": "匹配预测/GT关系学习；读取",
+      "commits": [
+        {
+          "commit": "84ef79c14d644acda28554d9d365b4ed3b603207",
+          "path": "src/ember/relation_input_compilation.py",
+          "url": "https://github.com/LinFyM/EMBER/blob/84ef79c14d644acda28554d9d365b4ed3b603207/src/ember/relation_input_compilation.py",
+          "subject": "experiment: match predicted and GT relation compilation inputs"
+        },
+        {
+          "commit": "e79504062abc433bb9daedcfef52c7355640adfc",
+          "path": "src/ember/relation_input_compilation.py",
+          "url": "https://github.com/LinFyM/EMBER/blob/e79504062abc433bb9daedcfef52c7355640adfc/src/ember/relation_input_compilation.py",
+          "subject": "docs: record canonical P/Q readout consumer validation"
+        }
+      ]
+    },
+    {
+      "family": "Experience",
+      "roles": "共享学习；formal恢复",
+      "commits": [
+        {
+          "commit": "76c136a308d3a1814483ad3d3ac7b6a820b5cb2a",
+          "path": "src/ember/experience_compiler",
+          "url": "https://github.com/LinFyM/EMBER/tree/76c136a308d3a1814483ad3d3ac7b6a820b5cb2a/src/ember/experience_compiler",
+          "subject": "Account for cold teaching features and register actual full-loop profile admission"
+        },
+        {
+          "commit": "517e0c20024dd52bc85598621b35e135457cc49c",
+          "path": "src/ember/experience_compiler",
+          "url": "https://github.com/LinFyM/EMBER/tree/517e0c20024dd52bc85598621b35e135457cc49c/src/ember/experience_compiler",
+          "subject": "Repair validation teacher admission and resume the completed batch at formal evaluation"
+        }
+      ]
+    },
+    {
+      "family": "Parameter",
+      "roles": "共享学习/原formal；360补读",
+      "commits": [
+        {
+          "commit": "db53422e3a2e56048b606dc62f5558045de71221",
+          "path": "src/ember/experience_compiler",
+          "url": "https://github.com/LinFyM/EMBER/tree/db53422e3a2e56048b606dc62f5558045de71221/src/ember/experience_compiler",
+          "subject": "Balance partial collection recovery without empty GPU workers"
+        },
+        {
+          "commit": "f0c49811cda3fcc1a55190d7b46164daef101935",
+          "path": "src/ember/experience_compiler",
+          "url": "https://github.com/LinFyM/EMBER/tree/f0c49811cda3fcc1a55190d7b46164daef101935/src/ember/experience_compiler",
+          "subject": "Record actual condition storage growth at save events"
+        }
+      ]
+    },
+    {
+      "family": "同incoming诊断",
+      "roles": "闭环；函数读取",
+      "commits": [
+        {
+          "commit": "c381f17855aef3d364dfd8a4e0aa70937461d93b",
+          "path": "src/ember/experience_compiler",
+          "url": "https://github.com/LinFyM/EMBER/tree/c381f17855aef3d364dfd8a4e0aa70937461d93b/src/ember/experience_compiler",
+          "subject": "Add fixed incoming edit diagnostic and compact native behavior capture"
+        },
+        {
+          "commit": "6204e02774204e702e9899cdb3a6e692befad94f",
+          "path": "src/ember/experience_compiler",
+          "url": "https://github.com/LinFyM/EMBER/tree/6204e02774204e702e9899cdb3a6e692befad94f/src/ember/experience_compiler",
+          "subject": "Consolidate native readout consumer checks and record diagnostic ownership"
+        }
+      ]
+    },
+    {
+      "family": "FR",
+      "roles": "实施；实施修正；正式学习；formal恢复",
+      "commits": [
+        {
+          "commit": "0791d711a13736140dd67f1a1157379f4b70375d",
+          "path": "src/ember/experience_compiler",
+          "url": "https://github.com/LinFyM/EMBER/tree/0791d711a13736140dd67f1a1157379f4b70375d/src/ember/experience_compiler",
+          "subject": "Batch native revision credit across independent conditions"
+        },
+        {
+          "commit": "6e4aac1db34ac82aa6e2c2473f2c710a178b44b3",
+          "path": "src/ember/experience_compiler",
+          "url": "https://github.com/LinFyM/EMBER/tree/6e4aac1db34ac82aa6e2c2473f2c710a178b44b3/src/ember/experience_compiler",
+          "subject": "Record native consumer evidence and preserved FM2 continuation"
+        },
+        {
+          "commit": "6b2b4ffd3a8bdd37515bf1cc1d4301e9e090eb67",
+          "path": "src/ember/experience_compiler",
+          "url": "https://github.com/LinFyM/EMBER/tree/6b2b4ffd3a8bdd37515bf1cc1d4301e9e090eb67/src/ember/experience_compiler",
+          "subject": "Retire unused compiler panel rebuilding helpers"
+        },
+        {
+          "commit": "8d7cab05218ba45788a198fe207ff1633ef7f37c",
+          "path": "src/ember/experience_compiler",
+          "url": "https://github.com/LinFyM/EMBER/tree/8d7cab05218ba45788a198fe207ff1633ef7f37c/src/ember/experience_compiler",
+          "subject": "docs: preserve FM360 and resume formal after cache du rename race"
+        }
+      ]
+    },
+    {
+      "family": "G24849/视频证据",
+      "roles": "endpoint学习；视频对照读取",
+      "commits": [
+        {
+          "commit": "7179d581299f3b3be069847e3084989b874431df",
+          "path": "src/ember/proposal_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/7179d581299f3b3be069847e3084989b874431df/src/ember/proposal_writer",
+          "subject": "Resume full frozen endpoint state for bounded refinement and terminal query16"
+        },
+        {
+          "commit": "c60bd4941394ffaef3946962800fb22ba21f10c1",
+          "path": "src/ember/proposal_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/c60bd4941394ffaef3946962800fb22ba21f10c1/src/ember/proposal_writer",
+          "subject": "Reference original bootstrap until actual saved-endpoint practice completes"
+        }
+      ]
+    },
+    {
+      "family": "完整Writer RL9",
+      "roles": "初始学习；恢复/正式读取",
+      "commits": [
+        {
+          "commit": "1bcb2601a682505fcb8557db5d2d81fdd79a623c",
+          "path": "src/ember/proposal_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/1bcb2601a682505fcb8557db5d2d81fdd79a623c/src/ember/proposal_writer",
+          "subject": "Consume the registered native response microbatch in the actual Runtime"
+        },
+        {
+          "commit": "6f6a8aa60f604f19c966d45ef632d63276d2cc02",
+          "path": "src/ember/proposal_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/6f6a8aa60f604f19c966d45ef632d63276d2cc02/src/ember/proposal_writer",
+          "subject": "Wait for real collection outside NCCL before the shared Actor update"
+        }
+      ]
+    },
+    {
+      "family": "selector B18",
+      "roles": "初始合同；实际物理调度修正",
+      "commits": [
+        {
+          "commit": "060485bab50126c167f0e60d39c7adf49e9f9791",
+          "path": "src/ember/proposal_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/060485bab50126c167f0e60d39c7adf49e9f9791/src/ember/proposal_writer",
+          "subject": "fix: validate reused formal MT state by original video ordinal"
+        },
+        {
+          "commit": "bf2c88b0d6412ea7660a4e5674fc02c667abb5f0",
+          "path": "src/ember/proposal_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/bf2c88b0d6412ea7660a4e5674fc02c667abb5f0/src/ember/proposal_writer",
+          "subject": "fix: integrate measured selector physical scheduling"
+        }
+      ]
+    },
+    {
+      "family": "G功能、D/C",
+      "roles": "同目标operator/native学习；实际交互预算修复",
+      "commits": [
+        {
+          "commit": "92d0a234f484623a4cb3ae23981f499f3a5d20cd",
+          "path": "src/ember/proposal_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/92d0a234f484623a4cb3ae23981f499f3a5d20cd/src/ember/proposal_writer",
+          "subject": "feat: learn same-target operator and native functions on matched G streams"
+        },
+        {
+          "commit": "045ee6028de0308213db5364c90f3dcef9385374",
+          "path": "src/ember/proposal_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/045ee6028de0308213db5364c90f3dcef9385374/src/ember/proposal_writer",
+          "subject": "fix: separate live rollouts from failed interaction budget"
+        }
+      ]
+    },
+    {
+      "family": "D相邻144",
+      "roles": "保留失败前缀后的正式恢复/读取",
+      "commits": [
+        {
+          "commit": "51924861b1a8b8ac71915c5f9654d7ed54bc49b5",
+          "path": "src/ember/proposal_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/51924861b1a8b8ac71915c5f9654d7ed54bc49b5/src/ember/proposal_writer",
+          "subject": "Preserve D failed prefix and resume physical frame32 without scientific change"
+        }
+      ]
+    },
+    {
+      "family": "图像/H与独立价值",
+      "roles": "H编译训练；H继续；价值结果发布修复",
+      "commits": [
+        {
+          "commit": "7f05e3e6982444a339f052929ee589f0a916706c",
+          "path": "src/ember/proposal_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/7f05e3e6982444a339f052929ee589f0a916706c/src/ember/proposal_writer",
+          "subject": "Restore exact MT experience without execution hidden in fresh matched image compilers"
+        },
+        {
+          "commit": "778ff8eae613f0a3c9a03cc63a0553b2604266a8",
+          "path": "src/ember/proposal_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/778ff8eae613f0a3c9a03cc63a0553b2604266a8/src/ember/proposal_writer",
+          "subject": "Resume matched image history compiler under bounded optimization contract"
+        },
+        {
+          "commit": "c683ff03aef0a8424e4d5980f5896d06fe981535",
+          "path": "src/ember/proposal_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/c683ff03aef0a8424e4d5980f5896d06fe981535/src/ember/proposal_writer",
+          "subject": "Publish independent value results through immutable role-scoped queue shards"
+        }
+      ]
+    },
+    {
+      "family": "接管可行性",
+      "roles": "原始合同与接管实验",
+      "commits": [
+        {
+          "commit": "8e718be23d60b5b9f4dbf99f0c62940e7b57d47b",
+          "path": "src/ember/proposal_writer",
+          "url": "https://github.com/LinFyM/EMBER/tree/8e718be23d60b5b9f4dbf99f0c62940e7b57d47b/src/ember/proposal_writer",
+          "subject": "diagnostic: integrate explicit failed-start accounting"
+        }
+      ]
+    },
+    {
+      "family": "更早phase消费者",
+      "roles": "实际learner-state aggregation，不与10/13接管实现混同",
+      "commits": [
+        {
+          "commit": "966353e309def2ba7b3c71f291a471c3a87fd0c2",
+          "path": "src/ember/functional_adaptation",
+          "url": "https://github.com/LinFyM/EMBER/tree/966353e309def2ba7b3c71f291a471c3a87fd0c2/src/ember/functional_adaptation",
+          "subject": "feat: aggregate phase decoder learner states"
+        }
+      ]
+    },
+    {
+      "family": "N4/N16",
+      "roles": "原信用路径；schema修正；官方MT读取；N16正式；N16恢复",
+      "commits": [
+        {
+          "commit": "8801e701bd642ebd33eec534d8ff3e6901ef1b0d",
+          "path": "src/ember/video_effect",
+          "url": "https://github.com/LinFyM/EMBER/tree/8801e701bd642ebd33eec534d8ff3e6901ef1b0d/src/ember/video_effect",
+          "subject": "Use registered next branch wave to exploit actual device headroom"
+        },
+        {
+          "commit": "afe6acc5901da7e69860192794247f2f4b6e6f08",
+          "path": "src/ember/video_effect",
+          "url": "https://github.com/LinFyM/EMBER/tree/afe6acc5901da7e69860192794247f2f4b6e6f08/src/ember/video_effect",
+          "subject": "Import known joint-schema histories and recompile independent conditions canonically"
+        },
+        {
+          "commit": "a986e7b2371e6e1eb1a90456a217bf3ecf56c469",
+          "path": "src/ember/video_effect",
+          "url": "https://github.com/LinFyM/EMBER/tree/a986e7b2371e6e1eb1a90456a217bf3ecf56c469/src/ember/video_effect",
+          "subject": "Restore settling protocol and bound fixed MT replacement readout"
+        },
+        {
+          "commit": "7a146fc090a5e2373f322c5764d84b34779995a7",
+          "path": "src/ember/video_effect",
+          "url": "https://github.com/LinFyM/EMBER/tree/7a146fc090a5e2373f322c5764d84b34779995a7/src/ember/video_effect",
+          "subject": "feat: widen canonical video-effect practice support to sixteen initial states"
+        },
+        {
+          "commit": "78d4f73e4ddd162f9f074b456145ea0041a5a302",
+          "path": "src/ember/video_effect",
+          "url": "https://github.com/LinFyM/EMBER/tree/78d4f73e4ddd162f9f074b456145ea0041a5a302/src/ember/video_effect",
+          "subject": "docs: register bounded N16 interruption recovery and new routing"
+        }
+      ]
+    },
+    {
+      "family": "source/r8 reference",
+      "roles": "原窗口；后继训练；最终四项继续/读取",
+      "commits": [
+        {
+          "commit": "44c0ee3a5de19313aafc77f8236377a61fa81fb5",
+          "path": "src/ember/reference",
+          "url": "https://github.com/LinFyM/EMBER/tree/44c0ee3a5de19313aafc77f8236377a61fa81fb5/src/ember/reference",
+          "subject": "Reap callback failures and retain unreaped startup cost intervals"
+        },
+        {
+          "commit": "0f8e00230968920e2b2bf544008b22d076b04d00",
+          "path": "src/ember/reference",
+          "url": "https://github.com/LinFyM/EMBER/tree/0f8e00230968920e2b2bf544008b22d076b04d00/src/ember/reference",
+          "subject": "Link downstream control-space preparation without expanding reference scope"
+        },
+        {
+          "commit": "355396b016a2132688288980388e81951af774e6",
+          "path": "src/ember/reference",
+          "url": "https://github.com/LinFyM/EMBER/tree/355396b016a2132688288980388e81951af774e6/src/ember/reference",
+          "subject": "Bound final four source references to preserved 1920 continuations"
+        }
+      ]
+    },
+    {
+      "family": "source E/D144",
+      "roles": "训练；物化/读取",
+      "commits": [
+        {
+          "commit": "eb78edd7e68a6fd518906011df0f994541896037",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/eb78edd7e68a6fd518906011df0f994541896037/src/ember/control_space",
+          "subject": "Preserve startup parser failure and its nonzero cost before engineering resume"
+        },
+        {
+          "commit": "39d21bf0f831f03e41a920c1061f776e49ae943d",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/39d21bf0f831f03e41a920c1061f776e49ae943d/src/ember/control_space",
+          "subject": "Preserve completed144 and diagnose native identity materialization before readout-only resume"
+        }
+      ]
+    },
+    {
+      "family": "source operator1170 / linear64",
+      "roles": "operator训练/读取；linear fit/读取",
+      "commits": [
+        {
+          "commit": "528a57b19d57c6889f2cce13c582e12057fffc21",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/528a57b19d57c6889f2cce13c582e12057fffc21/src/ember/control_space",
+          "subject": "Bound immutable factor cache by the complete271 point bank"
+        },
+        {
+          "commit": "c99502cf0478dd047f7e845dc49166b48d25c520",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/c99502cf0478dd047f7e845dc49166b48d25c520/src/ember/control_space",
+          "subject": "Record one-fit linear basis authority, consumers and active-path retirement"
+        }
+      ]
+    },
+    {
+      "family": "video initial Reader",
+      "roles": "初始特征/117前；117后训练及两点读取",
+      "commits": [
+        {
+          "commit": "93e27530a2cbd4f75ebabd95e229a938b8189be8",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/93e27530a2cbd4f75ebabd95e229a938b8189be8/src/ember/control_space",
+          "subject": "Validate the first useful full-task cycle before the wider feature dependency"
+        },
+        {
+          "commit": "5568f80ce23cd4ecccff352dba3c9622c309da8b",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/5568f80ce23cd4ecccff352dba3c9622c309da8b/src/ember/control_space",
+          "subject": "Keep completed profiling history separate from the single pipeline state machine"
+        }
+      ]
+    },
+    {
+      "family": "source actor / fixed Reader",
+      "roles": "Actor及恢复；固定Reader编译",
+      "commits": [
+        {
+          "commit": "81c859e689f281fc2beec5accc5b9a7b3af81a51",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/81c859e689f281fc2beec5accc5b9a7b3af81a51/src/ember/control_space",
+          "subject": "Record first feedback cycle scope, actual consumer evidence and resource lifecycle"
+        },
+        {
+          "commit": "7a149c3e979abfcadfe645f78721eb75e2bd618a",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/7a149c3e979abfcadfe645f78721eb75e2bd618a/src/ember/control_space",
+          "subject": "Record first useful feedback update and measured archive bottleneck"
+        },
+        {
+          "commit": "56c4dc99b1be4f6d3517f49dc8f8dbd3a20d26aa",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/56c4dc99b1be4f6d3517f49dc8f8dbd3a20d26aa/src/ember/control_space",
+          "subject": "Implement isolated incumbent compilation with full raw history and bounded atomic recovery"
+        }
+      ]
+    },
+    {
+      "family": "functional反馈",
+      "roles": "共享学习；formal最终读取",
+      "commits": [
+        {
+          "commit": "0b9b8080421a05ec32fd979d591f76707c91b4df",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/0b9b8080421a05ec32fd979d591f76707c91b4df/src/ember/control_space",
+          "subject": "Implement frozen-space experience-conditioned functional revision"
+        },
+        {
+          "commit": "26c284eeb7075bd5e7a0f2551f5abbdd735569df",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/26c284eeb7075bd5e7a0f2551f5abbdd735569df/src/ember/control_space",
+          "subject": "Resume named validation pending panels with bounded physical waves"
+        }
+      ]
+    },
+    {
+      "family": "task-exclusion",
+      "roles": "fit；首次/最终读取",
+      "commits": [
+        {
+          "commit": "537c676387cb4bde68de017772c48d5c32009c59",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/537c676387cb4bde68de017772c48d5c32009c59/src/ember/control_space",
+          "subject": "Validate scoped fit and paired readout consumers and retire completed history path"
+        },
+        {
+          "commit": "56491f827d979a6f8b92274b2d4e4622e257b979",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/56491f827d979a6f8b92274b2d4e4622e257b979/src/ember/control_space",
+          "subject": "Read saved exclusion row paths through Path interface"
+        },
+        {
+          "commit": "08437d2331c3a00dbc60e160a89ec8e70a0e9c72",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/08437d2331c3a00dbc60e160a89ec8e70a0e9c72/src/ember/control_space",
+          "subject": "Treat live unlaunched GPU cap refusal as admission failure"
+        }
+      ]
+    },
+    {
+      "family": "source-W生成",
+      "roles": "静态输入；训练；物化/读取",
+      "commits": [
+        {
+          "commit": "c7ef1372838250614544703e60f00fe1f2c351ca",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/c7ef1372838250614544703e60f00fe1f2c351ca/src/ember/control_space",
+          "subject": "Carry useful generator geometry into endpoint materialization"
+        },
+        {
+          "commit": "8395a9e1224cf93912de62ca276d6bf7733e5025",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/8395a9e1224cf93912de62ca276d6bf7733e5025/src/ember/control_space",
+          "subject": "Keep original preparation failure and registered legacy cache provenance"
+        },
+        {
+          "commit": "fb3eb80e9f3bfb22a00da53a87fdc4bd21c1efb7",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/fb3eb80e9f3bfb22a00da53a87fdc4bd21c1efb7/src/ember/control_space",
+          "subject": "Preserve full training and exact endpoint during readout interface repair"
+        },
+        {
+          "commit": "bd0e37b060f6f5b55413a31556a0599d3a7888ed",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/bd0e37b060f6f5b55413a31556a0599d3a7888ed/src/ember/control_space",
+          "subject": "Use real queue completion consumers and adopt all published valid shards before GPU"
+        }
+      ]
+    },
+    {
+      "family": "source-W factor credit",
+      "roles": "pair学习；相邻1090读取",
+      "commits": [
+        {
+          "commit": "eadfe958ff17b0d1b4e1ff10265c234883b243b0",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/eadfe958ff17b0d1b4e1ff10265c234883b243b0/src/ember/control_space",
+          "subject": "Implement fixed-architecture paired factor credit window"
+        },
+        {
+          "commit": "d963e8c34199bd71a90b00ecf1843853c15cb086",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/d963e8c34199bd71a90b00ecf1843853c15cb086/src/ember/control_space",
+          "subject": "Read saved factor-credit1090 through the canonical evaluation owner"
+        }
+      ]
+    },
+    {
+      "family": "native首写180",
+      "roles": "完整因子collective修复后的正式来源",
+      "commits": [
+        {
+          "commit": "cbd445a6313661b07ae6fed00d271a9b2e67b4ef",
+          "path": "src/ember/control_space",
+          "url": "https://github.com/LinFyM/EMBER/tree/cbd445a6313661b07ae6fed00d271a9b2e67b4ef/src/ember/control_space",
+          "subject": "Align complete-factor collective dtype and preserve both pre-FM engineering failures"
+        }
+      ]
+    }
+  ]
+}

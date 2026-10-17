@@ -1,0 +1,97 @@
+{
+  "MT_loaded": false,
+  "checkpoints": [
+    900,
+    1800
+  ],
+  "feature_schema": "ember_source_image_prefix_features_v1",
+  "frozen_basis": "runs/source_policy_space_compiler_20261015/control_linear64_seed7/basis/state.pt",
+  "limits": {
+    "FM_queries": 201600,
+    "added_peak_GiB": 192,
+    "auxiliary_video_reads": 7200,
+    "control_steps": 679360,
+    "dummy_steps": 19680,
+    "engineering_extra_attempts": 16,
+    "optimizer_updates": 1800,
+    "original_video_reads": 7200,
+    "physical_submissions": 1968,
+    "total_steps": 699040
+  },
+  "linear_root": "runs/source_policy_space_compiler_20261015/control_linear64_seed7",
+  "logical": {
+    "FM_queries_per_task": 28,
+    "auxiliary_per_task": 1,
+    "tasks": 4
+  },
+  "loss": {
+    "FM": 1.0,
+    "producer_code_MSE": 0.1
+  },
+  "operator_root": "runs/source_policy_space_compiler_20261015/control_operator_from144_seed7",
+  "optimizer": {
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eps": 1e-08,
+    "lr": 0.0001,
+    "weight_decay": 0.0001
+  },
+  "panels": "runs/source_policy_space_compiler_20261015/video_initial_seed7/panels.json",
+  "parent_root": "runs/source_policy_space_compiler_20261015/control_space_seed7",
+  "phase": "video_initial",
+  "practice_interactions": 0,
+  "reference_root": "runs/source_policy_space_compiler_20261015/reference_seed7",
+  "schema": "ember_source_video_initial_r8_seed7_v1",
+  "seed": 7,
+  "source_frozen": true,
+  "tasks": [
+    0,
+    1,
+    12,
+    13,
+    20,
+    21,
+    32,
+    34,
+    2,
+    4,
+    5,
+    7,
+    14,
+    15,
+    17,
+    19,
+    22,
+    25,
+    28,
+    29,
+    35,
+    36,
+    37,
+    38,
+    42,
+    43,
+    51,
+    55,
+    56,
+    62,
+    64,
+    73,
+    95,
+    96,
+    97,
+    101
+  ],
+  "validation": [
+    3,
+    6,
+    11,
+    16,
+    23,
+    26,
+    31,
+    39
+  ]
+}

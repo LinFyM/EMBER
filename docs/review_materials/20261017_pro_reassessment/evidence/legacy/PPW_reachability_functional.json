@@ -1,0 +1,3565 @@
+{
+  "schema": "ember_reachability_full24_functional_readout_v1",
+  "run_contract": "repo/runs/analysis/process_pullback_writer_20260914/causal_diagnostics/reachability/run_contract.json",
+  "tasks": 24,
+  "all_arms_usable": true,
+  "formal_writer_training": false,
+  "checkpoint_selection": false,
+  "gradient_data": "train-only support episodes17..41",
+  "heldout_use": "final readouts only",
+  "metric_space": "official source-normalized seven action coordinates",
+  "comparison_sign": "positive means lower candidate error; full10 first5 correspond to the executed chunk prefix",
+  "capacity_claim": "bounded fits and parameterization comparison; no certified optimum or mathematical upper bound",
+  "comparisons": {
+    "writer900_to_free_q": {
+      "support": {
+        "fm": {
+          "task_balanced_mean": 0.021266113986105967,
+          "positive_tasks": 24,
+          "task_cluster_bootstrap_95ci": [
+            0.015306929577006181,
+            0.027653968581095485
+          ]
+        },
+        "full10_mse": {
+          "task_balanced_mean": 0.02839820321919267,
+          "positive_tasks": 23,
+          "task_cluster_bootstrap_95ci": [
+            0.016440842555218976,
+            0.04162669850598417
+          ]
+        },
+        "full10_first5_mse": {
+          "task_balanced_mean": 0.017470612185545683,
+          "positive_tasks": 22,
+          "task_cluster_bootstrap_95ci": [
+            0.0095528723298154,
+            0.027030845147524546
+          ]
+        },
+        "full10_later45_mse": {
+          "task_balanced_mean": 0.029612380000709006,
+          "positive_tasks": 23,
+          "task_cluster_bootstrap_95ci": [
+            0.0166444842454283,
+            0.043830766108965045
+          ]
+        },
+        "full10_unpadded_mse": {
+          "task_balanced_mean": 0.03153227454554544,
+          "positive_tasks": 23,
+          "task_cluster_bootstrap_95ci": [
+            0.01888795866796819,
+            0.04559263127055448
+          ]
+        }
+      },
+      "heldout": {
+        "fm": {
+          "task_balanced_mean": 0.01179977972060442,
+          "positive_tasks": 22,
+          "task_cluster_bootstrap_95ci": [
+            0.008044966012433482,
+            0.015697524579203065
+          ]
+        },
+        "full10_mse": {
+          "task_balanced_mean": 0.02175330306049943,
+          "positive_tasks": 18,
+          "task_cluster_bootstrap_95ci": [
+            0.010484779088112621,
+            0.03481655242497788
+          ]
+        },
+        "full10_first5_mse": {
+          "task_balanced_mean": 0.015029077429594575,
+          "positive_tasks": 18,
+          "task_cluster_bootstrap_95ci": [
+            0.004766161430607746,
+            0.030057959986320142
+          ]
+        },
+        "full10_later45_mse": {
+          "task_balanced_mean": 0.02250043924171109,
+          "positive_tasks": 18,
+          "task_cluster_bootstrap_95ci": [
+            0.010617865006493022,
+            0.03590761809194167
+          ]
+        },
+        "full10_unpadded_mse": {
+          "task_balanced_mean": 0.02429822075876943,
+          "positive_tasks": 19,
+          "task_cluster_bootstrap_95ci": [
+            0.013205847011633087,
+            0.03702761471718363
+          ]
+        }
+      }
+    },
+    "writer900_to_free_lora": {
+      "support": {
+        "fm": {
+          "task_balanced_mean": 0.08909338743736346,
+          "positive_tasks": 24,
+          "task_cluster_bootstrap_95ci": [
+            0.07587273640771551,
+            0.10329982215480411
+          ]
+        },
+        "full10_mse": {
+          "task_balanced_mean": 0.05870292465336546,
+          "positive_tasks": 24,
+          "task_cluster_bootstrap_95ci": [
+            0.0414422104152053,
+            0.07824336963744719
+          ]
+        },
+        "full10_first5_mse": {
+          "task_balanced_mean": 0.047370180328492766,
+          "positive_tasks": 23,
+          "task_cluster_bootstrap_95ci": [
+            0.03258642549477787,
+            0.0636002287289232
+          ]
+        },
+        "full10_later45_mse": {
+          "task_balanced_mean": 0.05996211846724021,
+          "positive_tasks": 24,
+          "task_cluster_bootstrap_95ci": [
+            0.0418801605746846,
+            0.0803050161377386
+          ]
+        },
+        "full10_unpadded_mse": {
+          "task_balanced_mean": 0.06578848552791823,
+          "positive_tasks": 24,
+          "task_cluster_bootstrap_95ci": [
+            0.04639169073229334,
+            0.08741927808406653
+          ]
+        }
+      },
+      "heldout": {
+        "fm": {
+          "task_balanced_mean": 0.0241909958422184,
+          "positive_tasks": 21,
+          "task_cluster_bootstrap_95ci": [
+            0.01567062543181237,
+            0.032992192009502694
+          ]
+        },
+        "full10_mse": {
+          "task_balanced_mean": 0.03141016376381532,
+          "positive_tasks": 22,
+          "task_cluster_bootstrap_95ci": [
+            0.018988869986362455,
+            0.0457809453551562
+          ]
+        },
+        "full10_first5_mse": {
+          "task_balanced_mean": 0.026323198795013106,
+          "positive_tasks": 18,
+          "task_cluster_bootstrap_95ci": [
+            0.010415152473388043,
+            0.04603716877969391
+          ]
+        },
+        "full10_later45_mse": {
+          "task_balanced_mean": 0.031975382093682246,
+          "positive_tasks": 20,
+          "task_cluster_bootstrap_95ci": [
+            0.019207488127867187,
+            0.04644800269056785
+          ]
+        },
+        "full10_unpadded_mse": {
+          "task_balanced_mean": 0.03619187569706409,
+          "positive_tasks": 23,
+          "task_cluster_bootstrap_95ci": [
+            0.022820932605281046,
+            0.05163800123772476
+          ]
+        }
+      }
+    },
+    "free_q_to_free_lora": {
+      "support": {
+        "fm": {
+          "task_balanced_mean": 0.0678272734512575,
+          "positive_tasks": 24,
+          "task_cluster_bootstrap_95ci": [
+            0.05869771978662659,
+            0.0779837214834212
+          ]
+        },
+        "full10_mse": {
+          "task_balanced_mean": 0.030304721434172798,
+          "positive_tasks": 22,
+          "task_cluster_bootstrap_95ci": [
+            0.01934290594576876,
+            0.04519861472802342
+          ]
+        },
+        "full10_first5_mse": {
+          "task_balanced_mean": 0.029899568142947076,
+          "positive_tasks": 23,
+          "task_cluster_bootstrap_95ci": [
+            0.020570960878054923,
+            0.04034104064115689
+          ]
+        },
+        "full10_later45_mse": {
+          "task_balanced_mean": 0.030349738466531204,
+          "positive_tasks": 22,
+          "task_cluster_bootstrap_95ci": [
+            0.01905618904098949,
+            0.04599943185544921
+          ]
+        },
+        "full10_unpadded_mse": {
+          "task_balanced_mean": 0.03425621098237278,
+          "positive_tasks": 24,
+          "task_cluster_bootstrap_95ci": [
+            0.02170612707917083,
+            0.051301382825421724
+          ]
+        }
+      },
+      "heldout": {
+        "fm": {
+          "task_balanced_mean": 0.01239121612161398,
+          "positive_tasks": 18,
+          "task_cluster_bootstrap_95ci": [
+            0.006115373643115162,
+            0.01956566646501109
+          ]
+        },
+        "full10_mse": {
+          "task_balanced_mean": 0.009656860703315886,
+          "positive_tasks": 16,
+          "task_cluster_bootstrap_95ci": [
+            0.001147021348695488,
+            0.019703612630138426
+          ]
+        },
+        "full10_first5_mse": {
+          "task_balanced_mean": 0.011294121365418528,
+          "positive_tasks": 18,
+          "task_cluster_bootstrap_95ci": [
+            0.0016249580384808085,
+            0.0216553768979095
+          ]
+        },
+        "full10_later45_mse": {
+          "task_balanced_mean": 0.009474942851971153,
+          "positive_tasks": 17,
+          "task_cluster_bootstrap_95ci": [
+            0.000639928520709006,
+            0.019830376108253868
+          ]
+        },
+        "full10_unpadded_mse": {
+          "task_balanced_mean": 0.011893654938294662,
+          "positive_tasks": 15,
+          "task_cluster_bootstrap_95ci": [
+            0.0028454848000328574,
+            0.02301175238038941
+          ]
+        }
+      }
+    }
+  },
+  "optimizers": {
+    "free_q": {
+      "tasks": 24,
+      "normal_returns": 24,
+      "convergence_certified": false,
+      "closure_calls": [
+        22,
+        36,
+        28,
+        34,
+        27,
+        17,
+        42,
+        37,
+        27,
+        40,
+        28,
+        27,
+        38,
+        31,
+        34,
+        25,
+        40,
+        10,
+        17,
+        10,
+        36,
+        26,
+        27,
+        35
+      ],
+      "n_iter": [
+        12,
+        32,
+        22,
+        32,
+        22,
+        12,
+        23,
+        24,
+        21,
+        32,
+        22,
+        22,
+        20,
+        24,
+        32,
+        21,
+        32,
+        4,
+        13,
+        5,
+        23,
+        20,
+        15,
+        32
+      ],
+      "soft_max_eval_exceeded_tasks": 0,
+      "total_fit_seconds": 7079.43677914422
+    },
+    "free_lora": {
+      "tasks": 24,
+      "normal_returns": 24,
+      "convergence_certified": false,
+      "closure_calls": [
+        35,
+        34,
+        35,
+        36,
+        34,
+        35,
+        34,
+        36,
+        35,
+        35,
+        35,
+        34,
+        33,
+        35,
+        35,
+        35,
+        34,
+        35,
+        34,
+        34,
+        36,
+        33,
+        35,
+        36
+      ],
+      "n_iter": [
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32,
+        32
+      ],
+      "soft_max_eval_exceeded_tasks": 0,
+      "total_fit_seconds": 7992.833804059308
+    }
+  },
+  "per_task": [
+    {
+      "task": 0,
+      "suite": "libero_spatial",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.260267436504364,
+            "full10_mse": 0.2863035168680267,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.18455230363311867,
+            "full10_later45_mse": 0.29760920722746087,
+            "full10_unpadded_mse": 0.32716749092799235,
+            "full10_first5_per_action_dimension": [
+              0.21804776148356791,
+              0.0579957054316925,
+              0.20190282536658538,
+              0.09347010024335714,
+              0.16336876197850186,
+              0.0452114022555581,
+              0.5118695686725647
+            ],
+            "padding_fraction": 0.25531250000000005
+          },
+          "heldout": {
+            "fm": 0.25533391907811165,
+            "full10_mse": 0.25870193625759036,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1439168685155517,
+            "full10_later45_mse": 0.2714558326733724,
+            "full10_unpadded_mse": 0.29213464101838305,
+            "full10_first5_per_action_dimension": [
+              0.18994830547874766,
+              0.05302928889835888,
+              0.1687305542776513,
+              0.07419630803916448,
+              0.18310854007642902,
+              0.055836808501052236,
+              0.28256827433745524
+            ],
+            "padding_fraction": 0.23781249999999998
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.21733293496072292,
+            "full10_mse": 0.21755230064621028,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.16924919462770016,
+            "full10_later45_mse": 0.22291931242604474,
+            "full10_unpadded_mse": 0.23765641553705635,
+            "full10_first5_per_action_dimension": [
+              0.22366342858290786,
+              0.041564046843992716,
+              0.17604596132988143,
+              0.10111239961738708,
+              0.1620080066562714,
+              0.03995770031691308,
+              0.44039281904654537
+            ],
+            "padding_fraction": 0.25531250000000005
+          },
+          "heldout": {
+            "fm": 0.23078127391636372,
+            "full10_mse": 0.21105554496257012,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.15735371570381534,
+            "full10_later45_mse": 0.21702241488020954,
+            "full10_unpadded_mse": 0.24627170228586887,
+            "full10_first5_per_action_dimension": [
+              0.22063479735239308,
+              0.04844309111886995,
+              0.18934069055602937,
+              0.07602347070156015,
+              0.21304759369922244,
+              0.04689824060736326,
+              0.30708812589126583
+            ],
+            "padding_fraction": 0.23781249999999998
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.08780150208622217,
+            "full10_mse": 0.22184528205062687,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1534134770645224,
+            "full10_later45_mse": 0.22944881593797173,
+            "full10_unpadded_mse": 0.23629295855742982,
+            "full10_first5_per_action_dimension": [
+              0.155049950902839,
+              0.041295608895775784,
+              0.12322515001136987,
+              0.11143051861903715,
+              0.19220419653862017,
+              0.037767219031412724,
+              0.4129216954526007
+            ],
+            "padding_fraction": 0.25531250000000005
+          },
+          "heldout": {
+            "fm": 0.203646807000041,
+            "full10_mse": 0.24045292760937637,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.152034382579794,
+            "full10_later45_mse": 0.25027721039044104,
+            "full10_unpadded_mse": 0.2692171082060966,
+            "full10_first5_per_action_dimension": [
+              0.1911910768346423,
+              0.05167265024604013,
+              0.16189270081275522,
+              0.10920501830874005,
+              0.1861844995251676,
+              0.04346404837156238,
+              0.32063068395964667
+            ],
+            "padding_fraction": 0.23781249999999998
+          }
+        }
+      }
+    },
+    {
+      "task": 2,
+      "suite": "libero_spatial",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.1078143659979105,
+            "full10_mse": 0.12046497532669508,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11104149457427498,
+            "full10_later45_mse": 0.12151202874363062,
+            "full10_unpadded_mse": 0.1426721087477642,
+            "full10_first5_per_action_dimension": [
+              0.09633570450190682,
+              0.0252759142506254,
+              0.06944477254165779,
+              0.031631992177993146,
+              0.1627634902137443,
+              0.03276310529714375,
+              0.35907548303685277
+            ],
+            "padding_fraction": 0.21999999999999997
+          },
+          "heldout": {
+            "fm": 0.1198172215372324,
+            "full10_mse": 0.12596192548853052,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07632794577846018,
+            "full10_later45_mse": 0.1314768121229828,
+            "full10_unpadded_mse": 0.1415773363565998,
+            "full10_first5_per_action_dimension": [
+              0.10686478600221368,
+              0.037974902668135344,
+              0.07637594997919148,
+              0.03002214264582076,
+              0.08970941985507437,
+              0.015095421265355121,
+              0.17825299803342845
+            ],
+            "padding_fraction": 0.23859375000000005
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.09431536961346865,
+            "full10_mse": 0.09990410719158241,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.10150820808544471,
+            "full10_later45_mse": 0.09972587375893105,
+            "full10_unpadded_mse": 0.11757052041045417,
+            "full10_first5_per_action_dimension": [
+              0.08914799957958296,
+              0.025123091814711673,
+              0.060295897632005505,
+              0.032436258225593685,
+              0.1488483676642665,
+              0.032559850143468926,
+              0.3221459915384831
+            ],
+            "padding_fraction": 0.21999999999999997
+          },
+          "heldout": {
+            "fm": 0.11257411632686853,
+            "full10_mse": 0.11716114247697428,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07619626008055752,
+            "full10_later45_mse": 0.12171279607657615,
+            "full10_unpadded_mse": 0.12903093786847752,
+            "full10_first5_per_action_dimension": [
+              0.10974331991912809,
+              0.036705652883384225,
+              0.06536517622025807,
+              0.02825920350034008,
+              0.09746871751460187,
+              0.01466118138306274,
+              0.18117056914312632
+            ],
+            "padding_fraction": 0.23859375000000005
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.04930077353492379,
+            "full10_mse": 0.08678673113867218,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.0937316772249057,
+            "full10_later45_mse": 0.086015070462424,
+            "full10_unpadded_mse": 0.10372325950959946,
+            "full10_first5_per_action_dimension": [
+              0.07257214799872722,
+              0.025494129869949367,
+              0.05213215121331065,
+              0.032050816381317945,
+              0.1221557020807624,
+              0.024500694064942152,
+              0.3272160989653297
+            ],
+            "padding_fraction": 0.21999999999999997
+          },
+          "heldout": {
+            "fm": 0.11918201204389334,
+            "full10_mse": 0.12378826907237599,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.08231155672480053,
+            "full10_later45_mse": 0.12839679266655105,
+            "full10_unpadded_mse": 0.14090096921189796,
+            "full10_first5_per_action_dimension": [
+              0.09866083134094046,
+              0.03619552379383988,
+              0.0785672420805481,
+              0.03535581817418372,
+              0.10010023290999874,
+              0.01499317488974793,
+              0.21230807388434317
+            ],
+            "padding_fraction": 0.23859375000000005
+          }
+        }
+      }
+    },
+    {
+      "task": 4,
+      "suite": "libero_spatial",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.15616846829652786,
+            "full10_mse": 0.1439665537881113,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11457751485728672,
+            "full10_later45_mse": 0.14723200255820293,
+            "full10_unpadded_mse": 0.1587378724197852,
+            "full10_first5_per_action_dimension": [
+              0.1455450397879316,
+              0.0380089157106208,
+              0.08988269654480069,
+              0.03432705274981725,
+              0.16201738719175082,
+              0.07435116989526326,
+              0.25791034212082153
+            ],
+            "padding_fraction": 0.1378125
+          },
+          "heldout": {
+            "fm": 0.15161664690822363,
+            "full10_mse": 0.1334448920747843,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11640147714364395,
+            "full10_later45_mse": 0.13533860484491098,
+            "full10_unpadded_mse": 0.1497807510464542,
+            "full10_first5_per_action_dimension": [
+              0.08567415206488496,
+              0.04954153876454552,
+              0.08689629578402827,
+              0.04270941671726662,
+              0.2036024815448038,
+              0.10584793193593274,
+              0.24053852319404373
+            ],
+            "padding_fraction": 0.21734374999999995
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.14215402491390705,
+            "full10_mse": 0.14080481761463717,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11109450385542284,
+            "full10_later45_mse": 0.14410596358788322,
+            "full10_unpadded_mse": 0.14541592908454604,
+            "full10_first5_per_action_dimension": [
+              0.14829168693580605,
+              0.036525398977448074,
+              0.08727180487158862,
+              0.03381288838512658,
+              0.16396689674501375,
+              0.06908576518383544,
+              0.2387070858891403
+            ],
+            "padding_fraction": 0.1378125
+          },
+          "heldout": {
+            "fm": 0.1458375696092844,
+            "full10_mse": 0.13614521044612085,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11649918763745105,
+            "full10_later45_mse": 0.13832810186930636,
+            "full10_unpadded_mse": 0.13862092239218196,
+            "full10_first5_per_action_dimension": [
+              0.08526667555805217,
+              0.04263115593151041,
+              0.08252150057362889,
+              0.04404580161387905,
+              0.19798057252427034,
+              0.10105744160355974,
+              0.26199116565725367
+            ],
+            "padding_fraction": 0.21734374999999995
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.0705344034358859,
+            "full10_mse": 0.12729497103506815,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.10795765695163563,
+            "full10_later45_mse": 0.1294435614887829,
+            "full10_unpadded_mse": 0.139548988639049,
+            "full10_first5_per_action_dimension": [
+              0.10700174684267949,
+              0.04102878173883128,
+              0.06767063787261797,
+              0.03345816375322762,
+              0.2089859856515192,
+              0.07040873125154985,
+              0.22714955155102307
+            ],
+            "padding_fraction": 0.1378125
+          },
+          "heldout": {
+            "fm": 0.1235606586560607,
+            "full10_mse": 0.1321772490663062,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11592210021325568,
+            "full10_later45_mse": 0.13398337671664515,
+            "full10_unpadded_mse": 0.13977870871070922,
+            "full10_first5_per_action_dimension": [
+              0.07875100887941051,
+              0.051840130023196096,
+              0.0835077956057942,
+              0.03869037717676403,
+              0.21761338143185763,
+              0.07090961494904799,
+              0.2701423934267166
+            ],
+            "padding_fraction": 0.21734374999999995
+          }
+        }
+      }
+    },
+    {
+      "task": 5,
+      "suite": "libero_spatial",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.2042879145592451,
+            "full10_mse": 0.20709496738991148,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.13916171979032568,
+            "full10_later45_mse": 0.21464310601208764,
+            "full10_unpadded_mse": 0.22503953552323044,
+            "full10_first5_per_action_dimension": [
+              0.16799891053877253,
+              0.0766714846891386,
+              0.17292176812981613,
+              0.0818498392054618,
+              0.14063202631837352,
+              0.07778664272506315,
+              0.25627136692565194
+            ],
+            "padding_fraction": 0.24468749999999995
+          },
+          "heldout": {
+            "fm": 0.17998157255351543,
+            "full10_mse": 0.21026286343314515,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.14330017663474223,
+            "full10_later45_mse": 0.21770316196630102,
+            "full10_unpadded_mse": 0.24162129119190826,
+            "full10_first5_per_action_dimension": [
+              0.19994318121334792,
+              0.0516173506176104,
+              0.17512345239157276,
+              0.05992516042190075,
+              0.1658871689592945,
+              0.050960780881996445,
+              0.29964414195747036
+            ],
+            "padding_fraction": 0.22859375000000004
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.16096333228051662,
+            "full10_mse": 0.16620554160725107,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.14688626994230022,
+            "full10_later45_mse": 0.16835212734780114,
+            "full10_unpadded_mse": 0.18156565782411171,
+            "full10_first5_per_action_dimension": [
+              0.20423908159950624,
+              0.08088391012699774,
+              0.14472622183910927,
+              0.07621148834320883,
+              0.1631517467365807,
+              0.07063809231983696,
+              0.2883533486308599
+            ],
+            "padding_fraction": 0.24468749999999995
+          },
+          "heldout": {
+            "fm": 0.15333401039242744,
+            "full10_mse": 0.14902333130749534,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.13885046731998918,
+            "full10_later45_mse": 0.15015364952832935,
+            "full10_unpadded_mse": 0.17389608929061762,
+            "full10_first5_per_action_dimension": [
+              0.13822204298881263,
+              0.04398187102489136,
+              0.12386739096605977,
+              0.059315550667788354,
+              0.19188736468205744,
+              0.05215703916459184,
+              0.3625220117457193
+            ],
+            "padding_fraction": 0.22859375000000004
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.0720546143129468,
+            "full10_mse": 0.1676866302324462,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1292852742729121,
+            "full10_later45_mse": 0.17195344756128336,
+            "full10_unpadded_mse": 0.1655625089642985,
+            "full10_first5_per_action_dimension": [
+              0.12685095822004339,
+              0.04199400083084528,
+              0.14642852484823946,
+              0.10300211491852922,
+              0.1954438848289867,
+              0.05472482912737867,
+              0.23655260713636
+            ],
+            "padding_fraction": 0.24468749999999995
+          },
+          "heldout": {
+            "fm": 0.1440554689615965,
+            "full10_mse": 0.17343486123760116,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.14322356254557467,
+            "full10_later45_mse": 0.17679167220338182,
+            "full10_unpadded_mse": 0.19655942967280618,
+            "full10_first5_per_action_dimension": [
+              0.18020218909962088,
+              0.02252651779019772,
+              0.1775415062362622,
+              0.1053011527277116,
+              0.23033719572252748,
+              0.08102494595260804,
+              0.20563143029009287
+            ],
+            "padding_fraction": 0.22859375000000004
+          }
+        }
+      }
+    },
+    {
+      "task": 7,
+      "suite": "libero_spatial",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.13452282827347517,
+            "full10_mse": 0.11166288705826918,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.09038954009282654,
+            "full10_later45_mse": 0.11402659227665171,
+            "full10_unpadded_mse": 0.11520586046324965,
+            "full10_first5_per_action_dimension": [
+              0.10865699716299926,
+              0.07022046006133321,
+              0.07874114630245548,
+              0.04167036131062649,
+              0.1580132456357554,
+              0.02374555259451729,
+              0.15167901758209812
+            ],
+            "padding_fraction": 0.16281250000000003
+          },
+          "heldout": {
+            "fm": 0.18599219992756844,
+            "full10_mse": 0.18904274118775388,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.16780053954978902,
+            "full10_later45_mse": 0.19140298581419443,
+            "full10_unpadded_mse": 0.19986814858744406,
+            "full10_first5_per_action_dimension": [
+              0.13041669843939818,
+              0.09900852146001352,
+              0.1400168411798961,
+              0.023702219872300485,
+              0.20760431493187634,
+              0.020639547914034283,
+              0.553215633051001
+            ],
+            "padding_fraction": 0.10734374999999996
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.12109235860407352,
+            "full10_mse": 0.10263604167603849,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.08984104808940008,
+            "full10_later45_mse": 0.10405770763010941,
+            "full10_unpadded_mse": 0.10598973180000093,
+            "full10_first5_per_action_dimension": [
+              0.12812021866626305,
+              0.07328066956071272,
+              0.06583135086236885,
+              0.040780354330137394,
+              0.14648587575692418,
+              0.020944127105280118,
+              0.15344474034411354
+            ],
+            "padding_fraction": 0.16281250000000003
+          },
+          "heldout": {
+            "fm": 0.18488990515470505,
+            "full10_mse": 0.18336591818805162,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.18861435377108973,
+            "full10_later45_mse": 0.18278275867882518,
+            "full10_unpadded_mse": 0.19498035265776187,
+            "full10_first5_per_action_dimension": [
+              0.15516607181990646,
+              0.0957701439174683,
+              0.12398982262867383,
+              0.024037275090954536,
+              0.2029769664812699,
+              0.019299640562499987,
+              0.6990605558968516
+            ],
+            "padding_fraction": 0.10734374999999996
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.06682113697752357,
+            "full10_mse": 0.0962999236664212,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.09375049063419837,
+            "full10_later45_mse": 0.09658319400333486,
+            "full10_unpadded_mse": 0.09774387940135967,
+            "full10_first5_per_action_dimension": [
+              0.092215221685561,
+              0.0351247798706537,
+              0.05426001183170006,
+              0.045114387612911214,
+              0.16453833720269334,
+              0.02436753387140092,
+              0.24063316236446788
+            ],
+            "padding_fraction": 0.16281250000000003
+          },
+          "heldout": {
+            "fm": 0.1738721989095211,
+            "full10_mse": 0.17478894037801165,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.18535281575398535,
+            "full10_later45_mse": 0.17361517644734792,
+            "full10_unpadded_mse": 0.1889621583585898,
+            "full10_first5_per_action_dimension": [
+              0.13959311829940022,
+              0.08304771302120295,
+              0.10609398035138151,
+              0.02881338480665609,
+              0.21008482145706298,
+              0.021823329981508398,
+              0.7080133623606814
+            ],
+            "padding_fraction": 0.10734374999999996
+          }
+        }
+      }
+    },
+    {
+      "task": 9,
+      "suite": "libero_spatial",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.18411373533308506,
+            "full10_mse": 0.17663796785117894,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1639037570020842,
+            "full10_later45_mse": 0.178052880167745,
+            "full10_unpadded_mse": 0.20299852260678278,
+            "full10_first5_per_action_dimension": [
+              0.14370934036115585,
+              0.04239272204200257,
+              0.16333785551233057,
+              0.08324985698460416,
+              0.12381918506555974,
+              0.025157359658720867,
+              0.5656599793902123
+            ],
+            "padding_fraction": 0.27125
+          },
+          "heldout": {
+            "fm": 0.16657001711428165,
+            "full10_mse": 0.17251812666544,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.12512841267184308,
+            "full10_later45_mse": 0.17778365044250635,
+            "full10_unpadded_mse": 0.1931954522123217,
+            "full10_first5_per_action_dimension": [
+              0.1730591899081174,
+              0.036498804366002426,
+              0.13285503177229557,
+              0.047963736673676184,
+              0.20743492385251763,
+              0.034117892504539386,
+              0.24396930962575195
+            ],
+            "padding_fraction": 0.18781250000000005
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.16429014690220356,
+            "full10_mse": 0.15248909584587916,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.16311961444989356,
+            "full10_later45_mse": 0.15130792711209975,
+            "full10_unpadded_mse": 0.17512725041533692,
+            "full10_first5_per_action_dimension": [
+              0.16434114336924915,
+              0.03588694791182064,
+              0.1480045172295894,
+              0.07547927842149899,
+              0.1287873516633632,
+              0.023223753427354644,
+              0.5661143091263765
+            ],
+            "padding_fraction": 0.27125
+          },
+          "heldout": {
+            "fm": 0.15298888459801674,
+            "full10_mse": 0.13704606025025703,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11969600615863081,
+            "full10_later45_mse": 0.1389738440382155,
+            "full10_unpadded_mse": 0.15719905028413753,
+            "full10_first5_per_action_dimension": [
+              0.18477188610114964,
+              0.03044629160985568,
+              0.11836673944890996,
+              0.05099647335218464,
+              0.20317342264065602,
+              0.032257731157618916,
+              0.2178594988000393
+            ],
+            "padding_fraction": 0.18781250000000005
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.07207659026607871,
+            "full10_mse": 0.1073328862234681,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.12122323019662483,
+            "full10_later45_mse": 0.10578951467089513,
+            "full10_unpadded_mse": 0.11590492834282619,
+            "full10_first5_per_action_dimension": [
+              0.05588112326918628,
+              0.04201721743369123,
+              0.07836810917755009,
+              0.06790411966242377,
+              0.12189351193042879,
+              0.019084799143653217,
+              0.463413730759439
+            ],
+            "padding_fraction": 0.27125
+          },
+          "heldout": {
+            "fm": 0.12611684296280146,
+            "full10_mse": 0.12576860617729474,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.10703842072103512,
+            "full10_later45_mse": 0.1278497378946569,
+            "full10_unpadded_mse": 0.13197434417939086,
+            "full10_first5_per_action_dimension": [
+              0.113173138234958,
+              0.03611654931272336,
+              0.10109381508381221,
+              0.06151992993758766,
+              0.20631943876944198,
+              0.02894510511797016,
+              0.20210096859075088
+            ],
+            "padding_fraction": 0.18781250000000005
+          }
+        }
+      }
+    },
+    {
+      "task": 12,
+      "suite": "libero_object",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.10869995690882206,
+            "full10_mse": 0.11208311782716912,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.16030821453745203,
+            "full10_later45_mse": 0.1067247737482488,
+            "full10_unpadded_mse": 0.1304473928517507,
+            "full10_first5_per_action_dimension": [
+              0.14399113632805488,
+              0.09319824670925522,
+              0.18766685841625075,
+              0.05253715111935118,
+              0.08758351474205016,
+              0.019342748890418107,
+              0.5378378455567816
+            ],
+            "padding_fraction": 0.21343749999999995
+          },
+          "heldout": {
+            "fm": 0.10497210454195738,
+            "full10_mse": 0.10551710683903974,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11423922532426158,
+            "full10_later45_mse": 0.104547982562904,
+            "full10_unpadded_mse": 0.1218924516066684,
+            "full10_first5_per_action_dimension": [
+              0.1748434902500857,
+              0.12070024068995933,
+              0.19270185412600377,
+              0.03435707678558221,
+              0.05491111277507667,
+              0.014680896461343143,
+              0.20747990618177842
+            ],
+            "padding_fraction": 0.19499999999999995
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.0951056182384491,
+            "full10_mse": 0.09298320166695791,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1291419056026773,
+            "full10_later45_mse": 0.08896556789632241,
+            "full10_unpadded_mse": 0.10664199164360742,
+            "full10_first5_per_action_dimension": [
+              0.10712180373425459,
+              0.04036829031363193,
+              0.10585315269284297,
+              0.048263641852353614,
+              0.07774847945500041,
+              0.021386782901742195,
+              0.5032511882689139
+            ],
+            "padding_fraction": 0.21343749999999995
+          },
+          "heldout": {
+            "fm": 0.09297548234462738,
+            "full10_mse": 0.09315266797552911,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.08127363975905542,
+            "full10_later45_mse": 0.09447255999958172,
+            "full10_unpadded_mse": 0.10275393715796748,
+            "full10_first5_per_action_dimension": [
+              0.13955360461471,
+              0.048555745112229064,
+              0.11198160106810406,
+              0.03226274697962158,
+              0.051893393758326065,
+              0.015482717486757096,
+              0.16918566929363887
+            ],
+            "padding_fraction": 0.19499999999999995
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.04570989729836583,
+            "full10_mse": 0.0656180186999117,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07690107133445663,
+            "full10_later45_mse": 0.06436434618496227,
+            "full10_unpadded_mse": 0.07615384067965983,
+            "full10_first5_per_action_dimension": [
+              0.0625072919861547,
+              0.028449290078131823,
+              0.053185311783735256,
+              0.025384224121137937,
+              0.05637548372679988,
+              0.02291507599698102,
+              0.2894908216482554
+            ],
+            "padding_fraction": 0.21343749999999995
+          },
+          "heldout": {
+            "fm": 0.08212581928819418,
+            "full10_mse": 0.06616906403930677,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.050302502045993173,
+            "full10_later45_mse": 0.06793201537189716,
+            "full10_unpadded_mse": 0.07450849743910314,
+            "full10_first5_per_action_dimension": [
+              0.06092762747392755,
+              0.03060706768548463,
+              0.06670028575387413,
+              0.01775902567282548,
+              0.041736478442682225,
+              0.020648113183645164,
+              0.11373891610951233
+            ],
+            "padding_fraction": 0.19499999999999995
+          }
+        }
+      }
+    },
+    {
+      "task": 14,
+      "suite": "libero_object",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.1320126298815012,
+            "full10_mse": 0.16881545149395125,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.12669496615034817,
+            "full10_later45_mse": 0.17349550542101821,
+            "full10_unpadded_mse": 0.16944202528191873,
+            "full10_first5_per_action_dimension": [
+              0.07507850266108954,
+              0.15019722542212655,
+              0.21425529367485047,
+              0.030057126345563588,
+              0.12182083509275776,
+              0.020065443174297846,
+              0.27539033668175
+            ],
+            "padding_fraction": 0.15375000000000005
+          },
+          "heldout": {
+            "fm": 0.11534217651933432,
+            "full10_mse": 0.11408288577318815,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1452739212133547,
+            "full10_later45_mse": 0.1106172151687252,
+            "full10_unpadded_mse": 0.12663526583756687,
+            "full10_first5_per_action_dimension": [
+              0.07796891903296754,
+              0.19396678602300102,
+              0.2399972700950245,
+              0.03489546794351882,
+              0.15871218975346713,
+              0.0059733678889083664,
+              0.30540344775659267
+            ],
+            "padding_fraction": 0.14078124999999997
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.11406278889626265,
+            "full10_mse": 0.15637890779214528,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.10822199145761995,
+            "full10_later45_mse": 0.16172967627375917,
+            "full10_unpadded_mse": 0.1574621229709501,
+            "full10_first5_per_action_dimension": [
+              0.0620201268162651,
+              0.08939096782937961,
+              0.1497827646338798,
+              0.02771187134595394,
+              0.0937656738186536,
+              0.021871719702735784,
+              0.31301081605647096
+            ],
+            "padding_fraction": 0.15375000000000005
+          },
+          "heldout": {
+            "fm": 0.10510585643351078,
+            "full10_mse": 0.10677256654238709,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.12454702809075154,
+            "full10_later45_mse": 0.10479762637034658,
+            "full10_unpadded_mse": 0.11910871871556354,
+            "full10_first5_per_action_dimension": [
+              0.06440112596173699,
+              0.10314083985755376,
+              0.20058978987760642,
+              0.032793241982164524,
+              0.12450967467465698,
+              0.0067708051053239,
+              0.3396237191762153
+            ],
+            "padding_fraction": 0.14078124999999997
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.05825433088466525,
+            "full10_mse": 0.13586303133847155,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07686306004532428,
+            "full10_later45_mse": 0.1424185837043768,
+            "full10_unpadded_mse": 0.13458474468343193,
+            "full10_first5_per_action_dimension": [
+              0.047092133635173825,
+              0.027517019101127343,
+              0.07139027949764504,
+              0.02784527755141434,
+              0.09862947928504513,
+              0.024583926541223326,
+              0.24098330470564058
+            ],
+            "padding_fraction": 0.15375000000000005
+          },
+          "heldout": {
+            "fm": 0.1023821234703064,
+            "full10_mse": 0.11036579051871884,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.10581372793821234,
+            "full10_later45_mse": 0.11087157524988621,
+            "full10_unpadded_mse": 0.11748940343897775,
+            "full10_first5_per_action_dimension": [
+              0.06393112986469918,
+              0.04495819692868583,
+              0.13753308553670845,
+              0.03370386670512146,
+              0.10226200657684595,
+              0.013196270280733719,
+              0.34511153967468966
+            ],
+            "padding_fraction": 0.14078124999999997
+          }
+        }
+      }
+    },
+    {
+      "task": 15,
+      "suite": "libero_object",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.13950688112527132,
+            "full10_mse": 0.17740902784584717,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.2028123157476525,
+            "full10_later45_mse": 0.17458644030120213,
+            "full10_unpadded_mse": 0.1926369323882728,
+            "full10_first5_per_action_dimension": [
+              0.26169274915811225,
+              0.09375458273694415,
+              0.21622470143255756,
+              0.03183152574966301,
+              0.1330213232340622,
+              0.05457257860723001,
+              0.628588749314995
+            ],
+            "padding_fraction": 0.14093750000000005
+          },
+          "heldout": {
+            "fm": 0.1222020722925663,
+            "full10_mse": 0.13552997303940031,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1660188894585819,
+            "full10_later45_mse": 0.13214231565949122,
+            "full10_unpadded_mse": 0.1565918842555872,
+            "full10_first5_per_action_dimension": [
+              0.19478083811972005,
+              0.07768000083387339,
+              0.1619477662249098,
+              0.020947337647570997,
+              0.10016533127067176,
+              0.05304546469433857,
+              0.5535654874189854
+            ],
+            "padding_fraction": 0.17531249999999998
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.12205194029957056,
+            "full10_mse": 0.17434980528195496,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.17824106085233418,
+            "full10_later45_mse": 0.17391744355191285,
+            "full10_unpadded_mse": 0.19235590940173025,
+            "full10_first5_per_action_dimension": [
+              0.21054413143502618,
+              0.05276884530751304,
+              0.17138728029865088,
+              0.028609960951358242,
+              0.1341095032503887,
+              0.04924190001476812,
+              0.6010258047086315
+            ],
+            "padding_fraction": 0.14093750000000005
+          },
+          "heldout": {
+            "fm": 0.10965688247233629,
+            "full10_mse": 0.13731438303242188,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1514960853307621,
+            "full10_later45_mse": 0.13573863833260627,
+            "full10_unpadded_mse": 0.15746451998355154,
+            "full10_first5_per_action_dimension": [
+              0.1694857707391859,
+              0.03434487797642382,
+              0.12319028807447438,
+              0.022746572019650465,
+              0.09462326595285811,
+              0.04971078248196108,
+              0.5663710400707773
+            ],
+            "padding_fraction": 0.17531249999999998
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.06232391158118844,
+            "full10_mse": 0.1462476842562495,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.14778831906882808,
+            "full10_later45_mse": 0.14607650261040744,
+            "full10_unpadded_mse": 0.1593557091622059,
+            "full10_first5_per_action_dimension": [
+              0.08547160610506713,
+              0.04215824272239995,
+              0.14983497400574625,
+              0.022857136777302074,
+              0.12423038151084986,
+              0.03953847481427951,
+              0.5704274175461499
+            ],
+            "padding_fraction": 0.14093750000000005
+          },
+          "heldout": {
+            "fm": 0.09281098563224077,
+            "full10_mse": 0.1297842759699681,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.12416864999728303,
+            "full10_later45_mse": 0.13040823441137758,
+            "full10_unpadded_mse": 0.1473308510922919,
+            "full10_first5_per_action_dimension": [
+              0.08814888384650132,
+              0.025360307396563853,
+              0.10389244157968529,
+              0.021658025567054127,
+              0.11687005525421042,
+              0.03755991891076954,
+              0.4756909174261937
+            ],
+            "padding_fraction": 0.17531249999999998
+          }
+        }
+      }
+    },
+    {
+      "task": 16,
+      "suite": "libero_object",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.13237804733216763,
+            "full10_mse": 0.1417614234074714,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.16344954968055359,
+            "full10_later45_mse": 0.13935163159935116,
+            "full10_unpadded_mse": 0.16264681686137475,
+            "full10_first5_per_action_dimension": [
+              0.07439874552979618,
+              0.2982798706344617,
+              0.28112568624526213,
+              0.04849681505943426,
+              0.16194145595288292,
+              0.015225791011929602,
+              0.26467848333010746
+            ],
+            "padding_fraction": 0.19343750000000004
+          },
+          "heldout": {
+            "fm": 0.12050243746489286,
+            "full10_mse": 0.14904795972010465,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.17678876404598975,
+            "full10_later45_mse": 0.14596564812833965,
+            "full10_unpadded_mse": 0.16723980449491085,
+            "full10_first5_per_action_dimension": [
+              0.09378178463264064,
+              0.29447323003517906,
+              0.27342567003899076,
+              0.039522385963453484,
+              0.10001534423751127,
+              0.017949762971717444,
+              0.41835317044243114
+            ],
+            "padding_fraction": 0.16234375
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.10926304757595062,
+            "full10_mse": 0.1271020914853972,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.12177458078754826,
+            "full10_later45_mse": 0.1276940371184915,
+            "full10_unpadded_mse": 0.148524399923722,
+            "full10_first5_per_action_dimension": [
+              0.10004811264684206,
+              0.1566291295398864,
+              0.163558811391293,
+              0.04743368543321534,
+              0.12712291168160259,
+              0.01871310738683013,
+              0.23891630743316733
+            ],
+            "padding_fraction": 0.19343750000000004
+          },
+          "heldout": {
+            "fm": 0.10700094234198332,
+            "full10_mse": 0.1377246994061666,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1481508850278517,
+            "full10_later45_mse": 0.13656623433709048,
+            "full10_unpadded_mse": 0.15854260339203713,
+            "full10_first5_per_action_dimension": [
+              0.11630003942537137,
+              0.16879100823609067,
+              0.1804812265921521,
+              0.039010787300117714,
+              0.09707929106155669,
+              0.019250008186153002,
+              0.41614383439351643
+            ],
+            "padding_fraction": 0.16234375
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.05076732812449336,
+            "full10_mse": 0.07373545892005832,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07330179084955742,
+            "full10_later45_mse": 0.07378364426122509,
+            "full10_unpadded_mse": 0.08812960050094662,
+            "full10_first5_per_action_dimension": [
+              0.07077738041471324,
+              0.042850862018494966,
+              0.0703590597638186,
+              0.029164402757831664,
+              0.10491454689410613,
+              0.017524242344916393,
+              0.17752204175302017
+            ],
+            "padding_fraction": 0.19343750000000004
+          },
+          "heldout": {
+            "fm": 0.10569781344383955,
+            "full10_mse": 0.10661488555474091,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11266678592710738,
+            "full10_later45_mse": 0.10594245218003352,
+            "full10_unpadded_mse": 0.12385305777352516,
+            "full10_first5_per_action_dimension": [
+              0.07803385912358878,
+              0.05953131202279401,
+              0.08455826122811774,
+              0.0376402084324733,
+              0.10134954865650363,
+              0.017960950597346703,
+              0.4095933614289245
+            ],
+            "padding_fraction": 0.16234375
+          }
+        }
+      }
+    },
+    {
+      "task": 18,
+      "suite": "libero_object",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.1253726463764906,
+            "full10_mse": 0.13519968801339843,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.13766783265050622,
+            "full10_later45_mse": 0.13492544972038648,
+            "full10_unpadded_mse": 0.14499675913945292,
+            "full10_first5_per_action_dimension": [
+              0.09102518997238371,
+              0.18504101092704867,
+              0.2898656436935828,
+              0.05294918029489909,
+              0.13255093183688504,
+              0.025678569287720287,
+              0.18656430254102277
+            ],
+            "padding_fraction": 0.08218749999999997
+          },
+          "heldout": {
+            "fm": 0.12628965731710196,
+            "full10_mse": 0.12270482850901591,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11978459860165687,
+            "full10_later45_mse": 0.12302929849872248,
+            "full10_unpadded_mse": 0.1326176404384028,
+            "full10_first5_per_action_dimension": [
+              0.081611749920748,
+              0.17358505134615818,
+              0.2431563376222537,
+              0.033343499801076294,
+              0.13921157845649396,
+              0.029359305323640394,
+              0.13822466774122638
+            ],
+            "padding_fraction": 0.14531249999999996
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.1107234489172697,
+            "full10_mse": 0.11858522305866977,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1085689329005154,
+            "full10_later45_mse": 0.11969814418735358,
+            "full10_unpadded_mse": 0.1273145641222622,
+            "full10_first5_per_action_dimension": [
+              0.07465670666373948,
+              0.1399685299491333,
+              0.1911388677791793,
+              0.05135300554981829,
+              0.10296866517145535,
+              0.02478809759633303,
+              0.17510865759394809
+            ],
+            "padding_fraction": 0.08218749999999997
+          },
+          "heldout": {
+            "fm": 0.11109175719320774,
+            "full10_mse": 0.1071542665521436,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.09751406022166458,
+            "full10_later45_mse": 0.1082254005888635,
+            "full10_unpadded_mse": 0.1145130355861233,
+            "full10_first5_per_action_dimension": [
+              0.0657111294833013,
+              0.12640711503887106,
+              0.17360281246220893,
+              0.03156940909796197,
+              0.11813268173439082,
+              0.029404031945832187,
+              0.13777124178908456
+            ],
+            "padding_fraction": 0.14531249999999996
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.058588224928826094,
+            "full10_mse": 0.0967153256430511,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.08321682595546936,
+            "full10_later45_mse": 0.09821515894167131,
+            "full10_unpadded_mse": 0.1040181786483707,
+            "full10_first5_per_action_dimension": [
+              0.07306940902836065,
+              0.05458827525604577,
+              0.07061490212449742,
+              0.038740860042258,
+              0.0686740907183671,
+              0.028321794777683724,
+              0.24850844974107228
+            ],
+            "padding_fraction": 0.08218749999999997
+          },
+          "heldout": {
+            "fm": 0.0896809259429574,
+            "full10_mse": 0.08183300634281741,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07434385619458254,
+            "full10_later45_mse": 0.08266513413706575,
+            "full10_unpadded_mse": 0.09264106907544489,
+            "full10_first5_per_action_dimension": [
+              0.049662313233137904,
+              0.04460486693714112,
+              0.06670609588812479,
+              0.03300673188708368,
+              0.10306759180202836,
+              0.030156983172958358,
+              0.19320241044160297
+            ],
+            "padding_fraction": 0.14531249999999996
+          }
+        }
+      }
+    },
+    {
+      "task": 19,
+      "suite": "libero_object",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.10556163173168898,
+            "full10_mse": 0.13632095988512866,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.13810629002610808,
+            "full10_later45_mse": 0.1361225898694643,
+            "full10_unpadded_mse": 0.1548559939107996,
+            "full10_first5_per_action_dimension": [
+              0.14043717880481194,
+              0.07663753638674137,
+              0.1366748884551065,
+              0.04776499471751914,
+              0.11990880022210215,
+              0.026581101466080247,
+              0.41873953013039367
+            ],
+            "padding_fraction": 0.19374999999999998
+          },
+          "heldout": {
+            "fm": 0.1166350208222866,
+            "full10_mse": 0.13402701345631554,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1377606265783473,
+            "full10_later45_mse": 0.13361216755386757,
+            "full10_unpadded_mse": 0.15086270589291528,
+            "full10_first5_per_action_dimension": [
+              0.14994391959772307,
+              0.09534235387993921,
+              0.17244137791656317,
+              0.05598820855592603,
+              0.10801385230356379,
+              0.01280472125873782,
+              0.3697899525359746
+            ],
+            "padding_fraction": 0.16749999999999998
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.09418107196688652,
+            "full10_mse": 0.13071728652190212,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.09909489563171552,
+            "full10_later45_mse": 0.1342308855097006,
+            "full10_unpadded_mse": 0.13938229665916665,
+            "full10_first5_per_action_dimension": [
+              0.12207166348762258,
+              0.04436837926525452,
+              0.10261549861217838,
+              0.045002768700292864,
+              0.11854574923916102,
+              0.027129169215927746,
+              0.23393104090157074
+            ],
+            "padding_fraction": 0.19374999999999998
+          },
+          "heldout": {
+            "fm": 0.10805430170148611,
+            "full10_mse": 0.14029429052407832,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11638960812724686,
+            "full10_later45_mse": 0.14295036634594852,
+            "full10_unpadded_mse": 0.15162994736333957,
+            "full10_first5_per_action_dimension": [
+              0.13852527356011482,
+              0.06739369000263677,
+              0.11880510575898576,
+              0.050622146733279715,
+              0.11133757812357321,
+              0.013274412216457244,
+              0.31476905049567716
+            ],
+            "padding_fraction": 0.16749999999999998
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.046234551817178726,
+            "full10_mse": 0.102557841193853,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07310645620467694,
+            "full10_later45_mse": 0.10583021730376145,
+            "full10_unpadded_mse": 0.12202528184117126,
+            "full10_first5_per_action_dimension": [
+              0.06216061299639135,
+              0.030596733823131682,
+              0.0535663352842073,
+              0.04696225999860238,
+              0.07479150870319351,
+              0.029901215602551944,
+              0.21376652702465998
+            ],
+            "padding_fraction": 0.19374999999999998
+          },
+          "heldout": {
+            "fm": 0.11408197414129972,
+            "full10_mse": 0.11583415126285133,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.09150200377903402,
+            "full10_later45_mse": 0.11853772320549771,
+            "full10_unpadded_mse": 0.13311255802312202,
+            "full10_first5_per_action_dimension": [
+              0.06275920749342628,
+              0.039407301136536545,
+              0.0951412924718917,
+              0.04255053499782288,
+              0.12407588305944237,
+              0.017612485487092246,
+              0.25896732180702375
+            ],
+            "padding_fraction": 0.16749999999999998
+          }
+        }
+      }
+    },
+    {
+      "task": 20,
+      "suite": "libero_goal",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.15510879270732403,
+            "full10_mse": 0.15780778849903043,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.17369535817874662,
+            "full10_later45_mse": 0.15604250297906194,
+            "full10_unpadded_mse": 0.16608955946450712,
+            "full10_first5_per_action_dimension": [
+              0.11467340095123893,
+              0.20201733108715508,
+              0.16310835187721756,
+              0.10829352520439625,
+              0.4840560847881103,
+              0.1435830645073804,
+              0.00013574883572667896
+            ],
+            "padding_fraction": 0.140625
+          },
+          "heldout": {
+            "fm": 0.13660550396889448,
+            "full10_mse": 0.14042147517275277,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.13221667905203885,
+            "full10_later45_mse": 0.14133311918616542,
+            "full10_unpadded_mse": 0.15440174633977036,
+            "full10_first5_per_action_dimension": [
+              0.08922921717594219,
+              0.1654933027323405,
+              0.17402346404001842,
+              0.14179113592936793,
+              0.2730581970716694,
+              0.08176810927573494,
+              0.0001533271391969182
+            ],
+            "padding_fraction": 0.18546874999999996
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.1426132833585143,
+            "full10_mse": 0.13679052119152502,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.15574995778838457,
+            "full10_later45_mse": 0.1346839171252073,
+            "full10_unpadded_mse": 0.14522330231639788,
+            "full10_first5_per_action_dimension": [
+              0.11173398670402565,
+              0.18979673000020045,
+              0.13809309452279747,
+              0.09736346130429442,
+              0.4382236846154721,
+              0.1149079169769552,
+              0.0001308303949453249
+            ],
+            "padding_fraction": 0.140625
+          },
+          "heldout": {
+            "fm": 0.13166971039026976,
+            "full10_mse": 0.13187013100050846,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1194666505838871,
+            "full10_later45_mse": 0.13324829549124417,
+            "full10_unpadded_mse": 0.1429114953439505,
+            "full10_first5_per_action_dimension": [
+              0.08249850168990129,
+              0.15653686624503035,
+              0.13245771033508227,
+              0.11611240224201569,
+              0.2797092242026486,
+              0.06881165076026818,
+              0.00014019861226171603
+            ],
+            "padding_fraction": 0.18546874999999996
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.08037838712334633,
+            "full10_mse": 0.12323083319341117,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.14425672305031614,
+            "full10_later45_mse": 0.12089462320931063,
+            "full10_unpadded_mse": 0.1286457066040559,
+            "full10_first5_per_action_dimension": [
+              0.08991206737341728,
+              0.14231462380343807,
+              0.114031752706184,
+              0.07418219908135448,
+              0.47418673673994577,
+              0.11501627833197589,
+              0.00015340331589683843
+            ],
+            "padding_fraction": 0.140625
+          },
+          "heldout": {
+            "fm": 0.1234982144087553,
+            "full10_mse": 0.1416660588015212,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.14004789293670283,
+            "full10_later45_mse": 0.1418458550087232,
+            "full10_unpadded_mse": 0.14324494439606772,
+            "full10_first5_per_action_dimension": [
+              0.1297610133979913,
+              0.16631026184401618,
+              0.09506993750606203,
+              0.12608788010137767,
+              0.35356778208181544,
+              0.07795624214548771,
+              0.03158213348016713
+            ],
+            "padding_fraction": 0.18546874999999996
+          }
+        }
+      }
+    },
+    {
+      "task": 21,
+      "suite": "libero_goal",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.13861926924437284,
+            "full10_mse": 0.15771567638164394,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.08335103128689723,
+            "full10_later45_mse": 0.16597841472550467,
+            "full10_unpadded_mse": 0.1805567320773945,
+            "full10_first5_per_action_dimension": [
+              0.14951311116275068,
+              0.037241169517071133,
+              0.10259976032407345,
+              0.03149048734940024,
+              0.08225205423124507,
+              0.016379672992470132,
+              0.1639809634312695
+            ],
+            "padding_fraction": 0.22218749999999998
+          },
+          "heldout": {
+            "fm": 0.1541058775037527,
+            "full10_mse": 0.16813419969647675,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.09393132973945753,
+            "full10_later45_mse": 0.17637896302503442,
+            "full10_unpadded_mse": 0.1786206934156176,
+            "full10_first5_per_action_dimension": [
+              0.11890656982301735,
+              0.03306604303550481,
+              0.1100091494755326,
+              0.059267365949736375,
+              0.1082834593626775,
+              0.013724862691555584,
+              0.21426185783817697
+            ],
+            "padding_fraction": 0.2215625
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.09910212270915508,
+            "full10_mse": 0.08563640698230233,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07912511182908367,
+            "full10_later45_mse": 0.08635988422154885,
+            "full10_unpadded_mse": 0.09560381522443873,
+            "full10_first5_per_action_dimension": [
+              0.10151810649216353,
+              0.040866441468353824,
+              0.07437409246221763,
+              0.029363727868707456,
+              0.07571064202438896,
+              0.0166458334148293,
+              0.2153969390729246
+            ],
+            "padding_fraction": 0.22218749999999998
+          },
+          "heldout": {
+            "fm": 0.11893163248896599,
+            "full10_mse": 0.09955573090404489,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.08890184784769523,
+            "full10_later45_mse": 0.10073949568808373,
+            "full10_unpadded_mse": 0.10884816883768111,
+            "full10_first5_per_action_dimension": [
+              0.08985344807391252,
+              0.03896849790896215,
+              0.08438855784846751,
+              0.053416425917846254,
+              0.11851602857971266,
+              0.013390744530985122,
+              0.22377923207397865
+            ],
+            "padding_fraction": 0.2215625
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.048662003595381975,
+            "full10_mse": 0.06555629107567906,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.06263348082025288,
+            "full10_later45_mse": 0.06588104777072641,
+            "full10_unpadded_mse": 0.07538480381080938,
+            "full10_first5_per_action_dimension": [
+              0.07772414222357697,
+              0.02783783401137239,
+              0.05711702306304981,
+              0.02337553989956031,
+              0.05930302535900374,
+              0.015564267954819333,
+              0.17751253323038738
+            ],
+            "padding_fraction": 0.22218749999999998
+          },
+          "heldout": {
+            "fm": 0.10374940373003483,
+            "full10_mse": 0.08902242543558914,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.08762090100006957,
+            "full10_later45_mse": 0.0891781503728691,
+            "full10_unpadded_mse": 0.10038100080075606,
+            "full10_first5_per_action_dimension": [
+              0.09864163736037072,
+              0.02442793230555525,
+              0.08367482863779807,
+              0.05898202014342161,
+              0.11130583003306796,
+              0.014638356840971612,
+              0.22167570167930029
+            ],
+            "padding_fraction": 0.2215625
+          }
+        }
+      }
+    },
+    {
+      "task": 22,
+      "suite": "libero_goal",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.18667933903634548,
+            "full10_mse": 0.2664724736830464,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.25171724505313453,
+            "full10_later45_mse": 0.2681119435308144,
+            "full10_unpadded_mse": 0.3066670619035642,
+            "full10_first5_per_action_dimension": [
+              0.21287595108564422,
+              0.06232462650828442,
+              0.14673906869232517,
+              0.05863155773025815,
+              0.562571471509424,
+              0.013416742099680768,
+              0.7054612977463209
+            ],
+            "padding_fraction": 0.23250000000000004
+          },
+          "heldout": {
+            "fm": 0.17440759390592575,
+            "full10_mse": 0.2411146019440104,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.2322060601620186,
+            "full10_later45_mse": 0.2421044399197873,
+            "full10_unpadded_mse": 0.2883696628472139,
+            "full10_first5_per_action_dimension": [
+              0.22403497203696063,
+              0.07208869140860122,
+              0.14219189400423177,
+              0.11021474059482865,
+              0.3735596343515238,
+              0.019924623187331243,
+              0.6834278655506482
+            ],
+            "padding_fraction": 0.21828124999999998
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.13659706804901361,
+            "full10_mse": 0.1692352022705584,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.19857253632040986,
+            "full10_later45_mse": 0.16597549848724158,
+            "full10_unpadded_mse": 0.1998948447976758,
+            "full10_first5_per_action_dimension": [
+              0.19894955232897021,
+              0.04400633279468598,
+              0.11200105840340562,
+              0.05455095965782616,
+              0.3953115073712301,
+              0.011147846775337868,
+              0.5740404969114087
+            ],
+            "padding_fraction": 0.23250000000000004
+          },
+          "heldout": {
+            "fm": 0.15884646028280258,
+            "full10_mse": 0.19271205286829196,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.2021004508175403,
+            "full10_later45_mse": 0.19166889754059768,
+            "full10_unpadded_mse": 0.23047070625388652,
+            "full10_first5_per_action_dimension": [
+              0.2188789857696877,
+              0.053835823853472485,
+              0.1277877957514469,
+              0.1026564919774486,
+              0.3120598270859878,
+              0.021013826275222712,
+              0.5784704050095112
+            ],
+            "padding_fraction": 0.21828124999999998
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.0587242329493165,
+            "full10_mse": 0.11150955488502755,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1100057072424096,
+            "full10_later45_mse": 0.11167664906754066,
+            "full10_unpadded_mse": 0.13029566282936655,
+            "full10_first5_per_action_dimension": [
+              0.07667929508748579,
+              0.022378786113678852,
+              0.059450844802545665,
+              0.04292914491902393,
+              0.20204447981332513,
+              0.011255601423476706,
+              0.3553017985373305
+            ],
+            "padding_fraction": 0.23250000000000004
+          },
+          "heldout": {
+            "fm": 0.14696704223752022,
+            "full10_mse": 0.18362459911953044,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.14864836201944978,
+            "full10_later45_mse": 0.18751084768620604,
+            "full10_unpadded_mse": 0.21586468385188307,
+            "full10_first5_per_action_dimension": [
+              0.08984924691872453,
+              0.0402648374165941,
+              0.0885741154542536,
+              0.07884982180905652,
+              0.26466720229138685,
+              0.019273893512654426,
+              0.4590594167334741
+            ],
+            "padding_fraction": 0.21828124999999998
+          }
+        }
+      }
+    },
+    {
+      "task": 25,
+      "suite": "libero_goal",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.17409329861402512,
+            "full10_mse": 0.23156345680898358,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.2248842417810435,
+            "full10_later45_mse": 0.23230559181208804,
+            "full10_unpadded_mse": 0.21114925895456613,
+            "full10_first5_per_action_dimension": [
+              0.321077640541947,
+              0.34191159479225147,
+              0.12819964736739534,
+              0.04949254416138967,
+              0.12939709621836168,
+              0.02645743103489101,
+              0.5776537383510656
+            ],
+            "padding_fraction": 0.13249999999999995
+          },
+          "heldout": {
+            "fm": 0.16950824484229088,
+            "full10_mse": 0.24913219537644785,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.2824677222577499,
+            "full10_later45_mse": 0.24542824794519208,
+            "full10_unpadded_mse": 0.2421302649966495,
+            "full10_first5_per_action_dimension": [
+              0.3088309946362743,
+              0.34783163632576386,
+              0.0998492386353931,
+              0.03510968244641491,
+              0.16684525674858433,
+              0.03683972051516311,
+              0.9819675264966501
+            ],
+            "padding_fraction": 0.19562500000000005
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.14536891411989927,
+            "full10_mse": 0.14298139792328873,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.13233713882893208,
+            "full10_later45_mse": 0.14416409337821728,
+            "full10_unpadded_mse": 0.13748569997523105,
+            "full10_first5_per_action_dimension": [
+              0.3338060313324468,
+              0.2756586211954232,
+              0.1288906844157785,
+              0.053864116697609474,
+              0.10786490424743907,
+              0.025699404003642186,
+              0.0005762099101844665
+            ],
+            "padding_fraction": 0.13249999999999995
+          },
+          "heldout": {
+            "fm": 0.14753658883273602,
+            "full10_mse": 0.13713347613188223,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1282351319351625,
+            "full10_later45_mse": 0.13812218104262886,
+            "full10_unpadded_mse": 0.13425023424465873,
+            "full10_first5_per_action_dimension": [
+              0.34877919172132216,
+              0.25300940382960213,
+              0.10028860246190299,
+              0.03405893450066097,
+              0.12532248578490648,
+              0.035664317768889224,
+              0.0005229874788516998
+            ],
+            "padding_fraction": 0.19562500000000005
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.06666931137442589,
+            "full10_mse": 0.09751758271464124,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.09506444042298552,
+            "full10_later45_mse": 0.09779015408038078,
+            "full10_unpadded_mse": 0.08464333382822399,
+            "full10_first5_per_action_dimension": [
+              0.20848913744755998,
+              0.19432737893100302,
+              0.08289756415675667,
+              0.06724425306511453,
+              0.09623176188375232,
+              0.015924914475011626,
+              0.0003360730016995661
+            ],
+            "padding_fraction": 0.13249999999999995
+          },
+          "heldout": {
+            "fm": 0.1046845531091094,
+            "full10_mse": 0.11643630899642732,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.09560256855694052,
+            "full10_later45_mse": 0.11875116904525918,
+            "full10_unpadded_mse": 0.09671824032643729,
+            "full10_first5_per_action_dimension": [
+              0.2389870329446797,
+              0.17354952766013856,
+              0.07863206116237556,
+              0.03960615625890813,
+              0.10843272130018651,
+              0.029702089353543442,
+              0.00030839121875001483
+            ],
+            "padding_fraction": 0.19562500000000005
+          }
+        }
+      }
+    },
+    {
+      "task": 28,
+      "suite": "libero_goal",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.18400544673204422,
+            "full10_mse": 0.18886741184891503,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.09933984825486242,
+            "full10_later45_mse": 0.1988149189149209,
+            "full10_unpadded_mse": 0.21854104815883152,
+            "full10_first5_per_action_dimension": [
+              0.13131617123697464,
+              0.027561896191647277,
+              0.0976051493855831,
+              0.0648930573555339,
+              0.10733417287516478,
+              0.02761889780881025,
+              0.23904959293032224
+            ],
+            "padding_fraction": 0.249375
+          },
+          "heldout": {
+            "fm": 0.1768308486789465,
+            "full10_mse": 0.17673494568727086,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11945686110547063,
+            "full10_later45_mse": 0.18309917730747086,
+            "full10_unpadded_mse": 0.20429209831082587,
+            "full10_first5_per_action_dimension": [
+              0.15808093662255926,
+              0.026768467356494484,
+              0.13643557066557774,
+              0.02744207343825793,
+              0.10681394802601445,
+              0.026945023408886087,
+              0.35371200822050053
+            ],
+            "padding_fraction": 0.1875
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.12704754248261452,
+            "full10_mse": 0.12247901032666815,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.09707238334436301,
+            "full10_later45_mse": 0.1253019688802576,
+            "full10_unpadded_mse": 0.14972469479250644,
+            "full10_first5_per_action_dimension": [
+              0.09846120464974889,
+              0.030998355002342864,
+              0.07278980685674731,
+              0.06787419487021291,
+              0.11825892234989195,
+              0.02355816609991755,
+              0.267566033581679
+            ],
+            "padding_fraction": 0.249375
+          },
+          "heldout": {
+            "fm": 0.15556279569864273,
+            "full10_mse": 0.1552797995162354,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.12310209426112131,
+            "full10_later45_mse": 0.15885510010013698,
+            "full10_unpadded_mse": 0.17841387646245077,
+            "full10_first5_per_action_dimension": [
+              0.14462647953567212,
+              0.028059843423394966,
+              0.12158443871853856,
+              0.02347789714665751,
+              0.11560121350529648,
+              0.02199255090023828,
+              0.40637223659804683
+            ],
+            "padding_fraction": 0.1875
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.05773105751723051,
+            "full10_mse": 0.09264935504174762,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07566968966447075,
+            "full10_later45_mse": 0.09453598452811171,
+            "full10_unpadded_mse": 0.11235598041672654,
+            "full10_first5_per_action_dimension": [
+              0.056049080618901105,
+              0.02713743111374368,
+              0.061377167495697035,
+              0.05843230671458257,
+              0.0683840736714996,
+              0.019863350345152894,
+              0.23844441769171776
+            ],
+            "padding_fraction": 0.249375
+          },
+          "heldout": {
+            "fm": 0.15170779637992382,
+            "full10_mse": 0.14988074855847974,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11781103496281113,
+            "full10_later45_mse": 0.15344405006910958,
+            "full10_unpadded_mse": 0.1735660311867916,
+            "full10_first5_per_action_dimension": [
+              0.10445548680473185,
+              0.029264228312903505,
+              0.12965944169922958,
+              0.06639238022998933,
+              0.11388006270734745,
+              0.016827514314404886,
+              0.36419813067106765
+            ],
+            "padding_fraction": 0.1875
+          }
+        }
+      }
+    },
+    {
+      "task": 29,
+      "suite": "libero_goal",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.20151617377996445,
+            "full10_mse": 0.29952572813261785,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.25425238886724805,
+            "full10_later45_mse": 0.3045560991621034,
+            "full10_unpadded_mse": 0.32396779656539676,
+            "full10_first5_per_action_dimension": [
+              0.1857437814534402,
+              0.0840687720059631,
+              0.14381774194208582,
+              0.4312205173336946,
+              0.3096298310257259,
+              0.12323925189721936,
+              0.5020468264126062
+            ],
+            "padding_fraction": 0.12375000000000003
+          },
+          "heldout": {
+            "fm": 0.21543855592608452,
+            "full10_mse": 0.2850186515873747,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.25322545749788816,
+            "full10_later45_mse": 0.2885512287084288,
+            "full10_unpadded_mse": 0.3092540411382207,
+            "full10_first5_per_action_dimension": [
+              0.15295063165949677,
+              0.08915415807081215,
+              0.1306269043326317,
+              0.5097893685916539,
+              0.3284729782683896,
+              0.17560250491944013,
+              0.3859816566427902
+            ],
+            "padding_fraction": 0.14578124999999997
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.19599542766809464,
+            "full10_mse": 0.3019521485236014,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.24907731450366719,
+            "full10_later45_mse": 0.30782713008137186,
+            "full10_unpadded_mse": 0.3262562187588169,
+            "full10_first5_per_action_dimension": [
+              0.18427359165588494,
+              0.08299707303143716,
+              0.14514804139038903,
+              0.4009672658019031,
+              0.30440874986531774,
+              0.12353799449696361,
+              0.5022084852837729
+            ],
+            "padding_fraction": 0.12375000000000003
+          },
+          "heldout": {
+            "fm": 0.21284088864922523,
+            "full10_mse": 0.2855761153631947,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.2550018125391018,
+            "full10_later45_mse": 0.28897326012142727,
+            "full10_unpadded_mse": 0.3103579508716111,
+            "full10_first5_per_action_dimension": [
+              0.14867119525925004,
+              0.09260559551770435,
+              0.13001665728478237,
+              0.5290196998326748,
+              0.3234988421581412,
+              0.1775837089476209,
+              0.3836169887735349
+            ],
+            "padding_fraction": 0.14578124999999997
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.0774819003418088,
+            "full10_mse": 0.14143998680027034,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1602081881584534,
+            "full10_later45_mse": 0.13935463109380558,
+            "full10_unpadded_mse": 0.14364796696096888,
+            "full10_first5_per_action_dimension": [
+              0.09225921596006331,
+              0.04979978371473733,
+              0.11850747673239662,
+              0.16820931233099337,
+              0.19578743240620303,
+              0.06831128513253452,
+              0.4285828108322445
+            ],
+            "padding_fraction": 0.12375000000000003
+          },
+          "heldout": {
+            "fm": 0.14756313990801573,
+            "full10_mse": 0.19723095358523976,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1768186146134291,
+            "full10_later45_mse": 0.1994989912487743,
+            "full10_unpadded_mse": 0.20780631145286182,
+            "full10_first5_per_action_dimension": [
+              0.06060572964278852,
+              0.0640390009915307,
+              0.14072331555726045,
+              0.207111800263859,
+              0.3231150715520852,
+              0.162304510608135,
+              0.2798308736783409
+            ],
+            "padding_fraction": 0.14578124999999997
+          }
+        }
+      }
+    },
+    {
+      "task": 34,
+      "suite": "libero_10",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.11479524709284306,
+            "full10_mse": 0.11244196989398156,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07845173781055786,
+            "full10_later45_mse": 0.1162186623476953,
+            "full10_unpadded_mse": 0.11985401384349013,
+            "full10_first5_per_action_dimension": [
+              0.05474330699600184,
+              0.06877783488769902,
+              0.047438339332229705,
+              0.01571467051843162,
+              0.07280623428013602,
+              0.02617018540404021,
+              0.26351159325536605
+            ],
+            "padding_fraction": 0.10781249999999998
+          },
+          "heldout": {
+            "fm": 0.10611197911202908,
+            "full10_mse": 0.11071863029126125,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07781708470535764,
+            "full10_later45_mse": 0.11437435757858389,
+            "full10_unpadded_mse": 0.11879280808739281,
+            "full10_first5_per_action_dimension": [
+              0.07482170481686161,
+              0.105828569550944,
+              0.07463620078758457,
+              0.02867695784265014,
+              0.04831707410245312,
+              0.016561450399466562,
+              0.1958776354375424
+            ],
+            "padding_fraction": 0.10234374999999996
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.1121302992105484,
+            "full10_mse": 0.1107024747587201,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07769981852224897,
+            "full10_later45_mse": 0.11436943656277243,
+            "full10_unpadded_mse": 0.11810218267728272,
+            "full10_first5_per_action_dimension": [
+              0.05661448680238993,
+              0.07233294040831724,
+              0.043496323551859464,
+              0.015948606229448496,
+              0.07280306314941547,
+              0.026222829575801864,
+              0.25648047993850975
+            ],
+            "padding_fraction": 0.10781249999999998
+          },
+          "heldout": {
+            "fm": 0.10384905803948641,
+            "full10_mse": 0.10772895012972199,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07867205836178842,
+            "full10_later45_mse": 0.1109574936594924,
+            "full10_unpadded_mse": 0.11558850796402786,
+            "full10_first5_per_action_dimension": [
+              0.07216940656301976,
+              0.11066267296003007,
+              0.0732276255112938,
+              0.028644569772533462,
+              0.04759626211666404,
+              0.01686074464334861,
+              0.20154312696562798
+            ],
+            "padding_fraction": 0.10234374999999996
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.05539881531149149,
+            "full10_mse": 0.1009630216281215,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.060729815228812954,
+            "full10_later45_mse": 0.10543337789471133,
+            "full10_unpadded_mse": 0.1097494794144721,
+            "full10_first5_per_action_dimension": [
+              0.04719859386354326,
+              0.024489529447137566,
+              0.03276809094938073,
+              0.016360487570441125,
+              0.07088872516111382,
+              0.019503511625966495,
+              0.21389976798410698
+            ],
+            "padding_fraction": 0.10781249999999998
+          },
+          "heldout": {
+            "fm": 0.10886176023632288,
+            "full10_mse": 0.11029978305981629,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07170940823662311,
+            "full10_later45_mse": 0.11458760248461554,
+            "full10_unpadded_mse": 0.11691707415133883,
+            "full10_first5_per_action_dimension": [
+              0.05790878186010358,
+              0.04933403882400893,
+              0.06804628063456739,
+              0.02936365867255982,
+              0.0728427716921434,
+              0.034827741849093236,
+              0.1896425841238846
+            ],
+            "padding_fraction": 0.10234374999999996
+          }
+        }
+      }
+    },
+    {
+      "task": 35,
+      "suite": "libero_10",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.07652463158592582,
+            "full10_mse": 0.07438953761902595,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.04176036797777066,
+            "full10_later45_mse": 0.07801500091249877,
+            "full10_unpadded_mse": 0.06973684192801825,
+            "full10_first5_per_action_dimension": [
+              0.06758035371983212,
+              0.035533725901614806,
+              0.04119367885724166,
+              0.044225792200992334,
+              0.07168915828819565,
+              0.032030190053964,
+              6.96768225535993e-05
+            ],
+            "padding_fraction": 0.09687500000000004
+          },
+          "heldout": {
+            "fm": 0.0780977588146925,
+            "full10_mse": 0.08785654660206337,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.06217285128021319,
+            "full10_later45_mse": 0.0907102905267134,
+            "full10_unpadded_mse": 0.07615614831678846,
+            "full10_first5_per_action_dimension": [
+              0.05191516184446039,
+              0.023695321207832448,
+              0.059396664156224244,
+              0.12210856154725942,
+              0.06523038347291162,
+              0.043555241908293234,
+              0.06930862482451002
+            ],
+            "padding_fraction": 0.16171875000000002
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.07559569831937551,
+            "full10_mse": 0.07415766235424405,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.041144866156935286,
+            "full10_later45_mse": 0.07782575082061169,
+            "full10_unpadded_mse": 0.06972196407023258,
+            "full10_first5_per_action_dimension": [
+              0.0678178509907955,
+              0.0355564607597272,
+              0.03966021951349846,
+              0.0442572755146474,
+              0.06972395686262442,
+              0.030926690819920128,
+              7.160863733343125e-05
+            ],
+            "padding_fraction": 0.09687500000000004
+          },
+          "heldout": {
+            "fm": 0.07735334150493145,
+            "full10_mse": 0.08635194139172339,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.060296873686758,
+            "full10_later45_mse": 0.08924694891449735,
+            "full10_unpadded_mse": 0.07565002097760215,
+            "full10_first5_per_action_dimension": [
+              0.05141126838273038,
+              0.02355405888107191,
+              0.057288919061044184,
+              0.1142877079706072,
+              0.06428051274024837,
+              0.041945058169981245,
+              0.06931059060162156
+            ],
+            "padding_fraction": 0.16171875000000002
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.04483141703531146,
+            "full10_mse": 0.06123478438054991,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.037038175638538784,
+            "full10_later45_mse": 0.06392329646299559,
+            "full10_unpadded_mse": 0.06117434666875519,
+            "full10_first5_per_action_dimension": [
+              0.07841015449743735,
+              0.027862881749198147,
+              0.03776724265353787,
+              0.04537997862803972,
+              0.039894587676157285,
+              0.029879558312465127,
+              7.282595293555128e-05
+            ],
+            "padding_fraction": 0.09687500000000004
+          },
+          "heldout": {
+            "fm": 0.08519847225397825,
+            "full10_mse": 0.07586022886318598,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.05260690247210057,
+            "full10_later45_mse": 0.07844393179552879,
+            "full10_unpadded_mse": 0.07276555622046957,
+            "full10_first5_per_action_dimension": [
+              0.059160632481284246,
+              0.026634384577026132,
+              0.057109141935121885,
+              0.11813817771077122,
+              0.05064604302439533,
+              0.03759636140385307,
+              0.018963576172251372
+            ],
+            "padding_fraction": 0.16171875000000002
+          }
+        }
+      }
+    },
+    {
+      "task": 36,
+      "suite": "libero_10",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.12961317598819733,
+            "full10_mse": 0.17626867398520857,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.14065496646886524,
+            "full10_later45_mse": 0.1802257525981356,
+            "full10_unpadded_mse": 0.16387780954244427,
+            "full10_first5_per_action_dimension": [
+              0.15241923152873865,
+              0.12696799981258522,
+              0.07970564245909409,
+              0.035939980884209924,
+              0.13496764955459262,
+              0.018673983575789397,
+              0.43591027746704397
+            ],
+            "padding_fraction": 0.04125000000000001
+          },
+          "heldout": {
+            "fm": 0.1448203781619668,
+            "full10_mse": 0.20152126708193452,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11540081217531772,
+            "full10_later45_mse": 0.21109020651600302,
+            "full10_unpadded_mse": 0.19176009771883018,
+            "full10_first5_per_action_dimension": [
+              0.09517075575515259,
+              0.06057212469148702,
+              0.09106911968523522,
+              0.030937533414601048,
+              0.12239439122107784,
+              0.09031859144338839,
+              0.3173431690162799
+            ],
+            "padding_fraction": 0.06437499999999996
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.11793018877506256,
+            "full10_mse": 0.17331729642476118,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1240497318640017,
+            "full10_later45_mse": 0.17879147026484554,
+            "full10_unpadded_mse": 0.1559901330713983,
+            "full10_first5_per_action_dimension": [
+              0.11868509886578774,
+              0.11856206189566947,
+              0.061853966129519745,
+              0.03261945393669027,
+              0.13230181815645894,
+              0.017933129748250183,
+              0.38639259431563505
+            ],
+            "padding_fraction": 0.04125000000000001
+          },
+          "heldout": {
+            "fm": 0.14822899922728539,
+            "full10_mse": 0.21173090362633196,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11120535176785849,
+            "full10_later45_mse": 0.22290040938838457,
+            "full10_unpadded_mse": 0.19946801251313928,
+            "full10_first5_per_action_dimension": [
+              0.08600361113352303,
+              0.05312160038493265,
+              0.0937540195207567,
+              0.03154117832329206,
+              0.12218863338846338,
+              0.0848850571306022,
+              0.30694336249343623
+            ],
+            "padding_fraction": 0.06437499999999996
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.055147533770650625,
+            "full10_mse": 0.14370210973554415,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.09190620853615077,
+            "full10_later45_mse": 0.14945720986881003,
+            "full10_unpadded_mse": 0.12536292424212378,
+            "full10_first5_per_action_dimension": [
+              0.07999491649691673,
+              0.04516800986391219,
+              0.03834167929267841,
+              0.02187178702420135,
+              0.10205435193288906,
+              0.018623586776382536,
+              0.3372891283660746
+            ],
+            "padding_fraction": 0.04125000000000001
+          },
+          "heldout": {
+            "fm": 0.1437482088804245,
+            "full10_mse": 0.1767987922888479,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11222492217350694,
+            "full10_later45_mse": 0.18397366674610796,
+            "full10_unpadded_mse": 0.16326636174859976,
+            "full10_first5_per_action_dimension": [
+              0.07827100993089053,
+              0.03033680416268089,
+              0.06530061361183911,
+              0.03906430210214473,
+              0.14473128570650864,
+              0.09038801308009622,
+              0.3374824266203863
+            ],
+            "padding_fraction": 0.06437499999999996
+          }
+        }
+      }
+    },
+    {
+      "task": 37,
+      "suite": "libero_10",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.14396003168076277,
+            "full10_mse": 0.14778498189621278,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.12023751692054628,
+            "full10_later45_mse": 0.1508458113379535,
+            "full10_unpadded_mse": 0.15067819994515425,
+            "full10_first5_per_action_dimension": [
+              0.07638080969396578,
+              0.07622837768139845,
+              0.08789384653726107,
+              0.059128799820443424,
+              0.12806120132115995,
+              0.04933560954542132,
+              0.36463397384417295
+            ],
+            "padding_fraction": 0.036250000000000004
+          },
+          "heldout": {
+            "fm": 0.1387840984389186,
+            "full10_mse": 0.1636356334310357,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.10691317932894141,
+            "full10_later45_mse": 0.1699381283312684,
+            "full10_unpadded_mse": 0.1767375628376883,
+            "full10_first5_per_action_dimension": [
+              0.09980723279587567,
+              0.05538907928747537,
+              0.09487238825805332,
+              0.04584243619680511,
+              0.1392977752733745,
+              0.039468036822347896,
+              0.27371530666865496
+            ],
+            "padding_fraction": 0.09015625000000005
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.13212503027170897,
+            "full10_mse": 0.13974409100542576,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.12307742578145923,
+            "full10_later45_mse": 0.1415959426969776,
+            "full10_unpadded_mse": 0.14059341991644297,
+            "full10_first5_per_action_dimension": [
+              0.0737353268872635,
+              0.06168444220283163,
+              0.07544592470561756,
+              0.052568678814572535,
+              0.12174429005951204,
+              0.047445571592471994,
+              0.4289177462079444
+            ],
+            "padding_fraction": 0.036250000000000004
+          },
+          "heldout": {
+            "fm": 0.12756767217069864,
+            "full10_mse": 0.15035821582476933,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.09465917391744481,
+            "full10_later45_mse": 0.1565469982589165,
+            "full10_unpadded_mse": 0.1614076245924461,
+            "full10_first5_per_action_dimension": [
+              0.1053744036848669,
+              0.046790422433817466,
+              0.06957687819253076,
+              0.042818069625249935,
+              0.1384896041191579,
+              0.038490925189379785,
+              0.22107391417710875
+            ],
+            "padding_fraction": 0.09015625000000005
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.0676123509183526,
+            "full10_mse": 0.1273362424770976,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.10804036139288005,
+            "full10_later45_mse": 0.1294802292642329,
+            "full10_unpadded_mse": 0.12782668923832508,
+            "full10_first5_per_action_dimension": [
+              0.08121985212185476,
+              0.029896143618325176,
+              0.08014776434640221,
+              0.04352497066146012,
+              0.12697438504515876,
+              0.037124287387611546,
+              0.35739512656934674
+            ],
+            "padding_fraction": 0.036250000000000004
+          },
+          "heldout": {
+            "fm": 0.1277872435748577,
+            "full10_mse": 0.16186236240946128,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11587464031283408,
+            "full10_later45_mse": 0.16697210930908649,
+            "full10_unpadded_mse": 0.16734125968243785,
+            "full10_first5_per_action_dimension": [
+              0.09521228948124191,
+              0.04089331737086642,
+              0.07046108809468472,
+              0.0654848618384311,
+              0.17457659031655295,
+              0.04454531894115254,
+              0.31994901614690596
+            ],
+            "padding_fraction": 0.09015625000000005
+          }
+        }
+      }
+    },
+    {
+      "task": 38,
+      "suite": "libero_10",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.09585794247686863,
+            "full10_mse": 0.11329462113090802,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07939200454467994,
+            "full10_later45_mse": 0.1170615785293778,
+            "full10_unpadded_mse": 0.11532547226665602,
+            "full10_first5_per_action_dimension": [
+              0.09915781994596343,
+              0.07818886600838658,
+              0.0888384483718255,
+              0.07191902266992539,
+              0.08792626528529353,
+              0.05476237839520457,
+              0.0749512311361603
+            ],
+            "padding_fraction": 0.026874999999999982
+          },
+          "heldout": {
+            "fm": 0.10351414512842894,
+            "full10_mse": 0.14204616617144097,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11882479442297204,
+            "full10_later45_mse": 0.14462631858793754,
+            "full10_unpadded_mse": 0.14167859999128124,
+            "full10_first5_per_action_dimension": [
+              0.09125014914749097,
+              0.07649433895455729,
+              0.058928150638782026,
+              0.0775505131175251,
+              0.11236310381781012,
+              0.08740462393362791,
+              0.32778268135100797
+            ],
+            "padding_fraction": 0.07796875000000003
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.0900837816298008,
+            "full10_mse": 0.1096818816098756,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.07572407327333502,
+            "full10_later45_mse": 0.11345497142504679,
+            "full10_unpadded_mse": 0.11145303262175577,
+            "full10_first5_per_action_dimension": [
+              0.09170293456721763,
+              0.07094548638090586,
+              0.07611756627711053,
+              0.05711196629548211,
+              0.08474971070137233,
+              0.049710152583139045,
+              0.09973069610811758
+            ],
+            "padding_fraction": 0.026874999999999982
+          },
+          "heldout": {
+            "fm": 0.10471145436167717,
+            "full10_mse": 0.15246225980077635,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11862311549330187,
+            "full10_later45_mse": 0.15622216472382908,
+            "full10_unpadded_mse": 0.14496971505828257,
+            "full10_first5_per_action_dimension": [
+              0.08636493056615971,
+              0.07222287827536863,
+              0.05730555227992005,
+              0.07013703859210606,
+              0.10509924251561434,
+              0.08744853404298343,
+              0.3517836321809572
+            ],
+            "padding_fraction": 0.07796875000000003
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.04921931680291891,
+            "full10_mse": 0.09139563340913147,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.06264620821761076,
+            "full10_later45_mse": 0.09459001398596713,
+            "full10_unpadded_mse": 0.09194073694377393,
+            "full10_first5_per_action_dimension": [
+              0.0728720447749283,
+              0.058981915512776276,
+              0.046817688351330045,
+              0.04274053447828586,
+              0.064596640389836,
+              0.05303196633596262,
+              0.09948266768015593
+            ],
+            "padding_fraction": 0.026874999999999982
+          },
+          "heldout": {
+            "fm": 0.11125669535249472,
+            "full10_mse": 0.1478844361390305,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.11463640079605635,
+            "full10_later45_mse": 0.15157866228824987,
+            "full10_unpadded_mse": 0.1456072096251613,
+            "full10_first5_per_action_dimension": [
+              0.08295200152156218,
+              0.05221619880561636,
+              0.05620469665395408,
+              0.04555530296195774,
+              0.10626968382739713,
+              0.0911876709905132,
+              0.3680692508113905
+            ],
+            "padding_fraction": 0.07796875000000003
+          }
+        }
+      }
+    },
+    {
+      "task": 39,
+      "suite": "libero_10",
+      "arms": {
+        "writer900": {
+          "support": {
+            "fm": 0.23965252004563808,
+            "full10_mse": 0.2957030533964661,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.2449221856826241,
+            "full10_later45_mse": 0.3013453720313373,
+            "full10_unpadded_mse": 0.30723149647117975,
+            "full10_first5_per_action_dimension": [
+              0.21880350804681767,
+              0.3037756710361944,
+              0.12651410543766234,
+              0.19429067984253684,
+              0.18552757154292068,
+              0.11530392819948312,
+              0.5702398356727516
+            ],
+            "padding_fraction": 0.08406250000000004
+          },
+          "heldout": {
+            "fm": 0.23625759966671467,
+            "full10_mse": 0.3089530663765311,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.24371181623109794,
+            "full10_later45_mse": 0.31620209417046813,
+            "full10_unpadded_mse": 0.3135639547312333,
+            "full10_first5_per_action_dimension": [
+              0.3185827601793566,
+              0.2284965488550185,
+              0.1157751264530906,
+              0.30494089339344044,
+              0.2930521346479328,
+              0.17575582671727188,
+              0.2693794233715733
+            ],
+            "padding_fraction": 0.05734375000000003
+          }
+        },
+        "free_q": {
+          "support": {
+            "fm": 0.2006202358752489,
+            "full10_mse": 0.21161251901097816,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.2256571346210247,
+            "full10_later45_mse": 0.21005200616541744,
+            "full10_unpadded_mse": 0.21869191513536254,
+            "full10_first5_per_action_dimension": [
+              0.19132431178734996,
+              0.17930839183673122,
+              0.09380446066795357,
+              0.18669116249913548,
+              0.17577157719208303,
+              0.11474383850130561,
+              0.6379561998626121
+            ],
+            "padding_fraction": 0.08406250000000004
+          },
+          "heldout": {
+            "fm": 0.21515333279967308,
+            "full10_mse": 0.23708070018924582,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.2135423767239504,
+            "full10_later45_mse": 0.23969606946316754,
+            "full10_unpadded_mse": 0.2402696233628436,
+            "full10_first5_per_action_dimension": [
+              0.24944467165827078,
+              0.16466851473809413,
+              0.10504752144834892,
+              0.26214498631624245,
+              0.2698679913268768,
+              0.16726753360241947,
+              0.27635541797739754
+            ],
+            "padding_fraction": 0.05734375000000003
+          }
+        },
+        "free_lora": {
+          "support": {
+            "fm": 0.0905675208196044,
+            "full10_mse": 0.14616653861090814,
+            "finite": true,
+            "positions": 64,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.1497017355096942,
+            "full10_later45_mse": 0.14577373895548745,
+            "full10_unpadded_mse": 0.14752743968558937,
+            "full10_first5_per_action_dimension": [
+              0.19720176974175035,
+              0.09788771052532913,
+              0.10116022536093858,
+              0.1108809986421672,
+              0.12258502510450457,
+              0.06690480376697153,
+              0.3512916154261968
+            ],
+            "padding_fraction": 0.08406250000000004
+          },
+          "heldout": {
+            "fm": 0.18691756948828697,
+            "full10_mse": 0.2407069770448421,
+            "finite": true,
+            "positions": 128,
+            "fm_predictions": 128,
+            "full10_first5_mse": 0.2610473098932496,
+            "full10_later45_mse": 0.2384469400616857,
+            "full10_unpadded_mse": 0.24136320631637598,
+            "full10_first5_per_action_dimension": [
+              0.5721050914070342,
+              0.1531677703977729,
+              0.10278535181343387,
+              0.29740764150180465,
+              0.2735008538028756,
+              0.1986644599232281,
+              0.22970000040659536
+            ],
+            "padding_fraction": 0.05734375000000003
+          }
+        }
+      }
+    }
+  ],
+  "total_task_seconds": 18029.530501589878,
+  "maximum_peak_allocated_gib": 13.238199234008789
+}

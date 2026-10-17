@@ -1,0 +1,1504 @@
+{
+  "G_gradient_owner": "frozen",
+  "G_novel_tasks": [
+    40,
+    41,
+    52,
+    53,
+    54,
+    57,
+    59,
+    61,
+    63,
+    66,
+    68,
+    69,
+    72,
+    74,
+    78,
+    80,
+    81,
+    82,
+    99,
+    102,
+    103,
+    104,
+    105,
+    107,
+    108,
+    111,
+    112,
+    114,
+    115,
+    116,
+    119,
+    121,
+    122,
+    124,
+    126,
+    127
+  ],
+  "G_objective": "task_equal_layer_mean_full_BA_Frobenius_v1",
+  "G_seen_tasks": [
+    0,
+    1,
+    2,
+    4,
+    5,
+    7,
+    12,
+    13,
+    14,
+    15,
+    17,
+    19,
+    20,
+    21,
+    22,
+    25,
+    28,
+    29,
+    32,
+    34,
+    35,
+    36,
+    37,
+    38,
+    42,
+    43,
+    51,
+    55,
+    56,
+    62,
+    64,
+    73,
+    95,
+    96,
+    97,
+    101
+  ],
+  "Owner_latest": "11:50 autonomous execution; tonight23:00 goal subsequently cancelled; no deadline guard",
+  "bounded_stop": "fixed pair72,A180,B18,one correct400; no automatic successor",
+  "checkpoint_schema": "ember_selector_transfer72_fixedG38349_v12",
+  "compilation": {
+    "bootstrap": "same actual MT episode before first G",
+    "generation": "deterministic_MT_centered_endpoint",
+    "native_policy_flow_steps": 10,
+    "parameter_decoder_calls": 1,
+    "proposal_attempts": 32,
+    "proposals_per_decision": 1,
+    "response_observations": 16
+  },
+  "design": "docs/designs/video_guided_proposal_writer_20261010.md#23",
+  "engineering_consumer_repair": {
+    "CPU_dispatch_handoff": "runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349/coordinator/selector72_prefix_consumer_handoff_02/handoff.json",
+    "evidence": "runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349/analysis/engineering/formal_prefix_index_evidence.json",
+    "new_consumer": "060485bab50126c167f0e60d39c7adf49e9f9791",
+    "old_consumer": "0dee9028972fb5a14bd8b441c8a6833f151488eb",
+    "original_GPU_work_preserved": true,
+    "scientific_scope_unchanged": true
+  },
+  "expected_B_G_query_max": 5760,
+  "expected_B_additional_MT_query_max": 1152,
+  "expected_B_practice_max": 360,
+  "expected_formal_additional_MT_bootstrap_max": 400,
+  "expected_initial_new_generations": 36,
+  "expected_initial_pair_episodes": 1260,
+  "expected_initial_reused_query_rows": 1152,
+  "final_warm": {
+    "baseline_frozen": true,
+    "conditions": 720,
+    "final_only": true,
+    "no_extra_GPU_readback": true,
+    "task_exposure": 10,
+    "updates": 180
+  },
+  "fixed_G_update": 38349,
+  "fixed_local_update": 180,
+  "fixed_pair_sources": {
+    "0": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0000/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0000/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0000/G_000.safetensors"
+    },
+    "1": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0001/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0001/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0001/G_000.safetensors"
+    },
+    "101": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0101/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0101/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0101/G_000.safetensors"
+    },
+    "12": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0012/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0012/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0012/G_000.safetensors"
+    },
+    "13": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0013/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0013/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0013/G_000.safetensors"
+    },
+    "14": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0014/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0014/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0014/G_000.safetensors"
+    },
+    "15": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0015/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0015/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0015/G_000.safetensors"
+    },
+    "17": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0017/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0017/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0017/G_000.safetensors"
+    },
+    "19": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0019/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0019/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0019/G_000.safetensors"
+    },
+    "2": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0002/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0002/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0002/G_000.safetensors"
+    },
+    "20": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0020/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0020/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0020/G_000.safetensors"
+    },
+    "21": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0021/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0021/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0021/G_000.safetensors"
+    },
+    "22": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0022/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0022/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0022/G_000.safetensors"
+    },
+    "25": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0025/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0025/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0025/G_000.safetensors"
+    },
+    "28": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0028/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0028/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0028/G_000.safetensors"
+    },
+    "29": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0029/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0029/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0029/G_000.safetensors"
+    },
+    "32": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0032/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0032/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0032/G_000.safetensors"
+    },
+    "34": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0034/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0034/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0034/G_000.safetensors"
+    },
+    "35": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0035/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0035/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0035/G_000.safetensors"
+    },
+    "36": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0036/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0036/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0036/G_000.safetensors"
+    },
+    "37": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0037/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0037/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0037/G_000.safetensors"
+    },
+    "38": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0038/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0038/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0038/G_000.safetensors"
+    },
+    "4": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0004/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0004/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0004/G_000.safetensors"
+    },
+    "42": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0042/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0042/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0042/G_000.safetensors"
+    },
+    "43": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0043/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0043/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0043/G_000.safetensors"
+    },
+    "5": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0005/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0005/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0005/G_000.safetensors"
+    },
+    "51": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0051/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0051/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0051/G_000.safetensors"
+    },
+    "55": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0055/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0055/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0055/G_000.safetensors"
+    },
+    "56": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0056/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0056/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0056/G_000.safetensors"
+    },
+    "62": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0062/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0062/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0062/G_000.safetensors"
+    },
+    "64": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0064/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0064/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0064/G_000.safetensors"
+    },
+    "7": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0007/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0007/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0007/G_000.safetensors"
+    },
+    "73": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0073/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0073/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0073/G_000.safetensors"
+    },
+    "95": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0095/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0095/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0095/G_000.safetensors"
+    },
+    "96": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0096/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0096/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0096/G_000.safetensors"
+    },
+    "97": {
+      "bootstrap_complete": "runs/video_guided_proposal_writer_20261011/full36_common_teacher/bootstrap/task_0097/complete.json",
+      "generation": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0097/generation.json",
+      "panel": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/fixed_g_panel.json",
+      "results": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/results.json",
+      "root": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16",
+      "weights": "runs/video_guided_proposal_writer_20261013/endpoint_native_FM_after38349/parent_seen38349_query16/endpoints/task_0097/G_000.safetensors"
+    }
+  },
+  "formal_report": {
+    "arms": [
+      "correct"
+    ],
+    "bootstrap_reference_root": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/validation/RL_00000009/correct",
+    "checkpoint": "runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349/checkpoints/RL/update_00000018",
+    "checkpoint_selection": "sole complete B18",
+    "conditions": 400,
+    "environment_multiplier": 6,
+    "held_labels_read": false,
+    "max_rounds": 5,
+    "states_per_task": 50,
+    "test_enabled": false,
+    "version": [
+      "RL",
+      18
+    ],
+    "video_seed": 7
+  },
+  "frozen_workspace": "workspace_assets/ember_worktrees/selector72_prefix_20261013_060485ba",
+  "git": {
+    "branch": "",
+    "commit": "060485bab50126c167f0e60d39c7adf49e9f9791",
+    "dirty_paths": []
+  },
+  "information_wall": "query labels only theta/baseline, never H/G; no offline actions or held gradients/Test",
+  "initial_writer_checkpoint": "runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349/checkpoints/local/update_00000180",
+  "initial_writer_stage": "local",
+  "learning_migration": {
+    "destination_schema": "ember_selector_transfer72_fixedG38349_v12",
+    "fixed_G_cursor": 38349,
+    "fixed_bank_version": 9,
+    "new_training_task_distribution": "equal seen/novel, uniform within each36",
+    "original_contract_exact_resume": false,
+    "source_checkpoint": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000009",
+    "source_local_updates": 90,
+    "source_schema": "ember_full_writer_frozen_frontend_endpoint_v10",
+    "source_theta_stage": "RL",
+    "source_theta_update": 9,
+    "theta_Adam_baseline_samplers_RNG_inherited": true
+  },
+  "limits": {
+    "GPU_hours": null,
+    "GPU_hours_hard_cap_active": false,
+    "added_peak_GiB": 160
+  },
+  "logical_batch": {
+    "actor_conditions": 4
+  },
+  "mt_checkpoint": "legacy_runs/coverage_retraining_20260920/training/mtbc/checkpoints/step_00000300/lora.safetensors",
+  "on_policy": {
+    "G_bank_append": false,
+    "G_updates": 0,
+    "common_noise": true,
+    "conditions": 72,
+    "query_visit": 0,
+    "rounds": 5,
+    "teaching_pool_ordinal": 1,
+    "updates": 18
+  },
+  "optimizer": {
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eps": 1e-08,
+    "lr": 0.0001,
+    "weight_decay": 0.0001
+  },
+  "preparation_git": {
+    "branch": "codex/selector-transfer72-20261013",
+    "commit": "cf7c1eb5835820fa39e0076071ab40c0964241a3",
+    "dirty_paths": [],
+    "origin_main": "4ed61c16b84b0a03d7efb91c8b936092b3dcb2d7"
+  },
+  "previous_data_git": {
+    "branch": "",
+    "commit": "0dee9028972fb5a14bd8b441c8a6833f151488eb",
+    "dirty_paths": []
+  },
+  "readout_checkpoint": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000009",
+  "reporting": {
+    "Owner_quote": "我打算让一个新session接手主讨论，你把目前的任务完成后，不着急向现在的主讨论汇报",
+    "completion_continuation_experiment": "[operational-id]",
+    "delivery": "One reliable full-batch report or substantive scientific boundary to new main; no routine ACK/heartbeat",
+    "execution_not_paused": true,
+    "hold_proactive_delivery_to_previous_main": true,
+    "new_main": "[operational-id]",
+    "new_main_analysis_goal": "independent scientific analysis and mechanism/architecture/training review, independently reviewed and revised complete design; no extra experiment from registration",
+    "new_main_host": "remote-ssh-discovered:GPU-node-B",
+    "new_receiver_registration_required_only_for_delivery": false,
+    "previous_main": "[operational-id]",
+    "previous_completion_continuation_experiment": "[operational-id]",
+    "route_change_UTC": "2026-10-13T06:26:41.826604+00:00",
+    "latest_owner_authorized_experiment_takeover": true
+  },
+  "run_scoped_task_authority": "runs/video_guided_proposal_writer_20261013/selector_transfer72_fixedG38349/analysis/task_audit/task_authorities.json",
+  "schema_version": "ember_selector_transfer72_fixedG38349_v1",
+  "selector_schema": "ember_full36_student_joint_conditional_continue_selector_v5",
+  "selector_training": {
+    "bootstrap_stage": 0,
+    "collection": "full parent+STOP forward, then condition nonSTOP; actual current practice; theta fixed batch",
+    "complete_task_rounds": 1,
+    "continue_cost": 0.001,
+    "deployment": "ordinary parent/STOP; actual STOP absorbs final unique sampled LoRA",
+    "objective": "mean depths1..5 recursive STOP/final expectations; conditional behavior score plus direct gradient",
+    "practice_candidates": [
+      "parent",
+      "one newG"
+    ],
+    "practice_selection": "actual Actor categorical score",
+    "psi_freeze_scope": "each behavior batch and matching theta update; supervised psi block afterwards",
+    "query_states_per_parameter": 16,
+    "registered_theta_updates": 18,
+    "rounds": 5,
+    "schema": "ember_full36_conditional_continue_selector_v3",
+    "shared_training_requires_complete_real_rounds": true,
+    "unpracticed_G_query_credit": false
+  },
+  "source": {
+    "checkpoint": "runs/outputs/pi05_source_aligned_seed7_1k_20260915/checkpoints/step_00001000",
+    "data_protocol": "configs/libero_24_8_8_coverage_v1/protocol.json",
+    "evaluation_config": "configs/libero_24_8_8_coverage_v1/evaluation.json",
+    "lora_contract": "configs/pi05_lora_rank128_aligned.json",
+    "normalization": "configs/pi05_source_corpus_v1/source_normalization.json",
+    "tokenizer": "models/tokenizers/openpi/paligemma_tokenizer.model"
+  },
+  "source_checkpoint": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/checkpoints/RL/update_00000009",
+  "source_record": "runs/video_guided_proposal_writer_20261012/full_writer_after24849_20261013/run_contract.json",
+  "stage_estimate_seconds": {
+    "RL_18": 10800,
+    "local_180": 3000
+  },
+  "student_refresh": {
+    "G_update": 38349,
+    "condition_mapping": {
+      "0": {
+        "noise_root": 365902541,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "1": {
+        "noise_root": 3757055955,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "101": {
+        "noise_root": 3360594590,
+        "path_ordinal": 0,
+        "teacher_demo": 49
+      },
+      "102": {
+        "noise_root": 527199666,
+        "path_ordinal": 0,
+        "teacher_demo": 49
+      },
+      "103": {
+        "noise_root": 1164666822,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "104": {
+        "noise_root": 1609026921,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "105": {
+        "noise_root": 2412322011,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "107": {
+        "noise_root": 3331741350,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "108": {
+        "noise_root": 1847412461,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "111": {
+        "noise_root": 2198978117,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "112": {
+        "noise_root": 3817265998,
+        "path_ordinal": 0,
+        "teacher_demo": 49
+      },
+      "114": {
+        "noise_root": 3485076646,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "115": {
+        "noise_root": 3059149112,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "116": {
+        "noise_root": 3636319981,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "119": {
+        "noise_root": 3114073653,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "12": {
+        "noise_root": 632264980,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "121": {
+        "noise_root": 3587050925,
+        "path_ordinal": 0,
+        "teacher_demo": 49
+      },
+      "122": {
+        "noise_root": 996922914,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "124": {
+        "noise_root": 629786774,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "126": {
+        "noise_root": 780807199,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "127": {
+        "noise_root": 1551158237,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "13": {
+        "noise_root": 2046123816,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "14": {
+        "noise_root": 2267647116,
+        "path_ordinal": 0,
+        "teacher_demo": 49
+      },
+      "15": {
+        "noise_root": 4176976450,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "17": {
+        "noise_root": 45000032,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "19": {
+        "noise_root": 1929023503,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "2": {
+        "noise_root": 213898847,
+        "path_ordinal": 0,
+        "teacher_demo": 49
+      },
+      "20": {
+        "noise_root": 4074003439,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "21": {
+        "noise_root": 4177930291,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "22": {
+        "noise_root": 943162602,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "25": {
+        "noise_root": 2400362779,
+        "path_ordinal": 0,
+        "teacher_demo": 49
+      },
+      "28": {
+        "noise_root": 2845969834,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "29": {
+        "noise_root": 1513095644,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "32": {
+        "noise_root": 976606231,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "34": {
+        "noise_root": 3807312820,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "35": {
+        "noise_root": 1552479633,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "36": {
+        "noise_root": 1668430460,
+        "path_ordinal": 0,
+        "teacher_demo": 49
+      },
+      "37": {
+        "noise_root": 3932222783,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "38": {
+        "noise_root": 3430878618,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "4": {
+        "noise_root": 1583336206,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "40": {
+        "noise_root": 2013183613,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "41": {
+        "noise_root": 3247355590,
+        "path_ordinal": 0,
+        "teacher_demo": 49
+      },
+      "42": {
+        "noise_root": 3700835435,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "43": {
+        "noise_root": 955184084,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "5": {
+        "noise_root": 4242108607,
+        "path_ordinal": 0,
+        "teacher_demo": 49
+      },
+      "51": {
+        "noise_root": 2757263951,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "52": {
+        "noise_root": 851539486,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "53": {
+        "noise_root": 298916925,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "54": {
+        "noise_root": 1116771508,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "55": {
+        "noise_root": 1357717123,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "56": {
+        "noise_root": 3107592097,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "57": {
+        "noise_root": 3048956502,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "59": {
+        "noise_root": 3038989619,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "61": {
+        "noise_root": 2773321868,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "62": {
+        "noise_root": 4294548280,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "63": {
+        "noise_root": 3953608731,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "64": {
+        "noise_root": 209773575,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "66": {
+        "noise_root": 692118351,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "68": {
+        "noise_root": 110621006,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "69": {
+        "noise_root": 2898888528,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      },
+      "7": {
+        "noise_root": 774546039,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "72": {
+        "noise_root": 2408814133,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "73": {
+        "noise_root": 4204538510,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "74": {
+        "noise_root": 991825398,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "78": {
+        "noise_root": 3802954186,
+        "path_ordinal": 0,
+        "teacher_demo": 49
+      },
+      "80": {
+        "noise_root": 2109285128,
+        "path_ordinal": 0,
+        "teacher_demo": 49
+      },
+      "81": {
+        "noise_root": 568501765,
+        "path_ordinal": 0,
+        "teacher_demo": 46
+      },
+      "82": {
+        "noise_root": 3275799455,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "95": {
+        "noise_root": 688094995,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "96": {
+        "noise_root": 2442495220,
+        "path_ordinal": 0,
+        "teacher_demo": 49
+      },
+      "97": {
+        "noise_root": 2591260191,
+        "path_ordinal": 0,
+        "teacher_demo": 47
+      },
+      "99": {
+        "noise_root": 3702591425,
+        "path_ordinal": 0,
+        "teacher_demo": 48
+      }
+    },
+    "practice_mapping": {
+      "0": {
+        "env_seed": 1531795705,
+        "history_episode_ordinal": 1,
+        "init_state_id": 44,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 1531795705
+      },
+      "1": {
+        "env_seed": 798931642,
+        "history_episode_ordinal": 1,
+        "init_state_id": 32,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 798931642
+      },
+      "101": {
+        "env_seed": 3330647678,
+        "history_episode_ordinal": 1,
+        "init_state_id": 21,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3330647678
+      },
+      "102": {
+        "env_seed": 2208236178,
+        "history_episode_ordinal": 1,
+        "init_state_id": 32,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2208236178
+      },
+      "103": {
+        "env_seed": 3115315996,
+        "history_episode_ordinal": 1,
+        "init_state_id": 49,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3115315996
+      },
+      "104": {
+        "env_seed": 2359849501,
+        "history_episode_ordinal": 1,
+        "init_state_id": 33,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2359849501
+      },
+      "105": {
+        "env_seed": 708740529,
+        "history_episode_ordinal": 1,
+        "init_state_id": 17,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 708740529
+      },
+      "107": {
+        "env_seed": 932750416,
+        "history_episode_ordinal": 1,
+        "init_state_id": 45,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 932750416
+      },
+      "108": {
+        "env_seed": 1529888417,
+        "history_episode_ordinal": 1,
+        "init_state_id": 9,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 1529888417
+      },
+      "111": {
+        "env_seed": 3613806619,
+        "history_episode_ordinal": 1,
+        "init_state_id": 26,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3613806619
+      },
+      "112": {
+        "env_seed": 1055766233,
+        "history_episode_ordinal": 1,
+        "init_state_id": 33,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 1055766233
+      },
+      "114": {
+        "env_seed": 2942093404,
+        "history_episode_ordinal": 1,
+        "init_state_id": 19,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2942093404
+      },
+      "115": {
+        "env_seed": 1431376066,
+        "history_episode_ordinal": 1,
+        "init_state_id": 28,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 1431376066
+      },
+      "116": {
+        "env_seed": 3368986573,
+        "history_episode_ordinal": 1,
+        "init_state_id": 6,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3368986573
+      },
+      "119": {
+        "env_seed": 1473680106,
+        "history_episode_ordinal": 1,
+        "init_state_id": 20,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 1473680106
+      },
+      "12": {
+        "env_seed": 407084204,
+        "history_episode_ordinal": 1,
+        "init_state_id": 19,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 407084204
+      },
+      "121": {
+        "env_seed": 2804184314,
+        "history_episode_ordinal": 1,
+        "init_state_id": 30,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2804184314
+      },
+      "122": {
+        "env_seed": 1948652928,
+        "history_episode_ordinal": 1,
+        "init_state_id": 28,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 1948652928
+      },
+      "124": {
+        "env_seed": 1505128118,
+        "history_episode_ordinal": 1,
+        "init_state_id": 45,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 1505128118
+      },
+      "126": {
+        "env_seed": 3395223759,
+        "history_episode_ordinal": 1,
+        "init_state_id": 44,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3395223759
+      },
+      "127": {
+        "env_seed": 3472515408,
+        "history_episode_ordinal": 1,
+        "init_state_id": 30,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3472515408
+      },
+      "13": {
+        "env_seed": 3555493631,
+        "history_episode_ordinal": 1,
+        "init_state_id": 22,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3555493631
+      },
+      "14": {
+        "env_seed": 3593082471,
+        "history_episode_ordinal": 1,
+        "init_state_id": 13,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3593082471
+      },
+      "15": {
+        "env_seed": 402375512,
+        "history_episode_ordinal": 1,
+        "init_state_id": 5,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 402375512
+      },
+      "17": {
+        "env_seed": 1369853034,
+        "history_episode_ordinal": 1,
+        "init_state_id": 43,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 1369853034
+      },
+      "19": {
+        "env_seed": 3137590568,
+        "history_episode_ordinal": 1,
+        "init_state_id": 26,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3137590568
+      },
+      "2": {
+        "env_seed": 2606666766,
+        "history_episode_ordinal": 1,
+        "init_state_id": 46,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2606666766
+      },
+      "20": {
+        "env_seed": 1800130722,
+        "history_episode_ordinal": 1,
+        "init_state_id": 43,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 1800130722
+      },
+      "21": {
+        "env_seed": 738554764,
+        "history_episode_ordinal": 1,
+        "init_state_id": 22,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 738554764
+      },
+      "22": {
+        "env_seed": 2313980247,
+        "history_episode_ordinal": 1,
+        "init_state_id": 48,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2313980247
+      },
+      "25": {
+        "env_seed": 2984845349,
+        "history_episode_ordinal": 1,
+        "init_state_id": 32,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2984845349
+      },
+      "28": {
+        "env_seed": 3826553967,
+        "history_episode_ordinal": 1,
+        "init_state_id": 36,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3826553967
+      },
+      "29": {
+        "env_seed": 2853714851,
+        "history_episode_ordinal": 1,
+        "init_state_id": 49,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2853714851
+      },
+      "32": {
+        "env_seed": 290162574,
+        "history_episode_ordinal": 1,
+        "init_state_id": 22,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 290162574
+      },
+      "34": {
+        "env_seed": 762756005,
+        "history_episode_ordinal": 1,
+        "init_state_id": 45,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 762756005
+      },
+      "35": {
+        "env_seed": 4243011496,
+        "history_episode_ordinal": 1,
+        "init_state_id": 21,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 4243011496
+      },
+      "36": {
+        "env_seed": 2967693386,
+        "history_episode_ordinal": 1,
+        "init_state_id": 46,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2967693386
+      },
+      "37": {
+        "env_seed": 1667546749,
+        "history_episode_ordinal": 1,
+        "init_state_id": 27,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 1667546749
+      },
+      "38": {
+        "env_seed": 2382827018,
+        "history_episode_ordinal": 1,
+        "init_state_id": 43,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2382827018
+      },
+      "4": {
+        "env_seed": 4265918813,
+        "history_episode_ordinal": 1,
+        "init_state_id": 21,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 4265918813
+      },
+      "40": {
+        "env_seed": 495592953,
+        "history_episode_ordinal": 1,
+        "init_state_id": 38,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 495592953
+      },
+      "41": {
+        "env_seed": 4214454996,
+        "history_episode_ordinal": 1,
+        "init_state_id": 7,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 4214454996
+      },
+      "42": {
+        "env_seed": 32987292,
+        "history_episode_ordinal": 1,
+        "init_state_id": 34,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 32987292
+      },
+      "43": {
+        "env_seed": 3183703977,
+        "history_episode_ordinal": 1,
+        "init_state_id": 41,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3183703977
+      },
+      "5": {
+        "env_seed": 4176728344,
+        "history_episode_ordinal": 1,
+        "init_state_id": 11,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 4176728344
+      },
+      "51": {
+        "env_seed": 3574632122,
+        "history_episode_ordinal": 1,
+        "init_state_id": 39,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3574632122
+      },
+      "52": {
+        "env_seed": 925332368,
+        "history_episode_ordinal": 1,
+        "init_state_id": 39,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 925332368
+      },
+      "53": {
+        "env_seed": 266994159,
+        "history_episode_ordinal": 1,
+        "init_state_id": 30,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 266994159
+      },
+      "54": {
+        "env_seed": 3917233895,
+        "history_episode_ordinal": 1,
+        "init_state_id": 14,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3917233895
+      },
+      "55": {
+        "env_seed": 2466823372,
+        "history_episode_ordinal": 1,
+        "init_state_id": 2,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2466823372
+      },
+      "56": {
+        "env_seed": 909389109,
+        "history_episode_ordinal": 1,
+        "init_state_id": 4,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 909389109
+      },
+      "57": {
+        "env_seed": 279536680,
+        "history_episode_ordinal": 1,
+        "init_state_id": 11,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 279536680
+      },
+      "59": {
+        "env_seed": 3965982622,
+        "history_episode_ordinal": 1,
+        "init_state_id": 47,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3965982622
+      },
+      "61": {
+        "env_seed": 4180049302,
+        "history_episode_ordinal": 1,
+        "init_state_id": 24,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 4180049302
+      },
+      "62": {
+        "env_seed": 959222462,
+        "history_episode_ordinal": 1,
+        "init_state_id": 19,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 959222462
+      },
+      "63": {
+        "env_seed": 2271909620,
+        "history_episode_ordinal": 1,
+        "init_state_id": 15,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2271909620
+      },
+      "64": {
+        "env_seed": 768672937,
+        "history_episode_ordinal": 1,
+        "init_state_id": 28,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 768672937
+      },
+      "66": {
+        "env_seed": 966713689,
+        "history_episode_ordinal": 1,
+        "init_state_id": 45,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 966713689
+      },
+      "68": {
+        "env_seed": 3275891323,
+        "history_episode_ordinal": 1,
+        "init_state_id": 2,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3275891323
+      },
+      "69": {
+        "env_seed": 2608588871,
+        "history_episode_ordinal": 1,
+        "init_state_id": 46,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2608588871
+      },
+      "7": {
+        "env_seed": 2057662901,
+        "history_episode_ordinal": 1,
+        "init_state_id": 46,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2057662901
+      },
+      "72": {
+        "env_seed": 2705356358,
+        "history_episode_ordinal": 1,
+        "init_state_id": 41,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 2705356358
+      },
+      "73": {
+        "env_seed": 1671813180,
+        "history_episode_ordinal": 1,
+        "init_state_id": 38,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 1671813180
+      },
+      "74": {
+        "env_seed": 3228892479,
+        "history_episode_ordinal": 1,
+        "init_state_id": 0,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3228892479
+      },
+      "78": {
+        "env_seed": 1522491570,
+        "history_episode_ordinal": 1,
+        "init_state_id": 0,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 1522491570
+      },
+      "80": {
+        "env_seed": 1080569854,
+        "history_episode_ordinal": 1,
+        "init_state_id": 13,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 1080569854
+      },
+      "81": {
+        "env_seed": 1887502567,
+        "history_episode_ordinal": 1,
+        "init_state_id": 11,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 1887502567
+      },
+      "82": {
+        "env_seed": 3800675275,
+        "history_episode_ordinal": 1,
+        "init_state_id": 7,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3800675275
+      },
+      "95": {
+        "env_seed": 4069348186,
+        "history_episode_ordinal": 1,
+        "init_state_id": 35,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 4069348186
+      },
+      "96": {
+        "env_seed": 4093578172,
+        "history_episode_ordinal": 1,
+        "init_state_id": 26,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 4093578172
+      },
+      "97": {
+        "env_seed": 3389867407,
+        "history_episode_ordinal": 1,
+        "init_state_id": 14,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 3389867407
+      },
+      "99": {
+        "env_seed": 4092341973,
+        "history_episode_ordinal": 1,
+        "init_state_id": 36,
+        "parameter_ref": "G_000",
+        "policy_seed_root": 4092341973
+      }
+    },
+    "query_states_per_parameter": 16,
+    "readonly_E_query": false,
+    "readout_mode": "selector_fixed_pair",
+    "task_count": 72,
+    "version": "fixed_G38349_pair72"
+  },
+  "task_batch_seed": [
+    20261013,
+    23
+  ],
+  "training_tasks": [
+    0,
+    1,
+    2,
+    4,
+    5,
+    7,
+    12,
+    13,
+    14,
+    15,
+    17,
+    19,
+    20,
+    21,
+    22,
+    25,
+    28,
+    29,
+    32,
+    34,
+    35,
+    36,
+    37,
+    38,
+    40,
+    41,
+    42,
+    43,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    59,
+    61,
+    62,
+    63,
+    64,
+    66,
+    68,
+    69,
+    72,
+    73,
+    74,
+    78,
+    80,
+    81,
+    82,
+    95,
+    96,
+    97,
+    99,
+    101,
+    102,
+    103,
+    104,
+    105,
+    107,
+    108,
+    111,
+    112,
+    114,
+    115,
+    116,
+    119,
+    121,
+    122,
+    124,
+    126,
+    127
+  ],
+  "updates": {
+    "RL": [
+      18
+    ],
+    "local": [
+      90,
+      180
+    ]
+  }
+}

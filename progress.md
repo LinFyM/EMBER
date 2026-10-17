@@ -1,3 +1,9 @@
+## 2026-10-17 当前完整议案：直接操作/恢复监督与参数学习分工，暂不开实验
+
+Owner要求完整解决E学习，指出“读完整过程后仍靠FM/回报”没有实质补链。[当前议案](docs/analyses/feedback_learning_reassessment_20261017.md)改为：获准non-held操作事实、跨episode实际恢复对应、同学生状态真实干预的事件到达/继续结果直接训练E；自身实践更新对象/事件/控制响应的判断；E的事件信用及真实success经当前policy score修订完整38r8。外层跨episode FM与独立新初态回报只训练共享分组步长/动量规则，停止其对E语义输出的梯度，不再用末端参数效用冒充操作语义。
+
+reference恢复与当前LoRA能力分列，前者不作held输入、动作拟合或当前Q oracle。已核旧学生访态expert-FM、P/I实际消费者和T50原件：恢复9/16救回6但丢3，task29为0/4；没有现成广泛恢复老师。G/F、FR、Phi-N16和native64阴性继续约束事件代理与跨状态写入，新增对应/恢复监督尚未采集，不称方案有效。当前无active design、计算、实现或派发；Owner“先别开实验”保持。
+
 ## 2026-10-17 当前复核：E的表达边界与任务捷径尚不能由元梯度排除
 
 Owner追问线性E是否只是Phi/DTW重加权，要求结合G/F、FR说明操作表示与跨初态学习，明确不开实验。main核对原设计/报告，在[同一分析](docs/analyses/feedback_learning_reassessment_20261017.md)给出m碰撞/非负排序限制、完整投影信用M^T P^T g_Q、跨状态J_Q P J_H^T联系及task条件评分反例。独立query提供参数效用，不能自动提供操作语义或排除任务识别；w不变也不等于M未消费视频。

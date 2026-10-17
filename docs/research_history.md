@@ -1,3 +1,9 @@
+## 2026-10-17：形成直接操作/恢复监督的完整议案，尚未实施
+
+Owner否定仅扩大E输入仍靠末端FM/回报的解释，要求完整方案且不开实验。main在[同一分析首节](analyses/feedback_learning_reassessment_20261017.md)提出三类直接target：合法操作事实、教学与实际恢复的角色/事件对应、真实同状态干预的事件到达与继续结果；新condition实践校正应用条件/控制响应，完整38r8沿实际policy score修订。跨episode FM与独立新初态回报训练分组更新规则，对E语义stop-gradient。此为新增学习合同候选，不是既有结果或active design。
+
+main直接核对966353e的学生访态expert-FM消费者、bc729e86的P/I FM消费者及T50 JSON。旧路径包含学生状态、对应数据与真实恢复的部分环节，但未发现上述完整直接操作监督消费者；T50专家480接手9/16对MT4/16，救回6同时丢3、task29为0/4，禁止假定万能恢复老师。现有G/F、FR、Phi-N16/native阴性及G/D正例仍保留。新增恢复标签/覆盖未取得，0模型/env/GPU计算或派发。
+
 ## 2026-10-17：复核关系评分的表达限制与操作理解可识别性
 
 Owner质询线性E是否只是Phi/DTW加权以及M^T g_Q能否排除任务识别/局部投机。main在[同一分析](analyses/feedback_learning_reassessment_20261017.md)给出表示碰撞、非负排序、完整投影梯度和跨状态导数联系；独立query信用仅评价已有参数方向，不提供操作语义证明。task条件评分可满足跨episode目标，使用H/整路径回报亦无自动排除保证；w不随V变化与整个M忽略V须分开。

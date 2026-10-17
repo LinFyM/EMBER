@@ -12,7 +12,17 @@
   },
   "curated_markdown_links": "passed",
   "historical_code_index": "29 groups, 67 commit references; paths exist and commits are ancestors of scientific base b55226ed and pre-delivery origin/main.",
-  "remote_delivery": "See current progress and the final delivery commit; local validation alone is not remote accessibility verification.",
+  "remote_delivery": {
+    "remote_commit": "ac5f87f2acdbb2229f6f429db01396194adc3380",
+    "remote_git_tree": "2e5f52c8b88009a5e0c75ed28c23f91519a6d048",
+    "verified_via": "GitHub connector: recursive directory tree, complete prompt readback, evidence index and native results readback",
+    "remote_files": 399,
+    "remote_bytes": 138176535,
+    "all_expected_paths_and_sizes_match": true,
+    "tree_truncated": false,
+    "complete_prompt_text_matches": true,
+    "historical_T_producer_code_readback": true
+  },
   "no_claims": [
     "No new scientific validation",
     "No independent simulation replay",

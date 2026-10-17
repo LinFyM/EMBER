@@ -1,3 +1,10 @@
+## 2026-10-17 原生首写工程attempt001：自定义Function关闭forward AD
+
+owner1893672于03:07:55.856997Z exit1，reader1542已结束。profile_first3四rank都在r=J0D处报告native JVP tangent丢失，全部发生在FM sampling/forward之前；0有效更新/0FM/0新环境/0episode extra，无CP或生成参数需要恢复。实际GPU job03:07:21.518568→03:07:54.877796，4卡/0.037065746784GPUh，原失败log/exit、owner launch/exit、campaign时钟与cache均保留analysis/engineering_attempt001。
+按systematic-debugging实际CPU最小复现：custom autograd.Function.forward中forward AD enabled=False，dual_level本身不恢复它；显式_set_fwd_grad_enabled(True)后相同运算返回正确切向量。窄修只在NativeJacobian.jvp实际入口恢复forward AD作用域，真实J0数学/QR/alpha/权重/labels不改，不引入FD或source Hessian。实际NativeJacobian两条custom前后向CPU回归通过，真实GPU恢复验证尚待完成。
+四个source冻结视觉H缓存已真实构建、身份绑定，和原M可只adopt；原profile4更新/448FM余量完整，16episode工程额度未用。具名零消耗恢复只适用原attempt001与已退出进程，不滚动清费/自动重跑有效更新；新clean pushed detached版本后同一ROOT/同一campaign接续，原首dated02:39:51与03:06:46首次启动不重置。
+原2.5–5.5h预期/所有科学预算与资源边界保持；无新科学边界/Owner或main工程ACK需求。唯一旧owner已退出，恢复后仍只有一个实际退出等待者；普通工程修复不向main阶段ACK或自Queue。
+
 ## 2026-10-17 原生首写唯一owner实际启动
 
 owner1893672/监督1892547于2026-10-17T03:06:46.092437Z从clean pushed detached199fc3dc启动，正式workspace native_operator_frozen_20261017。直接退出reader1542/PTY20292，0自Queue/心跳/第二waiter；launch原件的actual_GPU_launch_yet=false只描述当时父进程启动，不冒充首有效更新或episode。

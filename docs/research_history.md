@@ -1,3 +1,9 @@
+## 2026-10-17：撤回关系评分主线，复算失败行为标签与控制传递
+
+Owner指出上一版仍靠Phi式关系评分/参数搜索及稀疏成功，main接受；functional93已含H条件密集FM，不能重新包装。只读旧八臂144首动作，target运动相对reference误差Reader .515166、functional .473203、native .937133，差距主要也在task内均值；不由首replan解释全程，task1/29不利反例保留。旧feedback_proposals的632H/158面板全部存在，203成功；455面板对状态/RNG匹配，126组两边全失败但首动作不同。97组至少两共同成功初态的配对仅10 task且76组在task0/20，独立覆盖不因样本帧数放大。
+
+[同一分析首节](analyses/feedback_learning_reassessment_20261017.md)推导`y_next=y_current+r(V)-r(O_current)`，由已知实际producer差训练同一视觉读取器，并以该完整LoRA的独立non-held功能目标训练。失败经历提供行为身份，正确教学/合法动作监督提供控制目标；纯task常量在式中抵消，有限录像、域差与held泛化仍未解决。复用已测D不等于清零旧64/Reader负证据，原G正例、P/I、FR/native/Phi边界保持。当前是科学讨论候选，无active design；新函数标签未计算，0模型/env/GPU/实现/采集或派发。
+
 ## 2026-10-17：d_e用途方案撤回；全失败与当前LoRA效用的推导
 
 Owner指出d_e仍是关联、source全失败无标签及reference用途不适配当前LoRA。main在[同一分析首节](analyses/feedback_learning_reassessment_20261017.md)撤回d_e→q→Phi的完整方法主张：随机动作不等于随机中介事件，分列控制器也没有提供学习桥梁。事实/对应监督保留，旧自动标签例子及方案按讨论历史解释，没有实施结果可追认。

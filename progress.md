@@ -1,8 +1,8 @@
-## 2026-10-17 学习链再审：目标解释、当前可行路径与跨初态信用分开
+## 2026-10-17 学习链再审：全失败的已知行为标签与实际编译消费者
 
-Owner指出p_phi仍承包关键难点，主讨论在[现有分析§4–8](docs/analyses/feedback_learning_reassessment_20261017.md)修正原下一步成功后果target：它是参考行为分布，不是当前学生最佳目标。保留A/f事实校准；教学产生有来源、带歧义的任务约束/过程候选，受限目标选择由真实成功/失败直接监督；局部物理导数只提案，同一完整LoRA的实际整段继续及独立non-held初态回报承担用途/迁移信用。
+Owner指出上一版仍回到Phi评分/参数搜索，主讨论接受。只读复算既有八臂首5步：target24运动相对reference误差Reader .515166、functional .473203、native .937133，native缺口主要也在task内均值，不能先认定A状态区分为主因；不以第一replan距离替代闭环，task1/29反例保留。读取旧feedback_proposals的36 task/158面板/632实际H，203成功、67全面板失败；455面板对初态/env/首noise配对，126组两边全失败但首动作不同。97组至少两共同成功初态只覆盖10 task，其中76组来自task0/20。
 
-没有假定新的Q或长程世界模型已经可用；全失败不凭空识别目标，势能/关系距离不能冒充成功回报，source/r8固定参数的新初态作用用相对误差收缩算式说明条件而非宣称LIBERO结果。历史阴性/正例与数据覆盖未知均保留。当前仅分析和现有记录更新，0实现/标签采集/模型/env/GPU/派发，无active design，先不开实验。
+当前讨论式为`y_next=y_current+r(V)-r(O_current)`，复用原有source/r8控制表达；r同权读取教学和真实自身RGB，不能输入自身y抄标签。共享学习实际producer差，并以该同一输出在独立non-held状态的功能目标训练；纯task常量抵消，失败行为仍有实际y标签，不能把它误标正确策略。原Reader已做共同producer监督、functional93已做H条件FM、旧G/P-I/FR/native正负全部继承；这是一项明确学习关系的候选，不是已证实新方法。详见[现有分析首节](docs/analyses/feedback_learning_reassessment_20261017.md)。新函数标签未计算，0实现/采集/模型/env/GPU/派发，无active design，先不开实验。
 
 ## 2026-10-17 当前具体化：自动标签与task12实例，暂不开实验
 

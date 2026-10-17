@@ -12674,3 +12674,15 @@ B在condition内直接按完整policy实际后果相对该目标分布的误差�
 局部f/物理导数只生成完整参数提案；一周期事实模型不能递归冒充未来RGB/原生hidden世界模型。提案必须由同一套完整LoRA真实继续，当前控制用途不能由参考Q替代。整段关系违反量可提供探索代理，但与真实R分列；全失败没有成功信用，非零方向仍可能只是共享先验/探索。旧d_e事件因果用途和势能不增加识别信息的边界保持。
 
 共享修订器须实际以同一最终LoRA在独立non-held初态上的完整回报受训，query不回写condition参数/H，held final query封存。BAh依赖当前状态才可能跨初态；例x_next=x+kappa*a、z=kappa*(g-x)、a=b*z给出误差(1-b)*(g-x)，0<b<2只在目标绑定/状态读取/响应均正确时收缩，不证明source hidden/rank8或LIBERO满足。G/F、FR、Phi-N16实践/query分离、native64及物理J等价/非线性限制继续约束投入；不是已经有效的新方法。完整分析见同一议案§4–8，0新实验/实现/active design。
+
+## 2026-10-17 失败经历有行为身份标签；不能再将稀疏评分或H条件FM当作补链
+
+Owner进一步指出上一版回到Phi关系评分加参数搜索，判断成立。事实校准与实际整段R分列并未解决全失败时正确方向，撤回该议案的主线资格。functional93已经以真实H和20160跨episode FM学修订，Reader89→93、实践83→100，不能将相同原则重新提作缺失监督；原G175/168及共同E的合法正例也不因新取舍抹去。
+
+只读八臂既有首个5×7动作：target24的六维运动误差以reference−source能量归一化，Reader .515166=.443884均值+.071281中心化，functional .473203=.397356+.075847，native .937133=.818885+.118248。全部初态/首noise配对。native对Reader的差距主要也在task内均值，不能以A未区分初态作为已经定位的主因。此项只有首replan，task1/29存在动作距离与闭环次序反例，不是成功surrogate或唯一根因。
+
+旧feedback_proposals原件有36 task/158面板/632实际H（203成功），全部归档存在，67面板全失败；455同task面板对的四初态/env/首noise/proprio配对。126组两边均全失败、14 task，首5步动作全部不同，35维MSE中位.006867256。R相同不等于行为相同；每段已知真实behavior_y/producer身份可为共享行为辨识提供密集标签。97组至少两个共同成功初态的面板对只10 task、76组在task0/20，不能称97独立技能。545旧正确producer视频每task仍仅一套selected。
+
+当前讨论机制用同一RGB读取器r，`y_next=y_current+r(V)-r(O_current)`，固定D形成完整source/38/r8。训练同task实际producer差，及同producer跨初态一致性；若配对图拟合，则r(O)=y+b_task，实际锚点消去共同偏置。r不读当前y，纯task常量在真正编译中抵消；已知y只作监督和锚点。原始正确教学仍通过同一算子接受跨episode主FM，不能假称原始视频由reference产生。失败标签只描述实际函数，不标为好策略；新condition不用teacher动作、轨迹准备/BC或Phi参数搜索。
+
+差分监督不保证新task泛化，有限视频可能不能识别完整函数，误差差分也可能叠加噪声；末帧/成功外观捷径、原始128/自产256域差和64表达限制尚在。新函数差标签尚未生成，不称数据准备已完成。取舍是集中于这条实际监督与部署联系，不以新A/f/评分模块继续保护旧假说；详见[当前分析](docs/analyses/feedback_learning_reassessment_20261017.md)。0新模型/env/GPU/实现/采集/active design。

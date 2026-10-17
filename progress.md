@@ -1,3 +1,8 @@
+## 2026-10-17 同一首写窗口通信修复恢复owner已启动
+
+owner2050894/监督2049882于03:32:37.876647Z从clean pushed detached cbd445a6的native_operator_collective_frozen_20261017启动。唯一reader1589/PTY88217；原1553/17503已exit1，0第二owner/waiter/Queue。原03:06:46首owner、02:39:51观察/家族时钟不改，两个pre-FM失败0.946019146178GPUh完整保留。
+同一ROOT/campaign的0有效更新/0FM具名工程恢复，不重建资产、不增加4临时更新/448FM或fresh180/144科学范围；所有GPU子job仍现场准入。当前只确认恢复owner启动，完整实际GPU反向/吞吐/科学结果待真实退出事件，旧owner_exit的1933851/exit1不等于当前owner状态。
+
 ## 2026-10-17 原生首写attempt002：跨rank完整因子dtype修复
 
 owner1933851于03:27:36.541314Z exit1，唯一reader1553已结束。03:13:57.407322→03:27:35.465447四卡0.908953399393GPUh，首个完整参数BROADCAST超时；生成FP32、非owner按物理identity建BF16缓冲。实际PEFT CPU注入复现BF16 A/B；修复统一FP32及固定key顺序，actual distributed_credit的76真实形状/Gloo2、4、6rank/112全局质量与因子余切到共享参数检查通过。真实G/QR/alpha/JVP已越原失败点，完整native反向和实际F_out仍待本次受限GPU消费者，不能提前称通过。

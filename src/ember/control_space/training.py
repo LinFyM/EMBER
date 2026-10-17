@@ -11,7 +11,7 @@ from ember.proposal_writer.learning import synchronize_gradients
 from ember.reference.training import Runtime
 from ember.reference.accounting import host_resources
 from ember.writer.runtime import autocast
-from .contract import OPTIMIZER,TASKS
+from .contract import OPTIMIZER,TASKS,OPERATOR_FILE
 from .data import Stream
 from .weights import load_source_inputs
 from .model import SourceWeightCompiler
@@ -45,7 +45,7 @@ def initialize(args,context):
     if args.start:
         state,migration=restore(args.root,args.start,model,optimizer,scheduler,context)
         stream=Stream(state['stream']);elapsed=state['training_seconds']
-    constants=read_json(args.root/'operator_constants.json')['denominators'];objective=OperatorLoss(model.lora,constants)
+    constants=read_json(OPERATOR_FILE)['denominators'];objective=OperatorLoss(model.lora,constants)
     references=References(SimpleNamespace(device=context.device,identity=identity),identity,capacity=36)
     paths={row['task']:row['path'] for row in read_json(args.root/'run_contract.json')['references']}
     memory=MemoryStore(args.root,context.device)
@@ -53,7 +53,7 @@ def initialize(args,context):
 
 
 def gradients(model,events,context,physical,memory,objective,references,paths,runtime,queries):
-    pack,row_chunk,micro,checkpointed=physical;result=dict(BA=0.,FM=0.,conditions=0,query_rows=0,LoRA_cotangent_norm=0.,physical_FM_batches=[])
+    pack,row_chunk,micro,checkpointed=physical;result=dict(BA=0.,L_A=0.,L_B=0.,L_pair=0.,FM=0.,conditions=0,query_rows=0,LoRA_cotangent_norm=0.,physical_FM_batches=[])
     owned=[(i,None) for i in range(context.rank,len(events),context.world_size)] if len(events)==36 else assignments(context.world_size,context.rank)
     for first in range(0,len(owned),pack):
         group=owned[first:first+pack];selected=[events[i] for i,_ in group]
@@ -61,7 +61,13 @@ def gradients(model,events,context,physical,memory,objective,references,paths,ru
         with autocast(context.device):states=model(memories,row_chunk=row_chunk,checkpointed=checkpointed)
         teachers=[references.get(paths[e['task']]) for e in selected]
         if len(events)==36:
-            errors,_=objective(states,teachers);loss=errors.mean(-1).sum()/36;loss.backward();result['BA']+=float(loss.detach())
+            errors_A,errors_B=objective.pair(states,teachers)
+            loss_A=errors_A.mean(-1).sum()/36;loss_B=errors_B.mean(-1).sum()/36
+            loss=(loss_A+loss_B)/2
+            with torch.no_grad():errors,_=objective(states,teachers);BA=errors.mean(-1).sum()/36
+            loss.backward()
+            result['L_A']+=float(loss_A.detach());result['L_B']+=float(loss_B.detach())
+            result['L_pair']+=float(loss.detach());result['BA']+=float(BA)
         else:
             samples=[queries.sample(e,indices)[0] for e,(_,indices) in zip(selected,group,strict=True)]
             credit=fm_credit(runtime,samples,states,teachers,objective,micro)
@@ -101,10 +107,10 @@ def one_update(args,context,model,optimizer,scheduler,events,config,memory,objec
     torch.nn.utils.clip_grad_norm_(model.parameters(),1.,error_if_nonfinite=True);optimizer.step();scheduler.step();torch.cuda.synchronize(context.device)
     seconds=reduction(context,time.monotonic()-tick,dist.ReduceOp.MAX)
     peak=reduction(context,[torch.cuda.max_memory_allocated()/2**20,torch.cuda.max_memory_reserved()/2**20],dist.ReduceOp.MAX)
-    total=reduction(context,[value['BA'],value['FM'],value['query_rows'],value['conditions']])
+    total=reduction(context,[value['BA'],value['FM'],value['query_rows'],value['conditions'],value['L_A'],value['L_B'],value['L_pair']])
     expected=0 if len(events)==36 else 112
     if total[2]!=expected or (len(events)==36 and total[3]!=36):raise ValueError('physical splitting changed global logical mass')
-    report=dict(BA=total[0],FM=total[1],queries=total[2],conditions=36 if expected==0 else 4,generator_condition_forwards=total[3],seconds=seconds,
+    report=dict(BA=total[0],L_A=total[4],L_B=total[5],L_pair=total[6],FM=total[1],queries=total[2],conditions=36 if expected==0 else 4,generator_condition_forwards=total[3],seconds=seconds,
         LoRAs_per_second=(36 if expected==0 else 4)/seconds,queries_per_second=expected/seconds,
         task_pack=chosen[0],row_chunk=chosen[1],microbatch=chosen[2],checkpointed=chosen[3],world_size=context.world_size,
         peak_allocated_MiB=peak[0],peak_reserved_MiB=peak[1],OOM_attempts=ooms,gradient_norm=before,
@@ -127,7 +133,7 @@ def train(args):
     try:
         for update in range(args.start,args.stop):
             events=stream.next();report,config=one_update(args,context,model,optimizer,scheduler,events,config,memory,objective,refs,paths,runtime,queries)
-            elapsed+=report['seconds'];report.update(update=update+1,stage='BA' if update<1000 else 'joint',logical_events=events)
+            elapsed+=report['seconds'];report.update(update=update+1,stage='pair' if update<1000 else 'joint',logical_events=events)
             append(args.root,f'rank_{context.rank}.jsonl',report)
             if context.is_main:
                 append(args.root,'updates.jsonl',{k:v for k,v in report.items() if k!='memory'})

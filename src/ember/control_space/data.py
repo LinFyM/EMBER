@@ -5,7 +5,7 @@ from ember.pi05_source_checkpoint import read_json,write_json_atomic
 from ember.writer.learning_data import load_learning_tasks,_episode_queries
 from ember.expert_manifold.video_schedule import condition_demo_index
 from ember.reference.contract import environment_contract
-from .contract import ASSETS,TASKS,VALIDATION_TASKS,VIDEO_ROOT,BANK_ROOT,SCHEMA,PHASE,LIMITS,SOURCE,NORMALIZATION,INITIAL_READER
+from .contract import ASSETS,TASKS,VALIDATION_TASKS,VIDEO_ROOT,BANK_ROOT,SCHEMA,PHASE,LIMITS,SOURCE,NORMALIZATION,INITIAL_READER,PREVIOUS_ROOT,SOURCE_INPUTS,OPERATOR_FILE,OBJECTIVE
 
 
 def teacher_demo(task,visit):
@@ -38,10 +38,10 @@ def prepare(root):
     old=read_json(VIDEO_ROOT/'run_contract.json')
     from ember.proposal_writer.contract import environment_contract as environment
     environments=dict(seen=old['environment'],validation=environment(ASSETS,root=root,role='validation'))
-    contract=dict(schema=SCHEMA,phase=PHASE,limits=LIMITS,tasks=list(TASKS),references=refs,
+    contract=dict(schema=SCHEMA,phase=PHASE,objective=OBJECTIVE,static_inputs=dict(source_inputs=str(SOURCE_INPUTS),source_manifest=str(SOURCE_INPUTS.parent/'manifest.json'),operator_constants=str(OPERATOR_FILE),producer=read_json(PREVIOUS_ROOT/'owner_launch.json')['code_commit'],read_only=True),shared_M=dict(root=str(PREVIOUS_ROOT/'cache/M'),producer_phase='source_weight_compiler',read_only=True,global_capacity=2**30),limits=LIMITS,tasks=list(TASKS),references=refs,
         environments=environments,panels=str(root/'panels.json'),source_checkpoint=str(ASSETS/SOURCE),normalization=str(ASSETS/NORMALIZATION),
         frozen_reader=str(INITIAL_READER),rank=8,alpha=8,dropout=0.,targets=38,seed=7,
-        stages=dict(BA=dict(updates=1000,conditions=36000,batch=36),joint=dict(updates=180,conditions=720,queries=20160,batch=112,BA_weight=.1)),
+        stages=dict(pair=dict(updates=1000,conditions=36000,batch=36,loss='(L_A+L_B)/2',true_BA_log_only=True),joint=dict(updates=180,conditions=720,queries=20160,batch=112,BA_weight=.1)),
         final_update=1180,eval_rows=976,interaction_adaptation=False,Test=False)
     for name,value in (('run_contract.json',contract),('panels.json',registered_panels())):
         path=root/name

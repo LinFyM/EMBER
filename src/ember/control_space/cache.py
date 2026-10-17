@@ -145,3 +145,45 @@ class MemoryCache:
             rows = [dict(row) for row in db.execute('SELECT status,count(*) entries,sum(bytes) bytes FROM tensors GROUP BY status')]
             return dict(capacity=self.capacity, control_allowance=self.control, rows=rows,
                 charged_bytes=self.control+sum(row['bytes'] for row in rows))
+
+
+class ReferencedMemoryCache:
+    """Read-only paid M payloads plus a lazy current-owner remainder of 1GiB."""
+    def __init__(self,root,dependency,capacity=2**30):
+        self.root,self.dependency,self.capacity=Path(root),Path(dependency),capacity
+        db=sqlite3.connect((self.dependency/'index.sqlite').as_uri()+'?mode=ro',uri=True)
+        db.row_factory=sqlite3.Row
+        try:
+            settings=dict(db.execute('SELECT name,value FROM settings'))
+            if settings!={'schema':SCHEMA,'capacity':str(capacity)}:raise ValueError('paid M schema/capacity changed')
+            self.entries={r['key']:dict(r) for r in db.execute('SELECT * FROM tensors')}
+        finally:db.close()
+        if any(e['status'] not in ('ready','absent') for e in self.entries.values()):
+            raise ValueError('old M owner has unresolved reservations; cannot share its budget')
+        self.dependency_charge=8*2**20+sum(e['bytes'] for e in self.entries.values())
+        if self.dependency_charge>=capacity-256*1024:raise RuntimeError('paid M leaves no bounded working space')
+        self.local=None
+
+    def get(self,key,metadata,required_bytes,build):
+        entry=self.entries.get(key);tick=time.monotonic()
+        if entry is not None:
+            if json.loads(entry['metadata'])!=metadata:raise ValueError('paid M requested observation/source/Phi identity mismatch')
+            path=self.dependency/f'entry_{entry["id"]:010d}.pt'
+            if entry['status']=='ready' and path.is_file():
+                if path.stat().st_size!=entry['bytes']:raise ValueError('paid M payload byte identity changed')
+                value=MemoryCache._load(path,key,metadata)
+                return value,dict(hit=True,cached=True,bytes=entry['bytes'],seconds=time.monotonic()-tick,
+                    dependency_payload=True,payload_path=str(path),dependency_index_read_only=True)
+        if self.local is None:self.local=MemoryCache(self.root,self.capacity-self.dependency_charge)
+        value,measure=self.local.get(key,metadata,required_bytes,build)
+        return value,dict(measure,dependency_payload=False,dependency_index_read_only=True)
+
+    def dependency_ready(self,key):
+        entry=self.entries.get(key)
+        return bool(entry and entry['status']=='ready' and (self.dependency/f'entry_{entry["id"]:010d}.pt').is_file())
+
+    def usage(self):
+        local=self.local.usage() if self.local else dict(charged_bytes=0,rows=[])
+        return dict(capacity=self.capacity,charged_bytes=self.dependency_charge+local['charged_bytes'],
+            dependency_charged_bytes=self.dependency_charge,dependency_entries=len(self.entries),
+            dependency_index_read_only=True,local=local)

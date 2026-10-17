@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import torch.distributed as dist
 from ember.pi05_source_checkpoint import capture_rng,restore_rng,write_json_atomic,read_json,barrier
-from .contract import SCHEMA,PHASE,PERMANENT,INITIAL_READER,ASSETS,SOURCE,NORMALIZATION,checkpoint_path
+from .contract import SCHEMA,PHASE,PERMANENT,INITIAL_READER,ASSETS,SOURCE,NORMALIZATION,SOURCE_INPUTS,OPERATOR_FILE,OBJECTIVE,checkpoint_path
 
 
 def save(root,model,optimizer,scheduler,stream,context,physical,*,training_seconds):
@@ -19,10 +19,10 @@ def save(root,model,optimizer,scheduler,stream,context,physical,*,training_secon
         destination.parent.mkdir(parents=True,exist_ok=True)
         if destination.exists():raise ValueError('a valid new-generator checkpoint cannot be overwritten')
         temporary=destination.with_name(destination.name+f'.partial_{os.getpid()}');temporary.mkdir(exist_ok=False)
-        state=dict(schema=SCHEMA,phase=PHASE,next_update=update,stage='BA' if update<1000 else 'joint',generator=model.state_dict(),
+        state=dict(schema=SCHEMA,phase=PHASE,next_update=update,stage='pair' if update<=1000 else 'joint',objective=OBJECTIVE,generator=model.state_dict(),
             optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),scaler=None,stream=stream.state_dict(),rank_RNG=ranks,
             topology=dict(world_size=context.world_size,hostname=os.uname().nodename,CUDA_VISIBLE_DEVICES=os.environ.get('CUDA_VISIBLE_DEVICES')),
-            source_inputs=str(Path(root)/'source_inputs/state.pt'),operator_constants=str(Path(root)/'operator_constants.json'),
+            source_inputs=str(SOURCE_INPUTS),operator_constants=str(OPERATOR_FILE),
             frozen_reader=str(INITIAL_READER),frozen_source=str(ASSETS/SOURCE),normalization=str(ASSETS/NORMALIZATION),
             physical=physical,training_seconds=training_seconds)
         torch.save(state,temporary/'state.pt')
@@ -46,7 +46,7 @@ def retire(root):
 def restore(root,update,model,optimizer,scheduler,context):
     state=torch.load(checkpoint_path(root,update),map_location='cpu',weights_only=False)
     if (state['schema']!=SCHEMA or state['phase']!=PHASE or state['next_update']!=update
-            or state['source_inputs']!=str(Path(root)/'source_inputs/state.pt') or state['frozen_reader']!=str(INITIAL_READER)
+            or state['source_inputs']!=str(SOURCE_INPUTS) or state.get('objective')!=OBJECTIVE or state.get('operator_constants')!=str(OPERATOR_FILE) or state['frozen_reader']!=str(INITIAL_READER)
             or state['frozen_source']!=str(ASSETS/SOURCE) or state['normalization']!=str(ASSETS/NORMALIZATION)):
         raise ValueError('new source-weight generator identity/phase/logical cursor changed')
     model.load_state_dict(state['generator'],strict=True);optimizer.load_state_dict(state['optimizer']);scheduler.load_state_dict(state['scheduler'])

@@ -1,18 +1,18 @@
 """Selected36 operator supervision and native full-factor cotangent credit."""
 from collections import OrderedDict
 from pathlib import Path
-from types import SimpleNamespace
 import math
 import torch
 from torch.utils.data import default_collate
 from safetensors.torch import load_file
 from ember.lora import LORA_A_SUFFIX,LORA_B_SUFFIX
 from ember.proposal_writer.learning import operator_squared_error
-from ember.pi05_source_checkpoint import read_json,write_json_atomic
+from ember.pi05_source_checkpoint import read_json
 from ember.writer.data import FunctionalQueryDataset
 from ember.writer.function_credit import FlowSample,NativeFlowPrediction,flow_sample,mean_velocity_loss
 from ember.writer.functional import task_logical_batch_policy_rng_seed
 from ember.writer.runtime import autocast
+from .contract import OPERATOR_FILE
 
 
 class References:
@@ -50,24 +50,26 @@ class OperatorLoss:
             errors.append(error/unit);baseline.append(energy/unit)
         return torch.stack(errors,-1),torch.stack(baseline,-1)
 
+    def pair(self,generated,reference):
+        if not generated or len(generated)!=len(reference):raise ValueError('pair loss requires complete paired states')
+        errors_A=[];errors_B=[]
+        for name,scale,unit in self.layers:
+            A,B,E_A,E_B=[torch.stack([r[name+suffix] for r in rows]) for rows,suffix in
+                [(generated,LORA_A_SUFFIX),(generated,LORA_B_SUFFIX),(reference,LORA_A_SUFFIX),(reference,LORA_B_SUFFIX)]]
+            E_A,E_B=E_A.detach(),E_B.detach()
+            error_A,_=operator_squared_error(A,E_B,E_A,E_B,scale)
+            error_B,_=operator_squared_error(E_A,B,E_A,E_B,scale)
+            errors_A.append(error_A/unit);errors_B.append(error_B/unit)
+        return torch.stack(errors_A,-1),torch.stack(errors_B,-1)
+
 
 def prepare_operator(root,inputs,lora):
-    """Once from only the36 selected labels; no old271-point C_l is consumed."""
-    root=Path(root);path=root/'operator_constants.json';rows=read_json(root/'run_contract.json')['references']
-    if path.exists():
-        record=read_json(path)
-        if record['sources']!=rows:raise ValueError('fixed operator labels changed')
-        return record
-    refs=References(SimpleNamespace(device='cpu',identity=inputs['identity']),inputs['identity'],capacity=36)
-    constants={}
-    for target in lora.targets:
-        name=target.name;energy=0.
-        for row in rows:
-            state=refs.get(row['path']);A=state[name+LORA_A_SUFFIX];B=state[name+LORA_B_SUFFIX]
-            _,value=operator_squared_error(A,B,A,B,lora.alpha/lora.rank);energy+=float(value)/36
-        constants[name]=max(energy,1e-12)
-    record=dict(sources=rows,denominators=constants,formula='max(mean36 ||sBA_selected||_F^2,1e-12)',selected_only=True)
-    write_json_atomic(path,record);return record
+    """Read the original fixed selected36 D; never recompute or copy labels."""
+    record=read_json(OPERATOR_FILE)
+    if record['sources']!=read_json(Path(root)/'run_contract.json')['references']:
+        raise ValueError('original fixed operator labels changed')
+    OperatorLoss(lora,record['denominators'])
+    return record
 
 
 class QueryBank:

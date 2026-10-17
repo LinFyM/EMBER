@@ -1,3 +1,12 @@
+## 2026-10-17 §21真实CPU消费者通过；正式计算尚未开始
+
+pair低秩Gram与小dense oracle的数值/生成A、B梯度一致；teacher双stopgrad、identity L_A=0、真实BA日志无梯度通过。
+实际旧source W/D只读加载、4,838,160参数和1800/400映射/完整1180流通过；原始与held真实M payload采用、错身份拒绝、旧SQLite大小/mtime不变。
+M共享charged617130072bytes，新payload0；旧schema拒绝恢复。原native完整A/B余切1–6rank×micro7/14/28/56和完整Adam/scheduler/stream原子保存恢复/单rolling消费者通过。
+这是CPU机制验证，CUDA RNG/真实吞吐及科学能力尚待正式运行；原件canonical .codex/tmp/source_weight_factor_credit_20261017/{consumer,joint_and_checkpoint_consumer}.json。
+本次源净增约60行/0新module/0新owner：删除旧source资产物化与整池M准备主动入口，复用同模型/流/Runtime/queue，CPU算子读回归入既有analysis。
+接下来集成push、新clean detached后一次受限profile及正式1180/976，不设main工程ACK。
+
 ## 2026-10-17 条件算子已经学习，但完整控制传递仍弱
 
 main从§20实际源码/完整原行/保存参数消费：target24仅71/384，参考超source新增270只保31；

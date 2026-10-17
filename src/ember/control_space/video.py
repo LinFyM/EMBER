@@ -9,7 +9,8 @@ from ember.pi05_source_checkpoint import read_json
 from ember.proposal_writer.model import attention, positions
 from ember.reference.contract import ASSETS, ROOT as REFERENCE_ROOT, SOURCE, TASKS
 from ember.writer.runtime import autocast
-from .cache import MemoryCache
+from .cache import ReferencedMemoryCache
+from .contract import PREVIOUS_ROOT
 
 VIDEO_ROOT = REFERENCE_ROOT.parent/'video_initial_seed7'
 READER_CHECKPOINT = VIDEO_ROOT/'checkpoints/update_00000900/state.pt'
@@ -138,7 +139,7 @@ class MemoryStore:
     def __init__(self, root, device='cpu', runtime=None, frame_chunk=32):
         self.root, self.device, self.runtime = Path(root), torch.device(device), runtime
         if type(frame_chunk) is not int or frame_chunk <= 0: raise ValueError('frame_chunk must be positive')
-        self.frame_chunk, self.reader = frame_chunk, load_memory_reader(self.device)
+        self.frame_chunk, self.reader = frame_chunk, None
         manifest = read_json(VIDEO_ROOT/'features/manifest.json')
         originals = [entry for entry in manifest['entries'] if entry['kind'] == 'original']
         self.originals = {(int(entry['task']), int(entry['demo'])): entry for entry in originals}
@@ -153,7 +154,7 @@ class MemoryStore:
                 or any({self.panels[task, init]['teacher_demo'] for init in range(50)} != set(range(50))
                     for task in VALIDATION)):
             raise ValueError('held RGB mapping must preserve all 400 unique task-video conditions')
-        self.cache = MemoryCache(self.root/'cache/M')
+        self.cache = ReferencedMemoryCache(self.root/'cache/M',PREVIOUS_ROOT/'cache/M')
         self.videos, self.measurements = None, []
 
     def _held_videos(self):
@@ -169,6 +170,7 @@ class MemoryStore:
         detail = {}
         @torch.no_grad()
         def build():
+            if self.reader is None:self.reader=load_memory_reader(self.device)
             prefix = teacher()
             if len(prefix['indices']) != frames: raise ValueError('M input frame count differs from its observation identity')
             detail.update(indices=prefix['indices'].tolist(), raw_frames=prefix['source']['raw_frames'],

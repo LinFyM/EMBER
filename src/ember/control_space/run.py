@@ -8,7 +8,7 @@ import torch
 from ember.pi05_source_checkpoint import write_json_atomic,read_json
 from ember.proposal_writer.batch import Batch,Job,DeviceWorkloadFailure,live_gpu_snapshot,quota_headroom
 from ember.reference.coordinator import Scheduler
-from .contract import ROOT,REFERENCE_ROOT,LIMITS
+from .contract import ROOT,REFERENCE_ROOT,LIMITS,SOURCE_INPUTS,OPERATOR_FILE,PREVIOUS_ROOT
 
 def utc():return datetime.datetime.now(datetime.timezone.utc).isoformat()
 def queue_path(root):return Path(root)/'evaluation.sqlite'
@@ -142,44 +142,13 @@ def launch(args,identity,command,world,*,estimate=600,minimum=12000,exact=False)
     batch.execute(job,devices);return len(devices)
 
 
-def memory_worker(args):
-    from ember.pi05_source_setup import initialize_distributed
-    from .video import MemoryStore
-    context=initialize_distributed(require_numa=True,defer_process_group=True)
-    torch.set_num_threads(8);torch.backends.cuda.matmul.allow_tf32=True
-    store=MemoryStore(args.root,context.device);start=time.monotonic();measurements=[]
-    try:
-        for entry in store.training_entries[context.rank::context.world_size]:
-            store.training(entry['task'],entry['demo']);current=store.drain_measurements();measurements.extend(current)
-            path=args.root/'memory'/f'measures_{os.uname().nodename}_{os.getpid()}.jsonl';path.parent.mkdir(parents=True,exist_ok=True)
-            with path.open('a') as handle:
-                for measure in current:handle.write(json.dumps(measure)+'\n')
-        torch.cuda.synchronize(context.device)
-        write_json_atomic(args.root/'memory'/f'rank_{context.rank}.json',dict(rank=context.rank,world=context.world_size,
-            entries=len(measurements),wall_seconds=time.monotonic()-start,measurements=measurements,
-            peak_allocated_MiB=torch.cuda.max_memory_allocated()/2**20,peak_reserved_MiB=torch.cuda.max_memory_reserved()/2**20,
-            cache=store.cache.usage(),NCCL=False,closed_UTC=utc()))
-    finally:store.close()
-
-
-def finish_memory(root,world):
-    records=[read_json(root/'memory'/f'rank_{r}.json') for r in range(world)]
-    rows=[row for record in records for row in record['measurements']]
-    if (len(rows)!=1800 or len({r['key'] for r in rows})!=1800 or sum(r['frames'] for r in rows)!=59114
-            or any(r['identity']['held'] for r in rows)):raise ValueError('bounded M preparation changed original-only1800/59114')
-    value=dict(complete=True,videos=1800,frames=59114,world=world,wall_seconds=max(r['wall_seconds'] for r in records),
-        M_builds=sum(r['M_builds'] for r in rows),M_hits=sum(r['M_hits'] for r in rows),
-        prefix_frames_reread=sum(r['prefix_frames_reread'] for r in rows),producer_videos_read=0,high_dimensional_prefix_copied=False)
-    write_json_atomic(root/'memory/completion.json',value);print('EMBER_MEMORY_OBSERVATION '+json.dumps(value),flush=True)
-
-
 def select_profile(args):
     records=[read_json(p) for p in sorted((args.root/'profiles').glob('world_*.json'))]
     if not records or any(not r.get('complete') for r in records):raise RuntimeError('incomplete disposable profile requires reconciliation, not repeated equivalents')
     totals={key:sum(r['actual_'+key] for r in records) for key in ('BA_equivalents','joint_equivalents','FM_queries')}
-    if totals['BA_equivalents']>8 or totals['joint_equivalents']>4 or totals['FM_queries']>448:raise ValueError('disposable profile budget exceeded')
+    if totals['BA_equivalents']>4 or totals['joint_equivalents']>2 or totals['FM_queries']>224:raise ValueError('disposable profile budget exceeded')
     result={}
-    for stage in ('BA','joint'):
+    for stage in ('pair','joint'):
         candidates=[row for record in records for row in record['results'] if row['stage']==stage and not row['OOM']]
         if not candidates:raise RuntimeError('no finite useful physical execution for '+stage)
         chosen=min(candidates,key=lambda r:r['seconds'])
@@ -199,7 +168,7 @@ def run_segment(args,start,stop,choice):
 
 def owner(args):
     from .data import prepare
-    from .weights import prepare_source_inputs
+    from .weights import load_source_inputs
     from .model import SourceWeightCompiler
     from .learning import prepare_operator
     from .checkpoint import latest
@@ -211,12 +180,12 @@ def owner(args):
         if (args.root/'completion.json').exists():raise ValueError('completed finite source-weight batch cannot restart')
         prepare(args.root)
         if host_available_GiB()<8:raise RuntimeError('source preparation needs8GiB actual CPU headroom')
-        identity=f'owner_{time.time_ns()}';record=dict(received_observed_UTC='2026-10-16T21:56:50.026590261Z',start_UTC=utc(),PID=os.getpid(),
+        identity=f'owner_{time.time_ns()}';record=dict(received_observed_UTC='2026-10-17T00:32:39.024050721Z',start_UTC=utc(),PID=os.getpid(),
             code=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),workspace=str(Path.cwd()),command=os.sys.argv,
-            estimate_hours=[4,7],family_first_reference_UTC='2026-10-15T09:05:48.038Z',new_root_is_not_zero_dependency_cost=True)
+            estimate_hours=[1.5,2.5],family_first_reference_UTC='2026-10-15T09:05:48.038Z',new_root_is_not_zero_dependency_cost=True)
         write_json_atomic(args.root/'owners'/f'{identity}.json',record)
         try:
-            inputs=prepare_source_inputs(args.root);model=SourceWeightCompiler(inputs)
+            inputs=load_source_inputs(args.root);model=SourceWeightCompiler(inputs)
             prepare_operator(args.root,inputs,model.lora)
             parameters=sum(p.numel() for p in model.parameters());source_bytes=sum(t['W'].numel()*4 for t in inputs['targets'])
             write_json_atomic(args.root/'admission/implementation_peak.json',dict(trainable_parameters=parameters,
@@ -224,18 +193,20 @@ def owner(args):
                 final_LoRA_bytes=976*643584*4,M_global_limit=2**30,forecast_peak_GiB=16,
                 rationale='three full permanent CP plus rolling/atomic, global M, actual W, 976 full LoRA and metadata/headroom'))
             del model,inputs
-            if not (args.root/'memory/completion.json').exists():
-                world=launch(args,'memory_original1800',['memory'],6,estimate=900,minimum=4000);finish_memory(args.root,world)
+            from .cache import ReferencedMemoryCache
+            shared=ReferencedMemoryCache(args.root/'cache/M',PREVIOUS_ROOT/'cache/M')
+            write_json_atomic(args.root/'memory/references.json',dict(shared.usage(),
+                originals=1800,held=400,original_sampled_frames=59114,held_sampled_frames=14528,
+                new_payload_copy=False,old_SQLite_modified=False,raw_inputs_are_paid_dependencies=True))
             if not (args.root/'physical_selection.json').exists():
                 existing=list((args.root/'profiles').glob('world_*.json'))
                 if existing or (args.root/'profiles/campaign.json').exists():raise RuntimeError('partial profile campaign must reconcile before any new disposable query')
-                write_json_atomic(args.root/'profiles/campaign.json',dict(start_UTC=utc(),single_disposable_campaign=True,max_BA_equivalents=8,max_joint_equivalents=4,max_FM_queries=448))
-                world=launch(args,'profile_world1',['profile'],1,estimate=900,exact=True)
+                write_json_atomic(args.root/'profiles/campaign.json',dict(start_UTC=utc(),single_disposable_campaign=True,max_pair_equivalents=4,max_joint_equivalents=2,max_FM_queries=224))
                 available=learning_devices(args,6,label='profile_maximum')
-                if len(available)>1:launch(args,f'profile_world{len(available)}',['profile'],len(available),estimate=900,exact=True)
+                launch(args,f'profile_world{len(available)}',['profile'],len(available),estimate=300,exact=True)
                 select_profile(args)
             selection=read_json(args.root/'physical_selection.json');current=latest(args.root)
-            if current<1000:run_segment(args,current,1000,selection['BA']);current=1000
+            if current<1000:run_segment(args,current,1000,selection['pair']);current=1000
             if current<1180:run_segment(args,current,1180,selection['joint'])
             # Use the real joint generator geometry for inference; no new scientific rows/profile.
             readout_args=argparse.Namespace(**vars(args))
@@ -257,7 +228,7 @@ def host_available_GiB():
 
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('command',choices=['owner','memory','profile','train','worker'])
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('command',choices=['owner','profile','train','worker'])
     parser.add_argument('--root',type=Path,default=ROOT);parser.add_argument('--devices',nargs='+')
     parser.add_argument('--worker-id');parser.add_argument('--slots',type=int,default=16)
     parser.add_argument('--physical-gpu',type=int,default=0);parser.add_argument('--resume',action='store_true')
@@ -271,7 +242,6 @@ def main():
     if args.command=='worker':
         from .readout import worker
         worker(args)
-    elif args.command=='memory':memory_worker(args)
     elif args.command=='profile':
         from .profile import run
         run(args)

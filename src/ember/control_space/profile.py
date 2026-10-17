@@ -15,17 +15,17 @@ def run(args):
     model,optimizer,scheduler,stream,elapsed,migration,objective,refs,paths,memory=initialize(args,context)
     initialize_deferred_process_group(context,rendezvous_root=args.root/'rendezvous');runtime=queries=None
     results=[];started=time.monotonic();largest=(36+context.world_size-1)//context.world_size
-    configurations=[(1,512,7,True),(min(6,largest),4096,7,False),(largest,4096,7,False)]
+    configurations=[(1,512,7,True),(largest,4096,7,False)]
     configurations=list(dict.fromkeys(configurations))
     try:
-        for stage in ('BA','joint'):
+        for stage in ('pair','joint'):
             if stage=='joint':
                 runtime=Runtime(args.root,context.device);queries=QueryBank(runtime)
                 state=Stream().state_dict();state.update(next_update=1000,visits={t:1000 for t in state['visits']});stream=Stream(state)
                 configurations=[(1,512,7,True),(4,4096,56,True)]
             for config in configurations:
                 events=stream.next();entry=dict(stage=stage,requested=dict(zip(('task_pack','row_chunk','microbatch','checkpointed'),config)),
-                    BA_equivalents=int(stage=='BA'),joint_equivalents=int(stage=='joint'),FM_queries=112 if stage=='joint' else 0)
+                    BA_equivalents=int(stage=='pair'),joint_equivalents=int(stage=='joint'),FM_queries=112 if stage=='joint' else 0)
                 try:
                     report,chosen=one_update(args,context,model,optimizer,scheduler,events,config,memory,objective,refs,paths,runtime,queries)
                     entry.update(report,OOM=False)

@@ -10,7 +10,7 @@ from ember.reference.analysis import paired
 from ember.proposal_writer.analysis import paired as checked_pair,billing
 from ember.reference.accounting import summary,connect
 from .contract import (SCHEMA,PHASE,FINAL,TASKS,VALIDATION_TASKS,VIDEO_ROOT,REFERENCE_ROOT,
-    INITIAL_READER,ASSETS,SOURCE,NORMALIZATION,checkpoint_path)
+    INITIAL_READER,ASSETS,SOURCE,NORMALIZATION,SOURCE_INPUTS,OPERATOR_FILE,OBJECTIVE,PREVIOUS_ROOT,ARM,checkpoint_path)
 from .analysis import grouped
 
 
@@ -19,9 +19,9 @@ def generated(root,role,panel):
 
 
 def generation_identity(root,role,panel):
-    return dict(schema=SCHEMA,phase=PHASE,checkpoint=str(checkpoint_path(root,FINAL)),update=FINAL,
+    return dict(schema=SCHEMA,phase=PHASE,objective=OBJECTIVE,operator_constants=str(OPERATOR_FILE),checkpoint=str(checkpoint_path(root,FINAL)),update=FINAL,
         source_checkpoint=str(ASSETS/SOURCE),normalization=str(ASSETS/NORMALIZATION),frozen_reader=str(INITIAL_READER),
-        source_inputs=str(Path(root)/'source_inputs/state.pt'),role=role,task=panel['task'],init_state_id=panel['init_state_id'],
+        source_inputs=str(SOURCE_INPUTS),role=role,task=panel['task'],init_state_id=panel['init_state_id'],
         teacher_demo=panel['teacher_demo'],noise_root=panel['noise_root'],registered_scene=panel.get('registered_scene'),
         rank=8,alpha=8,dropout=0.,targets=38,complete=True,held_offline_labels_read=False,
         teacher_input='complete_frozen_ordered_image_memory',interaction_adaptation=False,MT_loaded=False,
@@ -55,7 +55,7 @@ class Materializer:
         from .video import MemoryStore
         folder=checkpoint_path(self.root,FINAL).parent;manifest=read_json(folder/'manifest.json')
         state=torch.load(folder/'state.pt',map_location='cpu',weights_only=False,mmap=True)
-        expected=dict(schema=SCHEMA,phase=PHASE,next_update=FINAL,source_inputs=str(self.root/'source_inputs/state.pt'),
+        expected=dict(schema=SCHEMA,phase=PHASE,next_update=FINAL,source_inputs=str(SOURCE_INPUTS),objective=OBJECTIVE,operator_constants=str(OPERATOR_FILE),
             frozen_reader=str(INITIAL_READER),frozen_source=str(ASSETS/SOURCE),normalization=str(ASSETS/NORMALIZATION))
         if (not manifest['complete'] or manifest['next_update']!=FINAL or any(state.get(k)!=v for k,v in expected.items())):
             raise ValueError('only the frozen complete new-generator1180 may compile')
@@ -63,6 +63,10 @@ class Materializer:
         self.model.load_state_dict(state['generator'],strict=True);del state
         self.model=self.model.to(self.device).eval().requires_grad_(False)
         self.memory=MemoryStore(self.root,self.device,self.runtime,frame_chunk=self.frame_chunk)
+
+    def needs_held_prefix(self,panels):
+        self._ensure()
+        return any(not self.memory.cache.dependency_ready(f'held_t{p["task"]:04d}_d{p["teacher_demo"]:02d}') for p in panels)
 
     def _adopt(self,role,panel):
         destination=generated(self.root,role,panel);temporary=destination.with_name(destination.name+'.partial')
@@ -160,9 +164,12 @@ def historical(root,panels):
     for arm in ('D72','D144'):validation[arm]=read_json(Path(paths[arm]))['arms']['operator_only']['validation']['raw_rows']
     psi_path=REFERENCE_ROOT.parent/'functional_feedback_validation180_seed7/analysis/results.json'
     validation['psi180']=read_json(psi_path)['raw_rows']['functional_feedback_validation180']
+    previous=read_json(PREVIOUS_ROOT/'analysis/results.json')
+    for role,arms in (('seen',seen),('validation',validation)):
+        arms['source_weight1180']=previous['raw_rows'][role]['source_weight1180']
     result={role:{a:_index(v,panels[role]) for a,v in arms.items()} for role,arms in (('seen',seen),('validation',validation))}
-    for role,expected in (('seen',dict(source=218,reference=502,U36=484,Reader900=334,Reader1800=413)),
-            ('validation',dict(Reader900=117,Reader1800=111,MT153=153,G165=165,D72=175,D144=168,psi180=119))):
+    for role,expected in (('seen',dict(source=218,reference=502,U36=484,Reader900=334,Reader1800=413,source_weight1180=244)),
+            ('validation',dict(Reader900=117,Reader1800=111,MT153=153,G165=165,D72=175,D144=168,psi180=119,source_weight1180=57))):
         if {a:sum(r['success'] for r in v) for a,v in result[role].items()}!=expected:raise ValueError('actual historical full-panel identity/count changed')
         from ember.pi05_eval.scene import validate_scene_row
         for arm,rows in result[role].items():
@@ -171,7 +178,7 @@ def historical(root,panels):
                 if arm.startswith('Reader') and row.get('teacher_demo')!=panel['teacher_demo']:
                     raise ValueError('historical Reader teaching differs from the same-condition panel')
     return result,dict(video=str(VIDEO_ROOT/'analysis/results.json'),reference=str(REFERENCE_ROOT),linear=str(linear),
-        validation=paths,psi180=str(psi_path),MT_missing_initial_proprio='registered scene/RNG checked; no fabricated proprio',
+        validation=paths,psi180=str(psi_path),source_weight1180=str(PREVIOUS_ROOT/'analysis/results.json'),MT_missing_initial_proprio='registered scene/RNG checked; no fabricated proprio',
         D_G='historical MT-based methods, not source-only matched ablations',psi='uses actual practice, not a matched zero-interaction ablation')
 
 
@@ -202,7 +209,7 @@ def interaction_evidence(root,raw,panels,limits):
     expected=set()
     from .readout import row_path
     for role in ('seen','validation'):
-        for row,panel in zip(raw[role]['source_weight1180'],panels[role],strict=True):
+        for row,panel in zip(raw[role][ARM],panels[role],strict=True):
             case=f'{role}_t{panel["task"]:04d}_s{panel["init_state_id"]:03d}';expected.add(case)
             actual=ledger.get(row['attempt_id'])
             wanted=(case,'complete',row['steps'],10,str(row_path(root,role,panel)))
@@ -227,6 +234,7 @@ def paid_dependencies():
         source_cost_scope='original4 ranks through last update; excludes failed final save/recovery and earlier preparation',
         shared_paid_reference=str(REFERENCE_ROOT),reference_family_billing=reference,
         shared_paid_Reader900=str(INITIAL_READER),Reader_family_billing=video,
+        shared_paid_previous_compiler=str(PREVIOUS_ROOT),previous_compiler_billing=read_json(PREVIOUS_ROOT/'analysis/results.json')['billing'],
         source_center_and_units='old basis saved identity/layout and control_space76S only; no old U/code/neural decoder forward',
         costs_are_not_from_zero='current-root billing excludes prior source/reference/Reader learning and old failures; do not add shared costs twice')
 
@@ -237,16 +245,18 @@ def analyze(root):
     identity={r['task'] for r in run['references'] if r['path'] is None}
     for role in ('seen','validation'):
         new=[saved_case(root,role,tasks[role][p['task']],p) for p in panels[role]]
-        raw[role]=dict(old[role],source_weight1180=new)
+        raw[role]=dict(old[role],**{ARM:new})
         results[role]=grouped_evidence(raw[role],tasks[role],panels[role],identity)
     interactions=interaction_evidence(root,raw,panels,run['limits'])
-    if len(raw['seen']['source_weight1180'])!=576 or len(raw['validation']['source_weight1180'])!=400:
+    if len(raw['seen'][ARM])!=576 or len(raw['validation'][ARM])!=400:
         raise ValueError('only complete976 and the original finite physical budget can finish')
     result=dict(schema=SCHEMA,phase=PHASE,complete=True,checkpoint=str(checkpoint_path(root,FINAL)),update=FINAL,
         panels=results,raw_rows=raw,provenance=provenance,billing=billing(root),interactions=interactions,limits=run['limits'],
         new_episodes=976,zero_interaction=True,shared_updates=1180,held_offline_labels_read=False,Test=False,
         selection='unique preregistered1180; no mid-window/partial-held selection',automatic_successor=False,
         dependencies=paid_dependencies())
+    from .analysis import operator_decomposition
+    result['operator_readout']=operator_decomposition(root)
     write_json_atomic(root/'analysis/results.json',result);write_json_atomic(root/'completion.json',dict(complete=True,rows=976,result=str(root/'analysis/results.json')))
     lines=['# Source权重条件完整LoRA：唯一1180读出','',
         'seen576：'+str(results['seen']['total']['successes']),'','strict validation400：'+str(results['validation']['total']['successes']),'',

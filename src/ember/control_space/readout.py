@@ -165,7 +165,7 @@ def worker(args):
             work=message['work'];identity=message['identity'];role=work['role'];tick=time.monotonic()
             selected=[lookup[role][work['task'],i] for i in work['states']]
             try:
-                if active_role!=role or (role=='validation' and any(not generated(args.root,role,p).exists() for p in selected)):
+                if active_role!=role or (role=='validation' and compiler.needs_held_prefix(selected)):
                     runner=close_runner(runner,args.worker_id)
                 active_role=role;environment=run['environments'][role]
                 torch.cuda.reset_peak_memory_stats();controllers,materialization=compiler.compile(role,selected)

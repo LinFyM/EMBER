@@ -1,3 +1,20 @@
+## 2026-10-17 §21真实CPU消费者通过；正式计算尚未开始
+
+pair低秩Gram与小dense oracle的数值/生成A、B梯度一致；teacher双stopgrad、identity L_A=0、真实BA日志无梯度通过。
+实际旧source W/D只读加载、4,838,160参数和1800/400映射/完整1180流通过；原始与held真实M payload采用、错身份拒绝、旧SQLite大小/mtime不变。
+M共享charged617130072bytes，新payload0；旧schema拒绝恢复。原native完整A/B余切1–6rank×micro7/14/28/56和完整Adam/scheduler/stream原子保存恢复/单rolling消费者通过。
+这是CPU机制验证，CUDA RNG/真实吞吐及科学能力尚待正式运行；原件canonical .codex/tmp/source_weight_factor_credit_20261017/{consumer,joint_and_checkpoint_consumer}.json。
+本次源净增约60行/0新module/0新owner：删除旧source资产物化与整池M准备主动入口，复用同模型/流/Runtime/queue，CPU算子读回归入既有analysis。
+接下来集成push、新clean detached后一次受限profile及正式1180/976，不设main工程ACK。
+
+## 2026-10-17 §21执行接手与窄实现（尚未GPU启动）
+
+执行01a13dbf从main3121670d接手独占canonical工程/记录/Git；首次现场00:32:39.024050721Z，预期90–150min，旧家族09:05:48.038和§20费用不重置。
+只改前1000为teacher-detached L_pair，后180仍FM+.1完整BA；同4,838,160参数/seed7/源输入/流，fresh Adam，唯一1180新576+400。
+旧W/D只读引用，M2200只读payload采用、不写旧SQLite；共享M≤1GiB，新增峰16GiB/独立992提交353760步/16工程extra。
+受限临时profile至多4pair+2joint/224query，复用旧实测并只做有用新loss消费者；新schema拒绝旧CP恢复。当前是CPU实现准备，尚无正式更新/新episode。
+整批一次回main01a13dd9并归还窗口，0Queue/心跳/第二waiter/自动后继。
+
 ## 2026-10-17 §20已科学消费；唯一§21固定结构的因子信用检验
 
 main直接读取实际生成/学习代码、完整原结果，并归档976行/1180记录复算及保存576输出的CPU算术到

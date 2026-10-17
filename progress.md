@@ -1,3 +1,9 @@
+## 2026-10-17 原生首写受限消费者完成，fresh180正式学习已启动
+
+原4临时更新/448FM全部完成，0临时环境；未把临时model/Adam带入正式。实际source16支撑十步G/双伴随/QR-alpha-gauge/native完整因子FM反向、4条件有限F_out与context/video attention信用通过，首步伴随相对误差最大0.000776；仅工程消费者，不认证控制能力。CP3的4→6rank完整恢复和RNG/topology来源已落原件。
+有效配置4rank support4/FM7耗68.619s，4rank8/14为32.441s、4rank16/28为19.707s，6rank16/28为19.877s；选4rank16/28、峰17.23GiB。已打包每condition全部16支撑与28FM；6rank混合task有用pack无观测wall收益，不能为填余量加逻辑样本。ROOT analysis/useful_profile.json保留原始比较/实际消费者/依赖成本。
+fresh正式job于2026-10-17T03:37:51.062690+00:00从cbd445a6 clean pushed detached启动；03:39:08.370669Z首有效更新1，112FM/4condition，22.444s/峰17.20GiB，非零finite context和video attention梯度。唯一owner2050894/reader1589持续直接等待整个180/144退出，无阶段Queue/第二waiter。按真实19.7s量级及冷H/CP/读出，更新预计学习60–75min、当前余1.3–1.8h；不重置旧02:39/03:06及家族时钟，两个事故0.946019146178GPUh全留，0episode额外已用。
+
 ## 2026-10-17 同一首写窗口通信修复恢复owner已启动
 
 owner2050894/监督2049882于03:32:37.876647Z从clean pushed detached cbd445a6的native_operator_collective_frozen_20261017启动。唯一reader1589/PTY88217；原1553/17503已exit1，0第二owner/waiter/Queue。原03:06:46首owner、02:39:51观察/家族时钟不改，两个pre-FM失败0.946019146178GPUh完整保留。

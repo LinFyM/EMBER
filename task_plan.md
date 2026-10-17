@@ -1,3 +1,15 @@
+## 2026-10-17 回归家族停止；唯一目标为原生算子首写学习
+
+main已直接消费§22原件与两点全成功集合：seen290→306主要由Object+23驱动，held121→128中task26+9、其余350−2；训练参考控制与强MT缺口仍大。
+停止冻结Phi900/source-W共享行列头/36参考回归的loss、初始化、scale、seed、曝光补丁，不补1000或更多内部探针。正效应/不利分布/全部费用保留，详见[分析§32–33](docs/analyses/source_control_space_learning_20261015.md#32-相邻原件触发回归家族停止而不是抹去已学到的能力)。
+
+唯一active design改为[真实自身观测上的原生算子编译](docs/designs/source_native_operator_compiler_20261017.md)。首批fresh pressure/context在原36任务训练180更新/20160跨episode FM；以真实source自身观测的十步权重算子导数、可微rank8范围和同函数方向校准写出完整LoRA。固定终点36套新LoRA/144新query，比较source58/参考127/同教学Reader89及旧反馈结果，不以内部loss过关。
+已核原practice000/source H144条、40377步、52成功，只读复用；非zero-interaction，也不混入Reader/MT/后续提案经历。当前仅首写，不认证完整反馈循环、held或视频操作因果。
+
+新ROOT source_native_operator_compiler_20261017/first_write_seed7；最多4临时logical更新/448 FM、0临时env；正常144＋16工程extra，累计160提交/59200control/1600dummy/60800total，新增峰12GiB。旧数据/模型/H/M只读，新增全data1；每launch现场quota/双node6或8卡/node6/CPU-PSS。
+预计工程/消费者1.5–3h、学习/读出1–2.5h，合计2.5–5.5h，未profile估计需按实测修订。无自动续训/新reference/controls/held/Test或任务内动作BC。
+main文档/Git推送后实际派发唯一执行01a13dbf，接手后其独占工程/科研记录/Git；整批一次回main归还窗口，0例行ACK/自Queue/心跳/第二waiter。当前登记不冒称GPU启动。
+
 ## 2026-10-17 §22有限目标完成，无自动后继
 
 原1090只读生成及正式执行seen576+validation400已完成，0训练/profile/额外smoke；976新LoRA和有效新行、92shard、账本/配对/资源退出均验收通过。完整结果见[报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/source_weight_factor_credit_adjacent1090_seed7/analysis/engineering_completion.md)。

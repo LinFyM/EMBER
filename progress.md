@@ -1,3 +1,14 @@
+## 2026-10-17 main科学接回：§22家族停止与唯一新候选
+
+main已读取§22完整原件、当前实际算子，并复算两点各task成功集合。1090→1180 seen290→306/R253G53L37，held121→128/R97G31L24；Object+23而其它target合计−4，heldtask26+9而其它350−2。依据事前停止线，停止冻结Phi900＋source-W共享行列头＋36参考回归继续补丁；部分信用恢复不抹去，128仍低MT153，三零held与训练参考缺口保持。完整论证见[分析§32–33](docs/analyses/source_control_space_learning_20261015.md#32-相邻原件触发回归家族停止而不是抹去已学到的能力)。
+
+旧source_policy_space_compiler_20261015.md §1–22全部转为历史。唯一active为[原生算子首写设计](docs/designs/source_native_operator_compiler_20261017.md)：真实source H＋完整有序M→局部功能压力→原生十步权重算子导数→依赖该梯度的rank8范围→同Jacobian功能幅度校准→一套完整38r8。LocalField/PPW/Experience/功能修订已存在真实功能信用，未改写为新发现；固定子空间、A0首步切空间与因子单位衰减是本候选明确改变的部分，未证明唯一根因或迁移。
+
+主讨论只读核实源H：feedback_proposals_seed7的36任务practice000，共144条、38937control＋1440settling＝40377步、52成功/7808 replan；0新model/GPU/环境。仅复用source零代码H，不采用Reader/MT/后续提案。当前新有限窗口fresh180更新/20160 FM、末点36完整LoRA/144新query；首写不替代完整适应/held或教学因果。
+
+新ROOT source_native_operator_compiler_20261017/first_write_seed7；临时消费者最多4logical更新/448 FM、0env，新增峰12GiB；正常144＋16独立工程extra，累计160提交/60800联合步。原§22 2.421583033535GPUh/268197步、§21/§20和所有已付依赖/事故保持。现场data1独立quota及双node6/8/node6/CPU准入不变。
+预计实施1.5–3h、学习读出1–2.5h，合计2.5–5.5h；原生新算子成本尚未实测。main现持有科研/Git窗口，推送后实际派发01a13dbf并转只读。执行独占闭环实现、针对性真实消费者、clean pushed detached、整批运行/验收/Git，再一次归还；0例行工程ACK/自Queue/心跳/第二waiter，无自动后继。登记不是GPU运行声明。
+
 ## 2026-10-17 §22完整976读出及验收结束，待一次可靠main交付
 
 唯一owner1294904于02:09:24.811810Z exit0，直接reader1467/PTY42742结束；首次01:39:14.985237Z→科学退出30.164min，owner实际24.965min，原35–65min/家族09:05:48.038及旧费用保持，验收/Git另计。

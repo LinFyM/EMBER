@@ -1,3 +1,9 @@
+## 2026-10-17 main接回：原生首写科学消费与完整方法议案
+
+执行者已交付43398cf clean pushed main并归还独占写窗口；目前没有在途计算或新active design。main直接读取原报告和八臂原始144行，独立复算native64/source58/Reader89/functional93及RGL；target19/96、Object0、breadth20没有广泛获取，source净增6与少数正例保留。原pressure/首写组织停止，不续180或改scale/QR/rank/LR/seed，不开held/controls/Test；完整费用和失败原件沿已完成批保持。
+
+Owner最新要求先完整思考、说明方案及依据，暂不派新实验。[完整科学议案](docs/analyses/feedback_learning_reassessment_20261017.md)提出：真实转移监督并任务内校准动作后果模型，教学条件的学习准则经该模型及当前policy导数写完整LoRA，合法跨episode功能误差与独立新初态真实回报训练整个编译过程。它不是已验证方法或launch合同；native新阴性、旧FR/Experience/LocalField/Phi/N16及实践-query分离均作为具体限制，不能仅加模块或循环就自动启动。此前撤回的whole_method临时稿仍撤回，不恢复；本轮没有新model/env/GPU计算或执行派发。
+
 ## 2026-10-17 固定source-H原生首写180/144已完成，当前无自动后继
 
 唯一owner2050894于04:48:36.435624Z exit0，reader1589/PTY88217已完成；cbd445a6 clean pushed detached完成fresh180/720事件/20160FM与36套新完整38r8/144新query。临时4更新/448FM参数丢弃，CP90/180+rolling171的完整model/Adam/stream/4rank RNG/Ω已验；90无读出/选点，全部任务20不同非报告V、query跨episode。当前有限合同到此结束，不恢复旧§1–22或追加180/QR/rank/LR/scale/seed/held/controls/Test。

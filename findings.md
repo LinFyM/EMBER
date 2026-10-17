@@ -12592,3 +12592,9 @@ torch ZIP直接读取gzip seek流会重复解压：本批真实35.6MB/104event�
 fresh180的真实完整J/双伴随/QR2/alpha/gauge/native FM消费者与720流已完成，不是缺梯度或未执行。144新query仅64/source58/Reader89，R53G11L5、target19对14/43、参考新增70保10、Object0；support45/48与identity20保持不能掩盖目标任务缺口。现有结果降低当前pressure/原生范围组织继续投入的支持度，不自动更换尺度、QR、rank、loss或延长，亦不证明所有实践信息或原生参数编译不可能。固定旧source H首写不认证完整反馈修订、held或V/H因果；Owner已放弃无实践信息直接生成的取舍持续约束后继。撤回的whole_method讨论稿没有升级为候选或launch资格。
 
 4→8→16完整支撑批与7→14→28FM把实测68.619s降至19.707s，6卡19.877s无观测收益，formal中位19.700s。全部6.219000091420GPUh/38098新步、两次pre-FM工程失败与已付40377source实践独立保留；正常科学失败不重试。完整得失/每task-suite/教学重用/代码职责和资源见[原件](/data1/user/ymdai/ember_runs/source_native_operator_compiler_20261017/first_write_seed7/analysis/engineering_completion.md)。
+
+## 2026-10-17 主讨论完整重审：明确反馈监督消费者，同时保留native首写阴性
+
+main从八臂原始144行独立重建成功集合：native64/source58/Reader89/functional93，对source R53G11L5、对Reader R60G4L29、对functional93 R61G3L32；target19/96、Object0、breadth20。完整native梯度及实际参数改变已成立，却没有广泛控制获取，不能将原生算子当作已获能力的基础或把问题都归于旧因子单位。固定首写与完整当前LoRA反馈循环须区分，旧循环/FM/PG阴性同样保留。
+
+[完整方法议案](docs/analyses/feedback_learning_reassessment_20261017.md)明确三类训练消费者：真实自身转移教可校准的动作后果模型；合法non-held跨episode动作query只在完整LoRA之后教Reader/学习准则；独立场景完整回报训练整条编译提案路径。新condition自身动作作为预测模型输入，不作为LoRA拟合目标；预测后果和真实后果分开，最终只部署source+完整38r8。物理模型须实际进入动作余切，不只作辅助头；其加入不扩大给定J的像空间，也不证明动力学误差是旧失败根因。此为未实施议案，Owner要求先论证说明，本轮无新active design或launch。

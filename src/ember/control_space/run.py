@@ -165,14 +165,15 @@ def profile_campaign(args):
     if (args.root/'physical_selection.json').exists():return read_json(args.root/'physical_selection.json')
     profile=args.root/'profile'
     if (args.root/'profiles/campaign.json').exists():
-        recovery=args.root/'analysis/engineering_attempt001/recovery.json'
+        recovery=args.root/'profiles/recovery_authority.json'
         if not args.resume or not recovery.exists():
             raise RuntimeError('partial consumer campaign needs exact receipt reconciliation')
         evidence=read_json(recovery)
         attempts=list((args.root/'jobs/profile_first3').glob('attempt_*'))
         if (evidence.get('consumed_FM_queries')!=0 or evidence.get('valid_updates')!=0
-                or not evidence.get('all_original_processes_exited') or not evidence.get('scope_fix_only')
-                or len(attempts)!=1 or str(attempts[0])!=evidence.get('original_job_attempt')
+                or not evidence.get('all_original_processes_exited') or not evidence.get('method_math_unchanged')
+                or sorted(map(str,attempts))!=sorted(evidence.get('original_job_attempts',[]))
+                or any(read_json(p/'exit.json').get('exit_code')!=1 for p in attempts)
                 or (profile/'training/updates.jsonl').exists() or list((profile/'checkpoints').glob('update_*'))):
             raise RuntimeError('this finite zero-consumption engineering recovery does not apply')
     else:

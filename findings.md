@@ -12578,3 +12578,7 @@ torch ZIP直接读取gzip seek流会重复解压：本批真实35.6MB/104event�
 实践source52→best90/144（R51/G39/L1）；17实际非source输出task的68query13→35（R11/G24/L2）；19任务仍部署source的76query45→44，这些参数未变差异不归因学习，其中11source4/4直接停止且未编码教学。全122 proposal含未选中样本均进联合64维/完整路径score，9PG更新、beta首步固定1.875510629e−4，H body首步零/后续非零与全FM/D信用通过；这不等于有限9步充分、H/video因果或held成功。
 
 完整case/相邻practice R84/G67/L41、各task/suite/identity与所有不利结果见[原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/feedback_proposals_seed7/analysis/engineering_completion.md)。776提交/207328步/9.325162564582GPUh，632H含429正常失败全留，0工程失败/unknown/重算/OOM；旧费用区间保持。当前训练theta变化，0single-checkpoint资格、0新held/Test，主讨论消费后再定后继，不自动续同族。
+
+## 原生算子首写的pre-FM工程边界（2026-10-17）
+
+自定义Function默认关闭forward AD和BF16物理identity/FP32生成因子的集合通信dtype是两个确定工程违约，均在0FM/0有效更新时保留原费并窄修。CPU双伴随作用域与实际distributed_credit通信检查通过；这不替代完整真实native反向/QR-alpha梯度和闭环，科学结论尚无。证据见新ROOT analysis/engineering_attempt001/002。

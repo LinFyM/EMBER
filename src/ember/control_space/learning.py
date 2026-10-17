@@ -87,7 +87,7 @@ def native_credit(runtime,samples,states,microbatch):
 
 def distributed_credit(model,compiler,stream,events,context,*,microbatch=14,consumer=False):
     """Each compiler graph exists once; query pieces may use1–6 local ranks."""
-    owned={};zero=lambda: {k:torch.zeros_like(v) for k,v in compiler.runtime.identity.items()}
+    owned={};zero=lambda: {k:torch.zeros_like(v,dtype=torch.float32) for k,v in compiler.runtime.identity.items()}
     for index,event in enumerate(events):
         if index%context.world_size==context.rank:
             owned[index]=compiler.compile(model,event['task'],event['teacher_demo'])
@@ -98,7 +98,9 @@ def distributed_credit(model,compiler,stream,events,context,*,microbatch=14,cons
         for index,event in enumerate(events):
             owner=index%context.world_size
             state=owned[index][0] if context.rank==owner else zero()
-            values={k:v.detach().clone().contiguous() for k,v in state.items()}
+            # Physical identity adapters follow source BF16; generated factors
+            # and every rank's collective payload use the full FP32 contract.
+            values={k:state[k].detach().float().clone().contiguous() for k in sorted(state)}
             if context.world_size>1:
                 for value in values.values():dist.broadcast(value,src=owner)
             transmitted.append(values)

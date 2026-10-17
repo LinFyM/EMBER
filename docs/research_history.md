@@ -5856,3 +5856,7 @@ video_effect_MT_official_settling_03/a986e7b2，21:48:29Z→21:52:59Z，新增12
 26c284ee读取/0b9b8080训练来源，400完整独立编译/单final、七臂2800通过。新119/Reader900117/Reader1800111/MT153/G165/D72=175/D144=168；对Reader R105/G14/L12、practice505→647/1600、105改参数条件51→53，breadth5/8。Spatial40/Object44/Goal18/Long17，task16/23/39仍0。只有限净2、未形成清楚迁移；原训练36净4/所有旧正负证据继承，0相邻/视频H因果或自动后继。
 
 872旧有效保留、16具名原pending各一次恢复；三项实际9550/8196/8480物理费为特定中断例外、有效完整practice仍≤8192且停止输入不变。9213提交/9197完整/16unknown，确切2515196步，总区间[2515916,2523676]；39.789931998783GPUh/17job全结，原64工程额用16余48，无有效重跑。2026-10-16T20:45:06.719314Z exit0，原观察至退出7h28m，不重置09:05家族时钟。8 witness raw长期、392消费后退役/facts与所有参数rows保留，两node本批进程/GPU/env全退出。完整费用、私有具名例外、生命周期和Git见[原件](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/functional_feedback_validation180_seed7/analysis/engineering_completion.md)；交main后归还canonical写窗口，无新计算。
+
+## 2026-10-17 原生首写前FM工程失败保留
+
+199fc3dc作用域丢切向量0.037065746784GPUh；710b5a7d跨rank参数dtype导致BROADCAST超时0.908953399393GPUh，累计0.946019146178，均0有效更新/0FM/0环境。原件、代码身份与时钟保留，普通工程修复不改当前唯一科学合同，也不充新profile或episode额度。详见progress和ROOT analysis/engineering_attempt001/002；完整真实机制与科学读出尚未完成。

@@ -1,3 +1,9 @@
+## 2026-10-17 原生首写attempt002：跨rank完整因子dtype修复
+
+owner1933851于03:27:36.541314Z exit1，唯一reader1553已结束。03:13:57.407322→03:27:35.465447四卡0.908953399393GPUh，首个完整参数BROADCAST超时；生成FP32、非owner按物理identity建BF16缓冲。实际PEFT CPU注入复现BF16 A/B；修复统一FP32及固定key顺序，actual distributed_credit的76真实形状/Gloo2、4、6rank/112全局质量与因子余切到共享参数检查通过。真实G/QR/alpha/JVP已越原失败点，完整native反向和实际F_out仍待本次受限GPU消费者，不能提前称通过。
+事故在FM sampling/forward之前，0有效更新/0FM/0环境，无CP，原4更新/448FM全保留；两个失败累计0.946019146178GPUh，0/16 episode额外尝试。所有具名进程已退出，双node现场无本UID GPU进程，foreign未动。原日志/时钟/冻结/M及H不抹写，ROOT analysis/engineering_attempt002与profiles/recovery_authority.json绑定恰两个pre-FM失败receipt，不能自动覆盖未来额外attempt。
+确定工程修复沿同一ROOT/原campaign自主新clean pushed detached接续，fresh180/144、数学/信息墙/资源预算保持。原02:39:51观察/03:06:46首owner与2.5–5.5h预计不重置；已发生约20分钟作用域与通信事故耗时单列，真实吞吐待首有用更新修正。两个已集成CPU子任务worktree/branch已按clean与patch等价证据清理，正式冻结保留；0自Queue/心跳/第二waiter。
+
 ## 2026-10-17 同一原生首写窗口工程恢复owner已启动
 
 新owner1933851/监督1933287于03:13:23.538341Z从clean pushed detached710b5a7d启动，workspace native_operator_jvp_frozen_20261017；原199fc3dc冻结不热改。唯一直接reader1553/PTY17503，旧1542/20292已exit1，无第二owner/waiter或Queue。

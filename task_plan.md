@@ -1,3 +1,9 @@
+## 2026-10-17 当前判断：复核E学习，不以新增f作为解决依据
+
+Owner明确暂不开实验。已将[原议案](docs/analyses/feedback_learning_reassessment_20261017.md)的f事实监督、E外层信用、视频语义对应与跨初态参数作用分开：前者成立不推出后三者；旧FR/Phi-N16/Experience和最新native阴性实际限制新假设，强G/D正例与有限训练覆盖同样保留。撤下“f是视频理解主修复”的选择，仅保留其有前提的执行校准用途；没有新active design、实现或派发。
+
+完整目标仍是视频与真实实践形成有广泛闭环能力的单套source/r8 LoRA。当前方法判断必须解释E为何更容易从教学学到可迁移目标，以及该目标为什么能经完整参数修改在新初态生效；不能用预测更准、循环/FM/PG已接通或未试过替代这条依据。具体复核、反例和历史对应已写回同一分析，不追加局部实验清单。
+
 ## 2026-10-17 main接回：原生首写科学消费与完整方法议案
 
 执行者已交付43398cf clean pushed main并归还独占写窗口；目前没有在途计算或新active design。main直接读取原报告和八臂原始144行，独立复算native64/source58/Reader89/functional93及RGL；target19/96、Object0、breadth20没有广泛获取，source净增6与少数正例保留。原pressure/首写组织停止，不续180或改scale/QR/rank/LR/seed，不开held/controls/Test；完整费用和失败原件沿已完成批保持。

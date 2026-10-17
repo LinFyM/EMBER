@@ -1,3 +1,9 @@
+## 2026-10-17 学习关系复核：后果模型不再作为已选修复主线
+
+Owner要求暂不开实验，将E学习与旧负结果真正对齐。main核对实际FR/Experience/Phi-N16/native消费者后，在[同一议案](docs/analyses/feedback_learning_reassessment_20261017.md)补入梯度展开、等价反例与证据对照：f的真实转移标签只训练动作后果，不直接训练视频Reader/E；E仍经旧FM/完整回报学习，H残差作为query不自动识别正确操作解释。Phi已有更直接的视频关系目标与实际动作后果，N16实践改善仍未稳定迁移；native实际改参数仍64/144，不能把写入成立当能力基础。正G/D与各方法有限覆盖保留，未推广为所有FM/能量/物理模型无效。
+
+取舍：撤下“f能修复视频理解”的主论据，保留有条件执行校准用途；原议案是被限定的讨论候选，不是当前选定方法/active design，不派新实验、探针或实现。当前无在途计算；仅更新现有科研记录。source/r8、完整LoRA、合法实践与视频有用性的目标保持。
+
 ## 2026-10-17 main接回：原生首写科学消费与完整方法议案
 
 执行者已交付43398cf clean pushed main并归还独占写窗口；目前没有在途计算或新active design。main直接读取原报告和八臂原始144行，独立复算native64/source58/Reader89/functional93及RGL；target19/96、Object0、breadth20没有广泛获取，source净增6与少数正例保留。原pressure/首写组织停止，不续180或改scale/QR/rank/LR/seed，不开held/controls/Test；完整费用和失败原件沿已完成批保持。

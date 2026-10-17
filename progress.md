@@ -1,3 +1,11 @@
+## 2026-10-17 比较表示复核与修正：来源梯度不等于操作信用
+
+Owner质询F_phi是否承接了未解决未知，明确先不开实验。main在[当前分析首节](docs/analyses/feedback_learning_reassessment_20261017.md)给出来源特征反例与隐式分类元梯度：跨初态来源验证仍可只用成像／背景；准确事实分支也不阻止比较头使用另一个捷径分支。真实策略梯度对动作无关背景期望为0，对全失败恒定外观评分仍无相对方向，对可控但不充分外观则可能优化错误目标，三者分开。
+
+重新亲读85614d9c relation_writer feedback/credit及原报告，核实旧F使用GT教学/当前关系和原生query、真正动作FM；G主FM＋关系辅助＋stop-grad F蒸馏的全链存在。G131/126、seenG84/F66、GT匹配81/82→78/81保持。重新读0b9b8080 control_space feedback/learning与§17/18，确认functional93的H输入、固定D/Reader、真实FM余切和seen/held/全失败结果，未将这些负证据解释为断梯度。
+
+保留任务内比较与真实A/B更新候选，修正共享phi训练：来源BCE仅拟合局部头；实际分支回报差经Delta S形成LoRA更新，再由独立episode功能效用教比较用途。给出精确一步条件梯度、局部头隐式导数及同初态常量抵消条件；事实标签、功能效用和完整成功语义不混同。该修正不是新元学习原理或已有迁移证据，FR/N16/functional负证据继续有效。0新标签、实现、模型forward、环境/GPU、采集或实验派发，无active design。
+
 ## 2026-10-17 完整方法交付：现场比较学习直接形成任务内LoRA梯度
 
 Owner要求继续推通“视频操作要求—真实动作响应—跨初态LoRA修订”，不能反复只撤回。main在[现有分析首节](docs/analyses/feedback_learning_reassessment_20261017.md)选定并完整写出任务内观测模仿：有序教学／自身RGB经同一比较表示，当前condition以真实来源标签拟合正则逻辑头；独立episode交叉拟合控制信用，比较回报＋真实success经整段on-policy动作score、原生10步VJP更新所有38处A/B。预算末固定最后完整raw-source/r8，所有辅助退出，无held动作目标或BC/FM。

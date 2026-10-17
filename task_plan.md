@@ -1,3 +1,9 @@
+## 2026-10-17 当前讨论：自动标签必须保留观测、派生与未知的边界
+
+按Owner要求，以现有train task12的真实teacher/接手数据说明完整构造和信用链。自动构造只枚举匿名关系窗口、计算带mask的顺序对应及真实继续的到达target，不从task语言/BDDL目标表生成阶段或必要前提。实际例子包含“共同运动已实现、任务仍失败”的负证据；尚不存在的新source随机分支和.8/.2更新算式严格分开，不将示例写成结果。
+
+完整方案与G/F、FR的差别落在E直接监督与真实LoRA消费者，跨初态kernel和对应充分性仍未解决为定理；详见[当前具体化](docs/analyses/feedback_learning_reassessment_20261017.md)。当前继续遵守先不开实验：无实现、采集、训练、评测或active design，仅科学分析与记录。
+
 ## 2026-10-17 当前讨论：完整操作监督—实践修正—LoRA学习方案
 
 按Owner“要完整方案，先别开实验”，交付[现有分析首节](docs/analyses/feedback_learning_reassessment_20261017.md)中的当前方案：直接教E操作事实、视频与实际恢复对应及真实干预用途；任务内根据自身反馈更新事实/信念；真实policy-gradient信用写完整source/r8，外层独立状态FM/回报训练修订规则，不能任意改写E语义。新condition不读取teacher标签、不准备动作轨迹作BC，最终辅助退出。

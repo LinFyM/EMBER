@@ -1,3 +1,9 @@
+## 2026-10-17 当前具体化：自动标签与task12实例，暂不开实验
+
+Owner要求自动构造事件/前提/对应，不预写正确程序，并用完整例子推通。[现有分析首节](docs/analyses/feedback_learning_reassessment_20261017.md)明确：全实体、stride5连续关系窗口及带mask软对应；不读goal operands生成目标/阶段，“必要前提/正确下一步”没有真标签，只有实际条件下的未来对应/任务结果。原二值事件实现target改为明确的软匹配到达target，原始物理量与实际R、派生对应及语义推断分开。
+
+已只读task12 demo0合法关系数组与同T50/init34的expert480、MT300实际trace，计算旧窗口事实。两条继续均手瓶共同移动而最终一成一败，保留该反例；缺contact/物体R的字段不补造。不同控制器不伪称当前source/r8分支，.8/.2→Bernoulli信用.15明确只是算式示例。直接E损失不经J_H/J_Q，但完整LoRA仍有跨状态限制，不能保证不重演G/F/FR。仅旧原件算术与文档，0模型/env/GPU/实现/新active design。
+
 ## 2026-10-17 当前完整议案：直接操作/恢复监督与参数学习分工，暂不开实验
 
 Owner要求完整解决E学习，指出“读完整过程后仍靠FM/回报”没有实质补链。[当前议案](docs/analyses/feedback_learning_reassessment_20261017.md)改为：获准non-held操作事实、跨episode实际恢复对应、同学生状态真实干预的事件到达/继续结果直接训练E；自身实践更新对象/事件/控制响应的判断；E的事件信用及真实success经当前policy score修订完整38r8。外层跨episode FM与独立新初态回报只训练共享分组步长/动量规则，停止其对E语义输出的梯度，不再用末端参数效用冒充操作语义。

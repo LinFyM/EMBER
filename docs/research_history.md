@@ -1,3 +1,9 @@
+## 2026-10-17：自动标签构造与真实task12例子，未开实验
+
+Owner要求防止正确操作程序预写进标签。main将[现有议案](analyses/feedback_learning_reassessment_20261017.md)具体化为全实体连续关系窗口、带误差的软对应及真实继续target；区分原始事实/实际R与派生匹配，不设置必要前提或唯一下一步标签。旧二值“实现操作”假定改为显式软匹配到达定义，q的用途target来自同状态/同继续控制器真实分支的`mean(Delta Y_e * Delta R)`，不是“最先匹配就正确”；未知保留，不称关系必要性的因果证明。
+
+只读旧task12 demo0关系数组及T50/init34的expert480/MT300 trace：teacher60→75手/A z增.140672/.143562m，相对向量变.005611m；两种接手亦共同运动，专家121步成功而MT280步失败。不得将其解释成MT未抓住，也不能从缺contact/物体R的旧字段断言卡沿/姿态根因。旧不同控制器结果不伪作当前source分支，LoRA Bernoulli .15信用为标明的假设算式。E直接损失绕开FR上游的长梯度链，仍不证明目标充分或跨初态有效。0新模型/环境/GPU/实现或active design。
+
 ## 2026-10-17：形成直接操作/恢复监督的完整议案，尚未实施
 
 Owner否定仅扩大E输入仍靠末端FM/回报的解释，要求完整方案且不开实验。main在[同一分析首节](analyses/feedback_learning_reassessment_20261017.md)提出三类直接target：合法操作事实、教学与实际恢复的角色/事件对应、真实同状态干预的事件到达与继续结果；新condition实践校正应用条件/控制响应，完整38r8沿实际policy score修订。跨episode FM与独立新初态回报训练分组更新规则，对E语义stop-gradient。此为新增学习合同候选，不是既有结果或active design。

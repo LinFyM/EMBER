@@ -12630,3 +12630,11 @@ H不只作为额外输入：当前真实分支改变M，新增经历改变w对�
 新增监督不能冒称已有。966353e的学生访态aggregation用expert FM训练privileged-code decoder，bc729e86的P/I将配对迁移数据用于完整动作FM，均未将恢复操作对应作为video Reader直接target。T50真实接手只作诊断：专家480初态12/16、接手9/16对MT4/16，救回6但丢3、task29接手0/4；可用恢复参考不是oracle，reference可达性与当前source/r8能力必须分列。标签/对应不明须保留未知，不将失败等同不可恢复。
 
 当前完整方案的跨状态作用仍受native Jacobian、rank8与实际访态约束，分组正步长/动量不能创造缺失控制方向。G/F、FR、Phi-N16与native阴性未被语义标签取消；只有完整最终policy在独立初态的能力及教学内容证据才能支持此路线。见[当前议案](docs/analyses/feedback_learning_reassessment_20261017.md)；0新实验、实现或active design。
+
+## 2026-10-17 自动对应不等于正确程序；共同运动可与完整失败并存
+
+操作标签不能由BDDL目标表、语言动词、手写接触阶段或teacher时钟比例生成正确程序。全实体真实关系窗口及顺序距离只能给可复算、可能错误的候选对应，不能直接认证必要前提。当前具体化用真实继续的软匹配到达Y及独立任务R，不预设一个正确的二值操作判定器；q用途target为同状态/同继续控制器真实分支的`mean(Delta Y_e * Delta R)`正部分，不能把最先匹配的窗口称为正确下一步。多个同步变化仍无法识别唯一因果前提，全部R相同没有这种用途target。字段缺失/对应歧义须保留mask，参考能力与当前LoRA能力分列。
+
+真实train task12例子：teacher demo0的60→75帧手/A z分别增加.140672/.143562m，相对向量只变.005611m；T50/init34的expert480与MT300也都手瓶共同移动，但前者121步成功、后者280步失败。原件没有contact/force，旧自身trace也没有物体R，不能标成未抓住、卡篮沿或唯一姿态根因。对early动态事实的正确识别不充分，这与G/F/Phi阴性一致；成功恢复不得筛掉这类反例。
+
+E直接未来target的梯度`2*(v-Y)*grad_theta v`不经LoRA J_H/J_Q/步长，实质改变FR上游很弱的学习链；actor参数修订和新初态传播仍经native Jacobian，故不提供迁移保证。详见[自动标签与完整实例](docs/analyses/feedback_learning_reassessment_20261017.md)；现有不同控制器trace只作已有事实，假设.8/.2信用示例不冒充新source实验。0新model/env/GPU计算或实现。

@@ -1,3 +1,11 @@
+## 2026-10-17：完整候选改为任务内观测比较与真实整套LoRA学习，未实施
+
+Owner要求结束只指出缺口再撤回的循环。[当前完整方法](analyses/feedback_learning_reassessment_20261017.md)选择从新condition自身数据直接学目标：正则小比较头区分给定正确教学与当前真实过程，在独立实践episode上固定评分，再由真实探索动作score及原生10步VJP修订全部A/B。没有未来U、冻结任务参数提案或held轨迹准备后拟合；最终固定raw-source/38/r8，辅助退出。
+
+共享表示由Va/HA支持集与独立Vb/HB的跨初态来源分类、合法事实学习；任务无关A0及76步长由更新后独立episode原生FM学习。两类梯度消费者分开，完整条件元梯度不称无偏交互元梯度。全失败对称响应算例产生±.621方向，只说明信息与信用来源，不是LIBERO验证。GAIfO提供观测分布模仿原理，TRAIL约束视觉捷径；不继承其数据量、性能或理想保证。
+
+只读实际N16消费者确认全因子Adam、Gaussian/Bernoulli分支和原生10步信用均已存在，故实质新增是现场可重估的过程比较目标与其共享跨初态训练。Experience、functional93及N16的训练域／held、实践／query正负完整保留；MT起点与raw source差异不得伪作单变量比较。main交付并保留这一完整候选及可失败预测，未称有效或启动就绪；0新标签、实现、模型/env/GPU、采集或实验派发，无active design，先不开实验。
+
 ## 2026-10-17：真实续接标签未识别跨任务修订，消费Experience与functional93
 
 Owner指出关键未知被从U转交Compiler。[当前复核](analyses/feedback_learning_reassessment_20261017.md)给出任务共同终点解C=Lambda_task*−Lambda；真实续接、同task新初态和密集FM允许该解，不强迫理解H。不同经历也不必对应不同最终完整策略。main撤回前稿作为已推通机制与优先完整后继的判断，成功续接仅保留为标签质量/访态覆盖候选。

@@ -1,3 +1,7 @@
+## §20有限批完成，整批交付后归还main窗口
+
+source权重完整生成1180与976实际新episode已退出/验收：seen244/576、strict validation57/400，未超过Reader900117或MT153。Goal42局部正例及全部能力得失保留；0自动科学后继。1180训练/三个永久完整CP与rolling、976输出/原件、9.817228845821GPUh/281142步、unknown0/extra0/资源释放均核。详情progress和ROOT analysis/engineering_completion.md。当前没有活owner/退出waiter/Queue；Git清理/可靠整批回main后释放canonical写窗口，后续科学范围由main决定。
+
 §20真实物理比较已完成（5BA＋4joint/448临时query，0env），采用6rank；正式fresh BA首有效更新22:35:54Z。原1000→180/唯一1180/976保持，剩余按实测约1–2h，当前未完成科学读出；owner538112/reader1383（训练已完成，按bd0e37b0采用原112行后接续唯一读出）唯一直接等待。
 
 当前执行§20首准备中断后，从8395a9e1新clean pushed detached同ROOT接续唯一owner129605（实际UTC见progress/ROOT owner_launch_attempt002）；直接退出reader1348，旧owner/reader均退出，不设Queue/第二waiter。先M和受限物理比较，1000BA→180joint保同Adam，唯一1180完整976；完成后一次科学/费用/资源/Git交main。当前不是1180或闭环完成声明。

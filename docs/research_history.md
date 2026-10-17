@@ -1,3 +1,11 @@
+## 2026-10-17 §20完整source权重生成1180：seen244/576，validation57/400
+
+原source1000/38r8/Φ900完整M冻结，fresh4838160参数source W行列地址生成1000BA＋180 FM/.1BA，完整Adam/RNG/流接续；唯一1180共976新LoRA和新episode全部完成。seen244/source218/ref502/U484/Reader334/413：source R205G39L13、reference新增288保35，target71/support173/identity80。validation57对Reader117/MT153/G165/D175168/ψ119，Reader R28G29L89，MT R40G17L113；Spatial5/Object8/Goal42/Long2，task26=42的正例与其余损失均保留。训练域尚未广泛获取自由因子控制，真梯度/BA下降不认证迁移；不以此证明全类不可能或自动追加原假说。
+
+三次工程中断均保留：known legacy prefix漏接、44环境union角色接口、完成112后queue签名错误。修复分新clean pushed frozen，0重训/0有效行重跑/0unknown；112行CPU采用，余864完成。输入c7/训练8395/读取fb3及bd0独立追溯，全部关键CP/原件保留。实际271382control+9760dummy=281142，9.817228845821GPUh（19 job/8 failed费用均在），额外episode0/16；profile5BA+4joint/448仅临时query。最初21:56:50→00:12:25科学退出2.259898h，原家族09:05:48.038和旧全部成本区间不重置。
+
+峰7卡、node4/6，76 fullclose/累计688env PID退出，两node UID GPU0/zombies0；ROOT3.422GiB/M charged617130072<1GiB。完整per-task/suite/集合、真实梯度/吞吐、教学14528held帧/依赖费用及限制见[整批报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/source_weight_compiler_seed7/analysis/engineering_completion.md)。全部新/旧不利个例与Goal局部正例交main科学消费，0自动后继/controls/Test；记录/Git清理及可靠回报后归还canonical窗口。
+
 ## 2026-10-17 §20学习1180完成与读出角色接口修订
 
 8395a9e1生产完整1000/1090/1180 generator+Adam/流/RNG；实际1180更新/36000BA/720joint/20160query有限且只含36allowlist，无新环境。owner129605在训练段正常退出后，读出入口将原44任务环境union误当seen36而拒绝，0queue/0episode/0LoRA；原CP、日志、费用和两次退出保留。

@@ -1,3 +1,15 @@
+## 2026-10-17 §20完整1180/976已验收：seen244，validation57
+
+唯一owner538112于2026-10-17T00:12:25.660823Z exit0，直接reader1383结束；首次21:56:50→科学退出2.259898h，验收/Git另计。完整1000/1090/1180+rolling1170、1180有效更新/36000 BA/720 joint/20160跨episodequery保留，0训练补量。实际新976完整LoRA/976episode/92shard，unknown0/额外episode0/16/有效行重跑0；旧112在本ROOT CPU采用，未复用历史参照episode。
+
+seen244/source218/ref502/U484/Reader900334/1800413；source R205G39L13、Reader R221G23L113；reference新增288保35。target24 71（source48/ref315/Reader159）、support12 173（source170/ref187/Reader175），五identity新80/80，breadth27/36。validation57对Reader117/MT153/G165/D175168/ψ119：Reader R28G29L89，MT R40G17L113；Spatial5/Object8/Goal42/Long2，task26=42局部正例保留、16/23/39=0。训练域自由因子生成尚未广泛获取，不能仅归因held分布；真梯度与内部误差下降不认证迁移，1180不称充分或稳定，0自动续训/邻点/controls/Test。
+
+完整per-task/suite/target-support/identity/RGL/churn/Jaccard/集合、机制/教学/费用/失败见[整批报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/source_weight_compiler_seed7/analysis/engineering_completion.md)、results/engineering_acceptance/training_acceptance/dependency_cost_accounting。271382control+9760dummy=281142步，累计9.817228845821GPUh，19实际job全有exit，8失败job费用完整含有效112；三父owner中断不丢有效产物。训练8395a9e1、输入c7、读取fb3/bd0独立登记，四正式frozen保留。
+
+真实profile5BA+4joint/448临时query、0env；BA/joint正式均值2.721/3.230s，六rank吞吐与逻辑分片相容。峰7卡、node峰4/6；16/8/4及末2行有用波次，76次完整close/688累计env PID全部退出；最终两node UID GPU0/zombies0，CPU PSS约.314/1.699GiB。node最低MemAvailable275.58/379.49GiB，异步PSS快照不伪称同步峰。ROOT3.422GiB<16，M2200项charged617130072bytes<1GiB，held400完整14528帧/0高维prefix落盘；原source/数据/参考/148GiB特征与所有旧费用区间不动。
+
+本批结束无自动待跑科学工作；canonical独占窗口在一次可靠整批回报main01a13dd9后归还，由main科学消费接续。记录/Git与task-owned开发树清理完成身份另见ROOT analysis/git_delivery.json，不触碰旧formal/frozen或foreign进程。
+
 ## 2026-10-17 §20真实队列消费者修复后同批接续
 
 owner538112于23:43:08.835Z从new clean pushed detached bd0e37b0沿同ROOT --resume；PTY9495/连续直接退出reader1383。旧484519/reader1366均结束。完整1180训练来源8395、原112读取fb3、新队列/读取bd0分别登记；CPU-only采用原7个完整shard/112有效行，原实际费用/LoRA/rows不动，新物理请求0，后续只跑剩余864。

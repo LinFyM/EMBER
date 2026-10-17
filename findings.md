@@ -1,3 +1,9 @@
+## 2026-10-17 §20完整自由因子候选未广泛获取控制
+
+source W地址/完整M新generator4838160参数、1000 BA＋180 FM/.1BA、唯一1180：seen244/source218/ref502/U484/Reader334/413，reference新增288仅保35；target24 71对Reader159/ref315，support173/192及identity80/80保留。validation57对Reader117/MT153/G165/D175168/ψ119，Reader R28G29L89；Goal42（task26=42）局部正例不能抵消Spatial5/Object8/Long2的大损失。完整真实梯度/Adam/流已接通，BA末20≈.7053、joint末20 BA≈.7798/FM≈.11836只作解释；不是held分布的单一失败，也不证明所有source权重或自由参数生成不可能。1180不称充分，0自动加量/小扫/邻点/controls/Test，交main消费。
+
+全部976新episode，实际271382control+9760dummy=281142步，unknown0/extra0；累计9.817228845821GPUh包含三次工程中断的加载/有效行费用，112仅CPU采用不重跑。两node资源全释放，code训练8395/读取fb3-bd0；完整报告在source_weight_compiler_seed7/analysis/engineering_completion.md。旧source/reference/Reader及所有旧正负证据/成本区间保持，未将新root当从零费用。
+
 ## 2026-10-17 §20工程消费者边界
 
 当前唯一§20 fresh source权重地址生成器4838160参数，完整输出643584因子标量；冻结Reader900仅有序M，旧global/code/U/H不执行。CPU核验完整1180逻辑流及1–6rank全A/B余切权重，首零头B-only和非零B后A/body信用符合注册数学；这些只证明机制接通，尚无本批闭环/迁移证据。source/Reader900/参考为已付依赖，reference旧费用区间52.0141130901–52.1218585951GPUh保持，不把新ROOT当完整方法从零成本。唯一终点1180及976实际新episode不变。

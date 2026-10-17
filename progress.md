@@ -1,3 +1,11 @@
+## 2026-10-17 §22接手与真实CPU消费者通过（尚未GPU启动）
+
+执行01a13dbf从main b27b78f0接手独占canonical工程/科研记录/Git；首次现场01:39:14.985237Z，预计实施/读取35–65min，验收/Git另计；旧家族/§20/§21时钟和费用保持。
+实际1090 CP/manifest按原schema、joint/next1090、eadfe958 producer只读加载，4,838,160参数冻结、0optimizer恢复/新forward；不copy CP或改manifest。真实原始与held M payload只读采用/旧索引未变、完整976映射/92shard/345280正常最坏步、76完整因子结构、真实queue complete/unknown保守计费/有效行拒重跑消费者通过。
+唯一control_space复用model/MemoryStore/native/ledger/动态队列；新run schema与原model schema显式分开，不冒充新训练。旧training/profile/learning/checkpoint主动文件、训练Stream和算子分解主动入口退役到Git/frozen，无平行Writer/训练fallback；源码净减615行/0新增module，最大269行/11个peer，普通diff/尺寸审阅满足结构guard。
+原件canonical .codex/tmp/factor_credit_adjacent1090_20261017/consumer.json，CPU fixture不是新1090输出；实际1090首批将直接属于976有效子集，0额外smoke/profile/env。
+独立992提交/353760步/16extra/6GiB峰、共享M≤1GiB；准备quota已现场核，正式每launch再双node GPU/CPU/data1准入。先集成push/new clean detached再执行，整批一次回main、0Queue/心跳/第二waiter/自动后继。
+
 ## 2026-10-17 §21已科学消费；唯一§22只读1090，0新训练
 
 01:25Z完整回报已交main并归还canonical写窗口，main15b98272 clean pushed。

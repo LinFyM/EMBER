@@ -1,4 +1,4 @@
-"""Every registered video gets one complete1180 LoRA and one real final episode."""
+"""Every registered video gets one complete1090 LoRA and one new final episode."""
 from pathlib import Path
 from copy import deepcopy
 from contextlib import closing
@@ -11,14 +11,14 @@ from ember.reference.accounting import reserve,finish,connect,host_resources,sum
 from ember.reference.coordinator import Scheduler
 from ember.reference.run import close_runner,event
 from ember.proposal_writer.batch import Batch,Job
-from .contract import SCHEMA,PHASE,TASKS,VALIDATION_TASKS,FINAL,REFERENCE_ROOT,checkpoint_path,queue_path
+from .contract import SCHEMA,PHASE,TASKS,VALIDATION_TASKS,FINAL,REFERENCE_ROOT,MODEL_SCHEMA,checkpoint_path,queue_path
 
 
 def inputs(root):
     from .data import registered_panels
     root=Path(root);run=read_json(root/'run_contract.json');panels=read_json(root/'panels.json')
     if run['schema']!=SCHEMA or run['phase']!=PHASE or run['final_update']!=FINAL or panels!=registered_panels():
-        raise ValueError('readout must bind the single full1180/seen576/validation400 contract')
+        raise ValueError('readout must bind the single saved1090/seen576/validation400 contract')
     tasks={}
     # The original video owner retained one44-task environment union. Consume
     # only this role's registered panel; retain the immutable old contract file.
@@ -230,7 +230,7 @@ def owner(args):
     from .run import execute_worker,device_pool
     run,tasks,panels=inputs(args.root);panel=work_panel(tasks,panels)
     manifest=read_json(checkpoint_path(args.root,FINAL).parent/'manifest.json')
-    if not manifest['complete'] or manifest['schema']!=SCHEMA or manifest['next_update']!=FINAL:raise ValueError('endpoint1180 must be complete before any materialization/evaluation')
+    if not manifest['complete'] or manifest['schema']!=MODEL_SCHEMA or manifest['stage']!='joint' or manifest['next_update']!=FINAL:raise ValueError('original1090 must be complete before any materialization/evaluation')
     shards=[EvaluationShard(i,n,tasks[w['role']][w['task']]['suite'],w['task'],tasks[w['role']][w['task']]['horizon'],tuple(w['states']),w['cost']) for n,(i,w) in enumerate(panel.items())]
     initialize_queue(queue_path(args.root),shards,contract_reference=str(args.root/'run_contract.json'),recover_claims=args.resume,retry_failed=args.resume)
     adopt_shards(args.root,panel,tasks,panels)

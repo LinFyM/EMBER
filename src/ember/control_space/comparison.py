@@ -10,7 +10,7 @@ from ember.reference.analysis import paired
 from ember.proposal_writer.analysis import paired as checked_pair,billing
 from ember.reference.accounting import summary,connect
 from .contract import (SCHEMA,PHASE,FINAL,TASKS,VALIDATION_TASKS,VIDEO_ROOT,REFERENCE_ROOT,
-    INITIAL_READER,ASSETS,SOURCE,NORMALIZATION,SOURCE_INPUTS,OPERATOR_FILE,OBJECTIVE,PREVIOUS_ROOT,ARM,checkpoint_path)
+    INITIAL_READER,ASSETS,SOURCE,NORMALIZATION,SOURCE_INPUTS,OPERATOR_FILE,OBJECTIVE,PREVIOUS_ROOT,ARM,TRAIN_ROOT,MODEL_SCHEMA,MODEL_PHASE,TRAINING_PRODUCER,checkpoint_path)
 from .analysis import grouped
 
 
@@ -19,7 +19,7 @@ def generated(root,role,panel):
 
 
 def generation_identity(root,role,panel):
-    return dict(schema=SCHEMA,phase=PHASE,objective=OBJECTIVE,operator_constants=str(OPERATOR_FILE),checkpoint=str(checkpoint_path(root,FINAL)),update=FINAL,
+    return dict(schema=SCHEMA,phase=PHASE,objective=OBJECTIVE,operator_constants=str(OPERATOR_FILE),training_producer=TRAINING_PRODUCER,model_schema=MODEL_SCHEMA,checkpoint=str(checkpoint_path(root,FINAL)),update=FINAL,
         source_checkpoint=str(ASSETS/SOURCE),normalization=str(ASSETS/NORMALIZATION),frozen_reader=str(INITIAL_READER),
         source_inputs=str(SOURCE_INPUTS),role=role,task=panel['task'],init_state_id=panel['init_state_id'],
         teacher_demo=panel['teacher_demo'],noise_root=panel['noise_root'],registered_scene=panel.get('registered_scene'),
@@ -40,7 +40,7 @@ def validate_generated(root,role,panel,*,factors=False):
 
 
 class Materializer:
-    """Lazy generator/M owner. Only complete1180 and actual saved LoRAs are adopted."""
+    """Lazy generator/M owner. Only original1090 and this run's actual saved LoRAs are adopted."""
     def __init__(self,root,device,runtime,*,row_chunk=4096,pack=2,frame_chunk=32):
         self.root,self.device,self.runtime=Path(root),torch.device(device),runtime
         self.source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
@@ -55,10 +55,10 @@ class Materializer:
         from .video import MemoryStore
         folder=checkpoint_path(self.root,FINAL).parent;manifest=read_json(folder/'manifest.json')
         state=torch.load(folder/'state.pt',map_location='cpu',weights_only=False,mmap=True)
-        expected=dict(schema=SCHEMA,phase=PHASE,next_update=FINAL,source_inputs=str(SOURCE_INPUTS),objective=OBJECTIVE,operator_constants=str(OPERATOR_FILE),
+        expected=dict(schema=MODEL_SCHEMA,phase=MODEL_PHASE,stage='joint',next_update=FINAL,source_inputs=str(SOURCE_INPUTS),objective=OBJECTIVE,operator_constants=str(OPERATOR_FILE),
             frozen_reader=str(INITIAL_READER),frozen_source=str(ASSETS/SOURCE),normalization=str(ASSETS/NORMALIZATION))
-        if (not manifest['complete'] or manifest['next_update']!=FINAL or any(state.get(k)!=v for k,v in expected.items())):
-            raise ValueError('only the frozen complete new-generator1180 may compile')
+        if (not manifest['complete'] or manifest['schema']!=MODEL_SCHEMA or manifest['stage']!='joint' or manifest['next_update']!=FINAL or any(state.get(k)!=v for k,v in expected.items())):
+            raise ValueError('only the original fixed complete1090 may compile')
         with torch.random.fork_rng(devices=[]):self.model=SourceWeightCompiler(load_source_inputs(self.root))
         self.model.load_state_dict(state['generator'],strict=True);del state
         self.model=self.model.to(self.device).eval().requires_grad_(False)
@@ -167,18 +167,21 @@ def historical(root,panels):
     previous=read_json(PREVIOUS_ROOT/'analysis/results.json')
     for role,arms in (('seen',seen),('validation',validation)):
         arms['source_weight1180']=previous['raw_rows'][role]['source_weight1180']
+    adjacent=read_json(TRAIN_ROOT/'analysis/results.json')
+    for role,arms in (('seen',seen),('validation',validation)):
+        arms['factor_credit1180']=adjacent['raw_rows'][role]['factor_credit1180']
     result={role:{a:_index(v,panels[role]) for a,v in arms.items()} for role,arms in (('seen',seen),('validation',validation))}
-    for role,expected in (('seen',dict(source=218,reference=502,U36=484,Reader900=334,Reader1800=413,source_weight1180=244)),
-            ('validation',dict(Reader900=117,Reader1800=111,MT153=153,G165=165,D72=175,D144=168,psi180=119,source_weight1180=57))):
+    for role,expected in (('seen',dict(source=218,reference=502,U36=484,Reader900=334,Reader1800=413,source_weight1180=244,factor_credit1180=306)),
+            ('validation',dict(Reader900=117,Reader1800=111,MT153=153,G165=165,D72=175,D144=168,psi180=119,source_weight1180=57,factor_credit1180=128))):
         if {a:sum(r['success'] for r in v) for a,v in result[role].items()}!=expected:raise ValueError('actual historical full-panel identity/count changed')
         from ember.pi05_eval.scene import validate_scene_row
         for arm,rows in result[role].items():
             for row,panel in zip(rows,panels[role],strict=True):
                 validate_scene_row(row,row,dict(operator_read_write_scene=panel.get('registered_scene')))
-                if arm.startswith('Reader') and row.get('teacher_demo')!=panel['teacher_demo']:
+                if (arm.startswith('Reader') or arm=='factor_credit1180') and row.get('teacher_demo')!=panel['teacher_demo']:
                     raise ValueError('historical Reader teaching differs from the same-condition panel')
     return result,dict(video=str(VIDEO_ROOT/'analysis/results.json'),reference=str(REFERENCE_ROOT),linear=str(linear),
-        validation=paths,psi180=str(psi_path),source_weight1180=str(PREVIOUS_ROOT/'analysis/results.json'),MT_missing_initial_proprio='registered scene/RNG checked; no fabricated proprio',
+        validation=paths,psi180=str(psi_path),source_weight1180=str(PREVIOUS_ROOT/'analysis/results.json'),factor_credit1180=str(TRAIN_ROOT/'analysis/results.json'),MT_missing_initial_proprio='registered scene/RNG checked; no fabricated proprio',
         D_G='historical MT-based methods, not source-only matched ablations',psi='uses actual practice, not a matched zero-interaction ablation')
 
 
@@ -235,6 +238,7 @@ def paid_dependencies():
         shared_paid_reference=str(REFERENCE_ROOT),reference_family_billing=reference,
         shared_paid_Reader900=str(INITIAL_READER),Reader_family_billing=video,
         shared_paid_previous_compiler=str(PREVIOUS_ROOT),previous_compiler_billing=read_json(PREVIOUS_ROOT/'analysis/results.json')['billing'],
+        shared_paid_factor_credit=str(TRAIN_ROOT),factor_credit_billing=read_json(TRAIN_ROOT/'analysis/results.json')['billing'],
         source_center_and_units='old basis saved identity/layout and control_space76S only; no old U/code/neural decoder forward',
         costs_are_not_from_zero='current-root billing excludes prior source/reference/Reader learning and old failures; do not add shared costs twice')
 
@@ -245,22 +249,21 @@ def analyze(root):
     identity={r['task'] for r in run['references'] if r['path'] is None}
     for role in ('seen','validation'):
         new=[saved_case(root,role,tasks[role][p['task']],p) for p in panels[role]]
-        raw[role]=dict(old[role],**{ARM:new})
+        raw[role]={a:v for a,v in old[role].items() if a!='factor_credit1180'}
+        raw[role][ARM]=new;raw[role]['factor_credit1180']=old[role]['factor_credit1180']
         results[role]=grouped_evidence(raw[role],tasks[role],panels[role],identity)
     interactions=interaction_evidence(root,raw,panels,run['limits'])
     if len(raw['seen'][ARM])!=576 or len(raw['validation'][ARM])!=400:
         raise ValueError('only complete976 and the original finite physical budget can finish')
     result=dict(schema=SCHEMA,phase=PHASE,complete=True,checkpoint=str(checkpoint_path(root,FINAL)),update=FINAL,
         panels=results,raw_rows=raw,provenance=provenance,billing=billing(root),interactions=interactions,limits=run['limits'],
-        new_episodes=976,zero_interaction=True,shared_updates=1180,held_offline_labels_read=False,Test=False,
-        selection='unique preregistered1180; no mid-window/partial-held selection',automatic_successor=False,
+        new_episodes=976,zero_interaction=True,shared_updates=0,training_source=dict(checkpoint=str(checkpoint_path(root,FINAL)),producer=TRAINING_PRODUCER,optimizer_restored=False),held_offline_labels_read=False,Test=False,
+        selection='unique preregistered saved1090; no training, geometry or checkpoint selection',automatic_successor=False,
         dependencies=paid_dependencies())
-    from .analysis import operator_decomposition
-    result['operator_readout']=operator_decomposition(root)
     write_json_atomic(root/'analysis/results.json',result);write_json_atomic(root/'completion.json',dict(complete=True,rows=976,result=str(root/'analysis/results.json')))
-    lines=['# Source权重条件完整LoRA：唯一1180读出','',
+    lines=['# Source权重条件完整LoRA：唯一1090相邻读出','',
         'seen576：'+str(results['seen']['total']['successes']),'','strict validation400：'+str(results['validation']['total']['successes']),'',
         '完整raw rows、每task/suite/target-support/identity、RGL/churn/Jaccard及参考新增能力保留见results.json。',
         '旧D/G含MT，ψ含实践；它们是历史强参照，不是匹配零交互机制消融。MT缺原初始proprio不补造。',
-        '单点不能认证稳定最终能力；0中间选点/额外forward探针/controls/Test/自动续训。']
+        '相邻两点也不能单独认证稳定最终能力；0中间选点/额外forward探针/controls/Test/自动续训。']
     (root/'analysis/report.md').write_text('\n'.join(lines)+'\n');return result

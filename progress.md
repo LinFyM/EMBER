@@ -1,3 +1,12 @@
+## 2026-10-17 §21唯一正式owner与有用profile
+
+owner878801于00:39:45.988248Z从clean pushed detached eadfe958启动同名唯一ROOT，持续退出reader1430/PTY43534；登记真实owner，不把派发当运行。
+已实际完成6rank临时profile：2pair+2joint/224FM/0env，0OOM；pair pack1→6、row512 checkpoint→4096非重算，1.791→.281s/峰5476MiB；joint实际micro7→21、合并有用taskpack，2.681→1.887s/峰14866MiB。
+首pair A/B头均非零、body0，第二pair body非零；只是信用消费者，不代表闭环能力。临时模型弃用，正式fresh seed7/Adam和逻辑流保持。
+原2200M共享charged617130072bytes，只读路径采用/不写旧SQLite，新schema/目标与旧CP隔离。现场双node/CPU-PSS/独立data1准入已由launcher留存ROOT admission。
+90–150min原估计仍保留；只读M去除旧写锁开销与实测更快，待正式首有效更新按真实吞吐修正，0科学预算/选择变化。
+唯一1180新576/400仍待完成，0中间点/controls/Test/自动后继；整批一次回main归还窗口。
+
 ## 2026-10-17 §21真实CPU消费者通过；正式计算尚未开始
 
 pair低秩Gram与小dense oracle的数值/生成A、B梯度一致；teacher双stopgrad、identity L_A=0、真实BA日志无梯度通过。

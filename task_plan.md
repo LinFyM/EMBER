@@ -1,3 +1,20 @@
+## 2026-10-17 当前唯一目标：固定生成器下检验A/B学习信用
+
+main已消费§20原976新行、1180更新、实际算子和保存参数：target24仅71/384、参考新增270保31，
+held57中task26占42，不能仅归为迁移失败。CPU分解保留条件学习正事实，并定位晚层获取不足；
+固定A0可覆盖23.29%参考能量只是学习几何，不是唯一根因或闭环上界。
+完整判断见[分析§28–29](docs/analyses/source_control_space_learning_20261015.md#28-完整生成1180的不足首先在训练域而非只有held迁移)。
+
+唯一active [design§21](docs/designs/source_policy_space_compiler_20261015.md#21-固定生成器下分别监督两个因子的信用检验)：
+同source-W完整头/冻结Phi900/同seed fresh/同流，只把前1000更新换成参考另一因子分别监督A/B；
+后180仍原FM+.1BA，唯一1180新seen576＋strict400。没有新架构、额外曝光、任务内拟合/实践、SVD/gauge重排或Test。
+新ROOT source_weight_factor_credit_seed7，976正常＋独立16工程额，累计992提交/353760步，新增峰16GiB；
+优先只读复用旧W/小M，0大资产复制，预计90–150分钟。若仍弱，停止当前冻结M＋source-W共享头的回归补丁家族。
+
+当前main持有canonical科学/Git窗口，文档push后立即实际派发既有执行01a13dbf；接手后其独占工程/记录/Git。
+这是新合同登记，尚不冒称GPU启动。整批结果回报后main自主消费与接续，不等待Owner普通许可、不自Queue。
+以下§20及更早段落均为历史阶段快照，不能恢复未完成字样所指的旧运行。
+
 ## §20有限批完成，整批交付后归还main窗口
 
 source权重完整生成1180与976实际新episode已退出/验收：seen244/576、strict validation57/400，未超过Reader900117或MT153。Goal42局部正例及全部能力得失保留；0自动科学后继。1180训练/三个永久完整CP与rolling、976输出/原件、9.817228845821GPUh/281142步、unknown0/extra0/资源释放均核。详情progress和ROOT analysis/engineering_completion.md。当前没有活owner/退出waiter/Queue；Git清理/可靠整批回main后释放canonical写窗口，后续科学范围由main决定。

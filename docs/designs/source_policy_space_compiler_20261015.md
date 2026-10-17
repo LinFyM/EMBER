@@ -12,10 +12,11 @@
 完整方法与历次取舍见[编译分析](../analyses/policy_space_meta_compiler_proposal_20261015.md)。
 旧反馈学习原理保持其真实历史；当前不把自由因子、BA或FM接通重新描述成未经尝试的新原理。
 
-**当前唯一范围为§20：冻结source/Reader900，以实际source权重行列为地址生成完整38/r8；1000次BA＋180次FM/BA，终点576/400。**
-§2–19均为完成/失败/恢复历史。§18实践505→647而held117→119，§19内部排除投影98→37/128，
+**当前唯一范围为§21：同生成器/fresh同流，仅前1000更新以参考另一因子分别教A/B；后180仍FM/.1BA，终点576/400。**
+§2–20均为完成/失败/恢复历史；§20 seen244/held57，实际条件学习不足见控制空间分析§28–29。
+§18实践505→647而held117→119，§19内部排除投影98→37/128，
 停止原固定全局轨迹空间继续加量/微扫；不声称空间唯一根因或所有低维方法无效。
-新候选零交互、无任务内动作轨迹拟合/新reference/额外checkpoint选择/controls/Test；唯一实施合同见§20。
+新候选零交互、无任务内动作轨迹拟合/新reference/额外checkpoint选择/controls/Test；唯一实施合同见§21。
 
 ## 2. 已核资产与选择新参考教师的理由
 
@@ -1833,3 +1834,133 @@ main负责科学合同和结果消费，不重复工程审核/测试，不设普
 Reader900、36参考和source的已付共享成本列为复用依赖，不把新root账本冒充完整方法从零总成本。
 一个owner持续真实退出等待，0Queue自通知/心跳/第二等待者；整批976、完整费用/资源释放/Git后一次回main并归还写窗口。
 发生实际边界只报具体问题，同时完成独立工程工作；正常阴性不当bug，终点完成不自动续训或开启其它矩阵。
+
+## 21. 固定生成器下分别监督两个因子的信用检验
+
+### 21.1 问题、唯一干预与既存证据
+
+§20完整1180为seen244/576、validation57/400，target24只71/384，参考新增270保31；
+不是仅held泛化失败。task26的42/50及source保持205/218仍保留。
+main已读取实际源码、976新行/1180更新及保存参数，CPU分解显示条件拟合存在，
+实际BA误差.773562、条件误差.716722；后十层q仍近零作用，固定A0只覆盖23.29%参考算子能量。
+这与乘积监督的学习依赖相容，未唯一确诊；旧G864/1296、source E/D及V的负证据继续约束投入。
+完整数学与竞争解释见[分析§28–29](../analyses/source_control_space_learning_20261015.md#28-完整生成1180的不足首先在训练域而非只有held迁移)。
+
+本批只改变前段训练目标，保持§20的输入、网络、初始化、数据、优化器超参数、曝光和后段目标。
+ROOT唯一为`/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/source_weight_factor_credit_seed7`。
+全新seed7 generator/Adam/流，**不承接旧1180或任一旧optimizer**；不是追加旧训练或原样重复旧控制臂。
+§20原完整结果是唯一既存匹配控制；新的整个1180出口、576/400都实际生成/执行。
+0旧U/ψ恢复、0新的参考选点/训练、0SVD或规范重排、0架构/width/rank/seed/scale扫描、0任务内轨迹拟合/实践/搜索、0Test。
+
+### 21.2 固定输入、输出和可训练对象
+
+严格继承§20.1的显式36-task allowlist和原24/8/8/specification审计，§20.2所有合法输入及信息墙，
+§20.3完整SourceWeightCompiler计算（4838160参数、38/r8/alpha8/drop0、两零head、16latent/两fusion block）。
+source1000和原normalization、source实际W/A0、76个S、36个selected参考、Phi900全部冻结；Compiler无直接L/ID。
+exact L仍由原生policy/FM query正常读取，原source没有trainable parameter，最终完整单LoRA无MT/第二adapter。
+
+已有静态输入统一只读复用§20ROOT的`source_inputs/{state.pt,manifest.json}`与`operator_constants.json`，
+在新run contract显式登记其producer/path/数学身份，不复制W或重算D。
+E_tl仍为该contract中36个selected A_E/B_E的完整乘积，五identity仍等权；没有新标签或标签坐标变换。
+原参考因子只作为共享训练损失的常量，**不能进入generator、M、source结构地址或新condition前向**。
+
+Phi900完全不变，允许只读采用§20已经完成的1800训练M和400 held M，
+须按其实际source/Phi、task-video调度身份、完整frame indices和原完整memory消费记录匹配，
+不把旧M路径名/任务ID当模型内容，不读取旧final结果来构造M。
+新owner只维护自己的引用/消费账，不改写旧SQLite、ready状态或原缓存；不能整树复制缓存。
+若实际旧M项未完整保留，按§20原合法RGB→完整prefix→有序M路径有限重建同项，计真实成本，不换视频。
+所有新M、reserved、partial合计仍≤1GiB，旧只读payload计入统一工作缓存额度；不双计同一共享payload。
+教学读取总成本保留原59114训练采样帧/14528 held采样帧与实际命中/重读，缓存复用不称零教学。
+0新高维prefix落盘/producer545读取/teacher动作state或reward输入；held离线标签和最终反馈不产生梯度。
+
+### 21.3 前1000更新的唯一新损失
+
+对每条原训练视频生成的完整A_hat/B_hat，标签为固定A_E/B_E，`s=alpha/rank=1`：
+
+```
+L_B = mean_layer ||s B_hat A_E - E||_F² / D_l
+L_A = mean_layer ||s B_E A_hat - E||_F² / D_l
+L_pair = (L_B + L_A) / 2
+L_BA_report = mean_layer ||s B_hat A_hat - E||_F² / D_l
+```
+
+用现有低秩Gram/trace数学分别计算，不在训练GPU物化大dense BA；A_E/B_E都detach。
+阶段A只优化L_pair，各task/各layer仍等权；同一forward的实际L_BA_report仅作日志，**不加入阶段A梯度**。
+L_A/L_B及实际BA分别记录，不能把新L_pair下降当旧BA下降，或用其中最低值选择checkpoint。
+五identity的B_E=0使L_A自然为0，L_B仍约束生成B；不另加恒等A标签、调整identity权重或剔除任务。
+
+这相当于用参考另一因子的完整算子度量回归当前因子，约束原保存参考的gauge；不是新的gauge不变目标。
+不做balanced SVD、Procrustes、缩放/符号重排或额外因子MSE。最终控制误差还有`ΔB ΔA`交叉项，
+故监督通过和真实BA改善都不能替代闭环。第一有效更新通常A/B两head均有非零梯度，
+body首步仍可能因两零head为0；后续信用必须由实际消费者确认，不能用人工非零初始化改变科学干预。
+
+### 21.4 相同完整学习流与恢复边界
+
+严格复用§20.4的优化器与流定义：AdamW lr1e-4/betas(.9,.95)/eps1e-8/wd1e-4/clip1/constant LR。
+阶段A fresh1000 updates，每次36task各一原始视频、mean36，36000条件；视频50无放回周期种子
+`SeedSequence([7,202610173,task,cycle])`，cycle0..19。初始generator参数和原§20使用相同seed7/构造顺序，
+仅损失变了，不从已训练模型拷参数，也不为逐bit一致关闭高效kernel。
+
+阶段B承接新1000的同一Adam/RNG/stream，仍180 updates，每次4task×28合法跨episode FM query。
+task周期种子`[7,202610174,cycle]`，teacher visit1000..1019，query种子`[7,202610175,task]`；
+与原§20逻辑task/teacher/query/tau/noise流相同，排除当前teacher episode，20160 FM queries/720视频条件。
+**阶段B仍只优化原`L_FM+0.1 L_BA`，不含L_pair，也不重置Adam/LR**。
+原真实完整A/B leaf余切→generator、query份额/BA质量、sum或DDP等权合同完全继承；物理rank可按live吞吐变化。
+
+全部1180有效更新/36720条件；标签、M、source输入、source policy始终冻结，仅generator学习。
+checkpoint必须有新objective/schema身份、generator/Adam/scheduler/scaler、phase/globalstep、完整sampler/cursor、全rank RNG与topology。
+保存1000/1090/1180及至多一个原子滚动恢复点；本批只读出1180，不用loss择点或提前打开其余点。
+任一恢复必须保留本批实际状态与已完成有效更新，不能将旧§20 checkpoint解释为本批resume。
+真实工程修复保留原有效样本、失败、费用与代码身份，新clean pushed detached承接；数学/数据/选择变化交main裁决。
+
+### 21.5 唯一末点读出与预注册解释
+
+完整继承§20.5的576 seen与400 validation面板、state-video/RNG/registered scene映射、官方预处理/动作/settling/horizon。
+每一条相同合法教学由新1180生成自己的完整38/r8 LoRA，冻结后新执行一个final；976均为新episode，
+不采用§20旧LoRA/旧episode来填本批结果，也不把完整task共享一个输出当逐video编译。
+复用旧M是冻结输入复用，不能混为复用模型输出。Compiler/M/标签辅助在final退出，只剩source+完整生成LoRA与自身观测/exact L。
+validation仍八任务各50视频一次，无离线标签、梯度、动态参数选择或最终反馈学习；Test继续关闭。
+
+在§20.5原所有强参照之外，新增既存§20的source_weight1180作为同任务/视频/state/noise的直接控制：
+seen244/target71/support173/source保持205/reference新得保35，validation57/逐task[1,4,8,0,0,42,2,0]。
+这些数字只用于核对身份，正式读出从原rows复算。Reader900334/117、Reader1800413/111、source218、reference502/U484、
+MT153和旧G/D/ψ身份/MT缺proprio限制均保留；不把只胜244/57认作达到EMBER目标。
+
+完整报告per-task/suite、target/support、identity、breadth、R/G/L/churn/Jaccard和所有成功集合，
+特别报告参考新增能力保存、源能力保持、task26局部正例是否保持和其它七held task变化。
+从已保存全部576 seen输出按§20主分析相同D做一次必要CPU算子分解/逐层误差即可，不读held参考、不新增model/policy forward探针。
+L_pair两项/实际BA/FM、梯度、吞吐及标签侧几何只作机制解释，不成为新的内部qualification gate。
+
+若晚层BA和seen实际能力恢复，支持这项监督改善了当前训练域信用；若只新loss下降，不能称写入问题已解决。
+若seen强而held弱，当前冻结M/生成器的迁移仍未成立，不能用seen资格替代最终目标。
+若仍无广泛获取，停止冻结Phi900＋当前source-W行列头＋36参考回归的继续loss/初始化/scale/seed/曝光补丁；
+不能按新版本名称清零这一家族停止线。也不以一轮阴性宣布全部hypernetwork或source/r8不可能。
+若held有实质广泛收益及合理保持，main另登记相邻1090与必要匹配视频证据；本批无自动相邻/controls/Test或第二时间块。
+
+### 21.6 资源、运行面与交付
+
+独立新批预算与同面板一致：正常976提交/control335520/dummy9760/总345280；
+另独立16项工程尝试额，累计同时满足**992提交/control343840/dummy9920/总353760**。
+0旧余额迁入/0实践预算/0正常失败重跑；unknown按完整最坏收费，已完整有效行不重跑。
+保留实际全部失败/准备/profile/训练/读出GPUh，原source/reference/Reader/§20复用依赖单列，不双计共享资产或记从零。
+
+已有网络、M和后段物理图未变，复用§20实际1卡pack1/6/36与6rank/row4096、joint micro7/56及6rank最多21query的吞吐证据。
+仍在真实新loss消费者确认显存/完整梯度和有用吞吐；允许至多4个L_pair全update equivalents、2个joint equivalents
+（≤224额外FM query）的最小临时消费者/profile，0环境、临时参数弃用；不是必须重跑旧profile矩阵。
+显存有余量时沿实际可用逻辑batch验证有用扩大，不为占满显存造重复样本；物理选择不改task权重或更新数。
+
+新增峰16GiB，含全部976输出/三个完整CP/rolling/原子副本/新cache/日志和余量；旧W/M/大资产只读不复制。
+执行者在新ROOT/cache/launch前现场核strg01 data1独立user quota、相关du与shared容量，新增一律data1。
+每launch/resume核双node GPU/process、实际显存/CPU PSS/线程；总6或8、每node6、单node训练、NCCL_P2P_DISABLE=1/NUMA/deferred。
+独立物化/评测动态long-first持久workers、16/8/4有用槽、0NCCL/0dummy/0重探32，统一卡数与CPU准入，不挤foreign任务。
+
+仅修改既有control_space的目标、状态/来源标记和读出比较消费者；复用同一SourceWeightCompiler、native/FM/BA数学、M与queue。
+只有一个canonical主动训练目标，旧§20训练入口由Git/frozen保留，不复制平行模型/owner或添加可选旧loss fallback。
+source模型/数据计算无改动，不为这次窄目标改动做无关架构重构。按实际consumer验证两项teacher stopgrad、生成A/B信用、
+全局质量/流、保存恢复及完整最终参数来源；源码修复/测试/Git由执行者独占闭环，main不设工程ACK。
+
+预计**90–150分钟**，依据§20实测BA约2.72秒/update、joint约3.23秒/update：训练约55分钟，
+输入只读采用/窄实现与消费者15–30分钟，物化/976读出25–45分钟，加保存/加载余量；新损失实际吞吐用于校准，不承诺固定deadline。
+无GPUh硬限；明显超期、真实科学或其它资源边界变化明确报告，不能静默多训或把时间充裕当扩矩阵理由。
+全部成本/教学读取/有效更新/新976/资源退出/Git交付后一次回main01a13dd9并归还canonical窗口。
+唯一owner持续真实退出等待，0自Queue/心跳/第二waiter；main消费后继续科学取舍，0自动后继。

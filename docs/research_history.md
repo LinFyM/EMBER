@@ -1,3 +1,17 @@
+## 2026-10-17 §20科学消费与一次同结构监督干预
+
+main从原976行、1180学习记录和保存576输出消费§20：target24参考新增270只保31，
+task26 held42/50的局部正例与其余350仅15成功并存。CPU完整BA误差.773562，任务差异项.716722，
+生成非公共能量75.2%；初始A0/生成A/生成B可捕获参考能量23.29%/51.11%/37.88%，晚层q仍弱。
+原件`source_weight_compiler_seed7/analysis/main_scientific_readout`保留三份py/json；0新增forward/GPU/环境或held标签。
+这不唯一归因A/B信用或证明新方法可行，旧G864/1296、E/D、V/LocalField正负证据均继承。
+
+新唯一[design§21](designs/source_policy_space_compiler_20261015.md#21-固定生成器下分别监督两个因子的信用检验)
+保持完整source-W生成器/冻结M/fresh同seed/同流/1000+180曝光，仅前段换成固定参考另一因子的两项算子监督，
+后段仍真实FM+.1BA，唯一末点576/400。新ROOT source_weight_factor_credit_seed7，90–150分钟估计，
+992提交/353760步/独立16工程额/16GiB峰；旧W/M只读复用。当前只是科学登记和待实际派发，不是运行或正结果。
+若仍弱，停止当前冻结M＋source-W共享头回归补丁家族；所有旧原件/费用/控制正例不改，0Test/自动后继。
+
 ## 2026-10-17 §20完整source权重生成1180：seen244/576，validation57/400
 
 原source1000/38r8/Φ900完整M冻结，fresh4838160参数source W行列地址生成1000BA＋180 FM/.1BA，完整Adam/RNG/流接续；唯一1180共976新LoRA和新episode全部完成。seen244/source218/ref502/U484/Reader334/413：source R205G39L13、reference新增288保35，target71/support173/identity80。validation57对Reader117/MT153/G165/D175168/ψ119，Reader R28G29L89，MT R40G17L113；Spatial5/Object8/Goal42/Long2，task26=42的正例与其余损失均保留。训练域尚未广泛获取自由因子控制，真梯度/BA下降不认证迁移；不以此证明全类不可能或自动追加原假说。

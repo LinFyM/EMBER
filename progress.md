@@ -1,3 +1,25 @@
+## 2026-10-17 §20已科学消费；唯一§21固定结构的因子信用检验
+
+main直接读取实际生成/学习代码、完整原结果，并归档976行/1180记录复算及保存576输出的CPU算术到
+`source_weight_compiler_seed7/analysis/main_scientific_readout`，0新model/policy forward/GPU/环境。
+target24新71/384、参考新增270保31；held57中task26=42（对MT净+7），其余350仅15，广泛能力仍缺。
+实际BA .773562=公共.051546＋任务差异.716722＋视频波动.005295，非公共输出能量75.2%，不是纯共有方向。
+固定A0/生成A/生成B对参考的行列空间捕获为23.29%/51.11%/37.88%；晚层q仍近零，乘积信用解释未唯一确诊。
+§20原9.817228845821GPUh/281142步/全部工程事故、正负例和已付依赖完整保留。
+
+唯一active为[design§21](docs/designs/source_policy_space_compiler_20261015.md#21-固定生成器下分别监督两个因子的信用检验)：
+保持§20模型/输入/fresh同seed/逻辑流/1000+180曝光，只改前1000目标为
+`0.5*(||B_hat A_E-E||²+||B_E A_hat-E||²)/D`；参考只在损失中detach。
+后180仍FM+.1完整BA，末点1180新576/400，0旧optimizer恢复/架构或gauge改变/任务内拟合/实践/controls/Test。
+若仍无广泛获取，停止冻结Phi900＋当前source-W共享行列头＋36参考回归的继续loss/初始化/scale/seed/曝光补丁。
+详细推理与原件见[分析§28–29](docs/analyses/source_control_space_learning_20261015.md#28-完整生成1180的不足首先在训练域而非只有held迁移)。
+
+新ROOT `source_weight_factor_credit_seed7`，旧source inputs/完整2200小M按身份只读复用，不复制原cache或写旧SQLite。
+独立992提交/353760联合步/16工程额/16GiB峰，M统一≤1GiB，正式1180更新/20160FM；
+临时消费者至多4 pair＋2 joint equivalents/224额外FM，0env。预计90–150分钟，按原2.72/3.23秒更新与976读出校准。
+main当前独占科学/Git，文档push后真实派发唯一执行01a13dbf；接手后其独占工程/记录/Git，main不设工程ACK。
+登记不是GPU启动，旧§20已全部退出无待跑后继；新批唯一owner持续真实退出等待，整批一次回main，0Queue/心跳/第二waiter。
+
 ## 2026-10-17 §20完整1180/976已验收：seen244，validation57
 
 唯一owner538112于2026-10-17T00:12:25.660823Z exit0，直接reader1383结束；首次21:56:50→科学退出2.259898h，验收/Git另计。完整1000/1090/1180+rolling1170、1180有效更新/36000 BA/720 joint/20160跨episodequery保留，0训练补量。实际新976完整LoRA/976episode/92shard，unknown0/额外episode0/16/有效行重跑0；旧112在本ROOT CPU采用，未复用历史参照episode。

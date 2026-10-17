@@ -12586,3 +12586,9 @@ torch ZIP直接读取gzip seek流会重复解压：本批真实35.6MB/104event�
 ## 原生算子首写的pre-FM工程边界（2026-10-17）
 
 自定义Function默认关闭forward AD和BF16物理identity/FP32生成因子的集合通信dtype是两个确定工程违约，均在0FM/0有效更新时保留原费并窄修。CPU双伴随作用域与实际distributed_credit通信检查通过；这不替代完整真实native反向/QR-alpha梯度和闭环，科学结论尚无。证据见新ROOT analysis/engineering_attempt001/002。
+
+## 2026-10-17 真实source-H原生首写：工程信用完整，未广泛获取
+
+fresh180的真实完整J/双伴随/QR2/alpha/gauge/native FM消费者与720流已完成，不是缺梯度或未执行。144新query仅64/source58/Reader89，R53G11L5、target19对14/43、参考新增70保10、Object0；support45/48与identity20保持不能掩盖目标任务缺口。现有结果降低当前pressure/原生范围组织继续投入的支持度，不自动更换尺度、QR、rank、loss或延长，亦不证明所有实践信息或原生参数编译不可能。固定旧source H首写不认证完整反馈修订、held或V/H因果；Owner已放弃无实践信息直接生成的取舍持续约束后继。撤回的whole_method讨论稿没有升级为候选或launch资格。
+
+4→8→16完整支撑批与7→14→28FM把实测68.619s降至19.707s，6卡19.877s无观测收益，formal中位19.700s。全部6.219000091420GPUh/38098新步、两次pre-FM工程失败与已付40377source实践独立保留；正常科学失败不重试。完整得失/每task-suite/教学重用/代码职责和资源见[原件](/data1/user/ymdai/ember_runs/source_native_operator_compiler_20261017/first_write_seed7/analysis/engineering_completion.md)。

@@ -5860,3 +5860,9 @@ video_effect_MT_official_settling_03/a986e7b2，21:48:29Z→21:52:59Z，新增12
 ## 2026-10-17 原生首写前FM工程失败保留
 
 199fc3dc作用域丢切向量0.037065746784GPUh；710b5a7d跨rank参数dtype导致BROADCAST超时0.908953399393GPUh，累计0.946019146178，均0有效更新/0FM/0环境。原件、代码身份与时钟保留，普通工程修复不改当前唯一科学合同，也不充新profile或episode额度。详见progress和ROOT analysis/engineering_attempt001/002；完整真实机制与科学读出尚未完成。
+
+## 2026-10-17 固定source-H原生算子首写180有限批
+
+97cabedc唯一合同，实际producer cbd445a6，fresh180/720事件/20160FM、36完整38r8/144新query，04:48:36.435624Z exit0。source58/reference127/Reader89/new64，对source R53G11L5、对Reader R60G4L29；target19/96/support45/48/identity20，Object0，参考70新增只保10。局部task0/35收益保留，无广泛控制获取，不认证完整反馈/视频因果/held或自动后继；整体科学重审由main继续承担。
+
+13个GPU attempt、6.219000091420GPUh（含两个pre-FM失败.946019146178）、144有效/38098步/unknown0/extra0，0有效重跑。4临时更新448FM参数不进正式；CP90/180+rolling171完整。M780读/25700帧当量与原144source H/40377步依赖有账，0新实践不称zero-interaction；旧source/reference/Reader及历史成本区间不改。双node资源退出、36close/144环境释放、quota/峰值/Git及全部不利case见[完整原件](/data1/user/ymdai/ember_runs/source_native_operator_compiler_20261017/first_write_seed7/analysis/engineering_completion.md)。Owner最新稳定路线纠正21a50180已集成；被撤回的whole_method稿未成为后继合同。

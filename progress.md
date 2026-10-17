@@ -1,3 +1,12 @@
+## 2026-10-17 固定source-H原生首写180/144已完成，当前无自动后继
+
+唯一owner2050894于04:48:36.435624Z exit0，reader1589/PTY88217已完成；cbd445a6 clean pushed detached完成fresh180/720事件/20160FM与36套新完整38r8/144新query。临时4更新/448FM参数丢弃，CP90/180+rolling171的完整model/Adam/stream/4rank RNG/Ω已验；90无读出/选点，全部任务20不同非报告V、query跨episode。当前有限合同到此结束，不恢复旧§1–22或追加180/QR/rank/LR/scale/seed/held/controls/Test。
+新64/source58/reference127/Reader90089/first73/full79/random86/functional93，各144；对source R53G11L5/churn16/Jaccard.768116，对Reader R60G4L29/.645161，参考新增70保10、breadth20/36（Reader29）。target19/96对source14/Reader43/ref80，support45/48对44/46/47、五identity20/20；Spatial6/Object0/Goal9/Long4，局部task0/35得益与task12/14等严重损失均保留。未形成广泛获取，不以真实梯度/校准通过认证视频或H语义、完整反馈/held或超过MT；本组件无自动续量，主讨论承担整体重审。
+吞吐support4/FM7→8/14→16/28为68.619→32.441→19.707s，6rank同配置19.877s，选4rank16/28。正式中位19.700s/平均21.170s，峰17225MiB；学习64.67min，读出8持久worker/动态36条件约6min，原始profile/完整180曲线保留。全部144唯一有效行、0正常失败重跑/unknown/episode extra，36658control+1440dummy=38098步；总6.219000091420GPUh（训练4.311634977659/读出.667099736134/成功临时.294246231450/两次pre-FM失败.946019146178），13job attempt全结，失败原件/费用不抹写。
+源H144段40377步已付依赖只读；选576不同decision反复消费、0新实践不称zero-interaction。含失败780次完整M/25700帧当量读取，0新M/prefix/held读取/旧SQLite写，原Reader/source/reference费用及旧区间独立。ROOT约2.94GiB、H cache2.575GiB<4、共享M617130072bytes<1GiB、保守峰<3.6<12GiB。双node现场无本UID GPU，36完整close释放144环境、所有本批worker/child PID已退出，node eval各4worker/16真实episode上限，PSS峰之和保守48.780/51.810GiB；0僵尸/foreign触碰。
+源码新增1594/删580/净1014行、5职责模块、最大320行/guard无hard；显式ownership与退役理由见[完整交付](/data1/user/ymdai/ember_runs/source_native_operator_compiler_20261017/first_write_seed7/analysis/engineering_completion.md)，无平行Writer/旧source-W fallback。actual180 source producer cbd445a6与失败199fc3dc/710b5a7d分列；旧02:39:51观察/03:06:46 owner和家族09:05:48.038不重置。
+Owner因数月性能不足已放弃无实践信息直接生成的纠正已以21a50180置顶requirements/concept并写findings。whole_method_reassessment临时稿已由main撤回、尚未集成，按最新指示归还窗口后由main处理，不是当前选定方案/active design/待执行后继。原件/acceptance/各费用、资源、教学和Git回执在ROOT analysis；工程验收/Git后一次可靠回main01a13dd9并归还canonical写窗口。
+
 ## 2026-10-17 原生首写受限消费者完成，fresh180正式学习已启动
 
 原4临时更新/448FM全部完成，0临时环境；未把临时model/Adam带入正式。实际source16支撑十步G/双伴随/QR-alpha-gauge/native完整因子FM反向、4条件有限F_out与context/video attention信用通过，首步伴随相对误差最大0.000776；仅工程消费者，不认证控制能力。CP3的4→6rank完整恢复和RNG/topology来源已落原件。

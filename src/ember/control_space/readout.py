@@ -1,4 +1,4 @@
-"""Every registered video gets one complete1090 LoRA and one new final episode."""
+"""One terminal180 controller per report video; all144 query episodes are new."""
 from pathlib import Path
 from copy import deepcopy
 from contextlib import closing
@@ -11,24 +11,19 @@ from ember.reference.accounting import reserve,finish,connect,host_resources,sum
 from ember.reference.coordinator import Scheduler
 from ember.reference.run import close_runner,event
 from ember.proposal_writer.batch import Batch,Job
-from .contract import SCHEMA,PHASE,TASKS,VALIDATION_TASKS,FINAL,REFERENCE_ROOT,MODEL_SCHEMA,checkpoint_path,queue_path
+from .contract import SCHEMA,PHASE,TASKS,FINAL,REFERENCE_ROOT,checkpoint_path,queue_path
 
 
 def inputs(root):
     from .data import registered_panels
     root=Path(root);run=read_json(root/'run_contract.json');panels=read_json(root/'panels.json')
-    if run['schema']!=SCHEMA or run['phase']!=PHASE or run['final_update']!=FINAL or panels!=registered_panels():
-        raise ValueError('readout must bind the single saved1090/seen576/validation400 contract')
-    tasks={}
-    # The original video owner retained one44-task environment union. Consume
-    # only this role's registered panel; retain the immutable old contract file.
-    for role,required in (('seen',TASKS),('validation',VALIDATION_TASKS)):
-        environment=run['environments'][role];all_tasks={t['global_task_id']:t for t in environment['tasks']}
-        if len(all_tasks)!=len(environment['tasks']) or not set(required)<=set(all_tasks):
-            raise ValueError('role environment is missing an explicitly registered task')
-        tasks[role]={t:all_tasks[t] for t in required}
-        run['environments'][role]=dict(environment,tasks=list(tasks[role].values()))
-    return run,tasks,panels
+    if (run['schema']!=SCHEMA or run['phase']!=PHASE or run['final_update']!=FINAL
+            or run['eval_rows']!=144 or panels!=registered_panels() or set(run['environments'])!={'seen'}):
+        raise ValueError('readout must bind the unique terminal180/non-held144 contract')
+    environment=run['environments']['seen'];all_tasks={t['global_task_id']:t for t in environment['tasks']}
+    if set(all_tasks)!=set(TASKS) or len(all_tasks)!=len(environment['tasks']):
+        raise ValueError('readout environment must contain exactly the audited36 tasks')
+    return run,dict(seen=all_tasks),panels
 
 
 def validate_case(row,task,panel,role):
@@ -40,7 +35,7 @@ def validate_case(row,task,panel,role):
     if any(row.get(k)!=v for k,v in expected.items()):raise ValueError('official per-video task/native/RNG contract changed')
     steps=row.get('steps',0)
     if (type(row.get('success')) is not bool or not 0<steps<=task['horizon'] or (not row['success'] and steps!=task['horizon'])
-            or row.get('model_failure') or row.get('budget_truncated') or row.get('failure_type')
+            or row.get('model_failure') or row.get('engineering_error') or row.get('budget_truncated') or row.get('failure_type')
             or row.get('environment_steps')!=steps+10):raise ValueError('engineering/incomplete row cannot complete a final query')
     stream=[policy_noise_seed(noise,task['suite'],task['task_id'],init,i) for i in range((steps+4)//5)]
     if row.get('policy_noise_seeds')!=stream or row.get('first_noise_seed')!=stream[0]:raise ValueError('absolute native policy-noise stream changed')
@@ -57,7 +52,7 @@ def saved_case(root,role,task,panel):
     row=read_json(row_path(root,role,panel));validate_case(row,task,panel,role)
     meta=validate_generated(root,role,panel)
     expected=dict(LoRA=meta['path'],actual_parameter_ref=meta['path'],producer_parameter_ref=meta['path'],
-        generator_checkpoint=str(checkpoint_path(root,FINAL)),interaction_adaptation=False)
+        generator_checkpoint=str(checkpoint_path(root,FINAL)),interaction_adaptation=True)
     if any(row.get(k)!=v for k,v in expected.items()):raise ValueError('final row lost its own frozen per-video complete controller')
     return row
 
@@ -78,10 +73,13 @@ def cases(args,runtime,work,task,panels,runner):
             rows[init]=row
         else:missing.append(panel)
     states={};metadata={p['init_state_id']:validate_generated(root,role,p) for p in missing}
+    shared={}
     for init,meta in metadata.items():
-        state=load_file(meta['path'],device=str(runtime.device));validate_lora_state(state,runtime.lora)
-        if any(not bool(v.isfinite().all()) for v in state.values()):raise ValueError('nonfinite saved controller cannot execute')
-        states[init]=state
+        if meta['path'] not in shared:
+            state=load_file(meta['path'],device=str(runtime.device));validate_lora_state(state,runtime.lora)
+            if any(not bool(v.isfinite().all()) for v in state.values()):raise ValueError('nonfinite saved controller cannot execute')
+            shared[meta['path']]=state
+        states[init]=shared[meta['path']]
     def requests():
         for panel in missing:
             init=panel['init_state_id'];path=metadata[init]['path']
@@ -98,7 +96,7 @@ def cases(args,runtime,work,task,panels,runner):
         row.update(global_task_id=task['global_task_id'],LoRA=path,phase=PHASE,generator_checkpoint=str(checkpoint_path(root,FINAL)),
             generator_update=FINAL,role=role,teacher_demo=panel['teacher_demo'],attempt_id=req['episode_id'],noise_root=panel['noise_root'],
             first_noise_seed=first['noise_seed'],first_native_normalized_actions=first['normalized_actions'].tolist(),full_native_flow_steps=10,
-            executed_chunk=5,source_frozen=True,MT_loaded=False,producer_parameter_ref=path,interaction_adaptation=False)
+            executed_chunk=5,source_frozen=True,MT_loaded=False,producer_parameter_ref=path,interaction_adaptation=True)
         validate_case(row,task,panel,role)
         destination=row_path(root,role,panel);write_json_atomic(destination,row);finish(root,req['episode_id'],row,destination);rows[init]=row
     elapsed=time.monotonic()-start
@@ -114,7 +112,7 @@ class ReadoutScheduler(Scheduler):
     def eligible(self,statuses):return [i for i in self.panel if statuses[i]=='pending']
     def terminal(self,statuses):return all(statuses[i]=='complete' for i in self.panel)
     def stop_idle(self,statuses):return self.failed or all(statuses[i]!='pending' for i in self.panel)
-    def slot_candidates(self,worker,work,budget):return tuple(s for s in (16,8,4) if s<=self.capacities[worker])
+    def slot_candidates(self,worker,work,budget):return (min(len(work['states']),self.capacities[worker]),)
     def event(self,worker,ev,stream):
         if ev['kind']=='physical_pack':
             with self.lock:self.running_slots[worker]=ev['slots'];self.capacities[worker]=ev['native_slot_capacity']
@@ -165,7 +163,7 @@ def worker(args):
             work=message['work'];identity=message['identity'];role=work['role'];tick=time.monotonic()
             selected=[lookup[role][work['task'],i] for i in work['states']]
             try:
-                if active_role!=role or (role=='validation' and compiler.needs_held_prefix(selected)):
+                if active_role!=role:
                     runner=close_runner(runner,args.worker_id)
                 active_role=role;environment=run['environments'][role]
                 torch.cuda.reset_peak_memory_stats();controllers,materialization=compiler.compile(role,selected)
@@ -186,8 +184,8 @@ def worker(args):
 
 def work_panel(tasks,panels):
     result={}
-    for role in ('seen','validation'):
-        width=16 if role=='seen' else 8
+    for role in ('seen',):
+        width=4
         for task in tasks[role]:
             states=sorted(p['init_state_id'] for p in panels[role] if p['task']==task)
             for offset in range(0,len(states),width):
@@ -230,13 +228,13 @@ def owner(args):
     from .run import execute_worker,device_pool
     run,tasks,panels=inputs(args.root);panel=work_panel(tasks,panels)
     manifest=read_json(checkpoint_path(args.root,FINAL).parent/'manifest.json')
-    if not manifest['complete'] or manifest['schema']!=MODEL_SCHEMA or manifest['stage']!='joint' or manifest['next_update']!=FINAL:raise ValueError('original1090 must be complete before any materialization/evaluation')
+    if not manifest['complete'] or manifest['schema']!=SCHEMA or manifest['phase']!=PHASE or manifest['next_update']!=FINAL:raise ValueError('terminal180 must be complete before any materialization/evaluation')
     shards=[EvaluationShard(i,n,tasks[w['role']][w['task']]['suite'],w['task'],tasks[w['role']][w['task']]['horizon'],tuple(w['states']),w['cost']) for n,(i,w) in enumerate(panel.items())]
     initialize_queue(queue_path(args.root),shards,contract_reference=str(args.root/'run_contract.json'),recover_claims=args.resume,retry_failed=args.resume)
     adopt_shards(args.root,panel,tasks,panels)
     with closing(sqlite3.connect(queue_path(args.root))) as db:statuses=dict(db.execute('SELECT job_id,status FROM jobs'))
     if all(statuses[i]=='complete' for i in panel):
-        write_json_atomic(args.root/'readout_completion.json',dict(complete=True,rows=976,interactions=summary(args.root)));return
+        write_json_atomic(args.root/'readout_completion.json',dict(complete=True,rows=144,interactions=summary(args.root)));return
     choices,cap=device_pool(args)
     write_json_atomic(args.root/'execution_readout.json',dict(devices=choices,total_cap=cap,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()))
     devices=[(n,g) for n,g,_ in choices];capacities={f'readout_worker_{i:02d}':16 if free>=28000 else 8 for i,(_,_,free) in enumerate(choices)}
@@ -256,5 +254,5 @@ def owner(args):
             except BaseException as error:
                 failure=repr(error)
                 with scheduler.lock:scheduler.failed=True;scheduler.dispatch()
-    if failure or not scheduler.terminal(scheduler.statuses()):raise RuntimeError(failure or '976 registered finals not complete')
-    write_json_atomic(args.root/'readout_completion.json',dict(complete=True,rows=976,interactions=summary(args.root)))
+    if failure or not scheduler.terminal(scheduler.statuses()):raise RuntimeError(failure or '144 registered finals not complete')
+    write_json_atomic(args.root/'readout_completion.json',dict(complete=True,rows=144,interactions=summary(args.root)))

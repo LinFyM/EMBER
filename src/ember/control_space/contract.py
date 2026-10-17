@@ -1,34 +1,33 @@
-"""The one saved1090 readout, separate from its immutable training identity."""
+"""The bounded native-operator first-write window, with read-only shared assets."""
 from pathlib import Path
-from ember.reference.contract import ASSETS,SOURCE,NORMALIZATION,TASKS,ROOT as REFERENCE_ROOT
+from ember.reference.contract import ASSETS, SOURCE, NORMALIZATION, TASKS, ROOT as REFERENCE_ROOT
 
-BASE=REFERENCE_ROOT.parent
-PREVIOUS_ROOT=BASE/'source_weight_compiler_seed7'
-TRAIN_ROOT=BASE/'source_weight_factor_credit_seed7'
-ROOT=BASE/'source_weight_factor_credit_adjacent1090_seed7'
-MODEL_SCHEMA='ember_source_weight_factor_credit_r8_seed7_v1'
-MODEL_PHASE='source_weight_factor_credit'
-TRAINING_PRODUCER='eadfe958ff17b0d1b4e1ff10265c234883b243b0'
-SOURCE_INPUTS=PREVIOUS_ROOT/'source_inputs/state.pt'
-OPERATOR_FILE=PREVIOUS_ROOT/'operator_constants.json'
-OBJECTIVE='teacher_detached_pair1000_then_native_FM_plus_0.1_complete_BA180_v1'
-ARM='factor_credit1090'
-VIDEO_ROOT=BASE/'video_initial_seed7'
-INITIAL_READER=VIDEO_ROOT/'checkpoints/update_00000900/state.pt'
-BANK_ROOT=BASE/'control_space_seed7'
-CENTER_REFERENCE=BASE/'control_linear64_seed7/basis/state.pt'
-UNITS_FILE=BANK_ROOT/'units.json'
-SCHEMA='ember_source_weight_factor_credit_adjacent1090_readout_v1'
-PHASE='source_weight_factor_credit_adjacent1090'
-FINAL=1090
-VALIDATION_TASKS=(3,6,11,16,23,26,31,39)
-LIMITS=dict(optimizer_updates=0,FM_queries=0,
- physical_submissions=992,control_steps=343840,dummy_steps=9920,total_steps=353760,
- engineering_extra_attempts=16,added_peak_GiB=6,profile_BA_equivalents=0,
- profile_joint_equivalents=0,profile_FM_queries=0,M_cache_bytes=2**30)
+BASE = REFERENCE_ROOT.parent
+PREVIOUS_ROOT = BASE/'source_weight_compiler_seed7'
+VIDEO_ROOT = BASE/'video_initial_seed7'
+INITIAL_READER = VIDEO_ROOT/'checkpoints/update_00000900/state.pt'
+H_ROOT = BASE/'feedback_proposals_seed7'
+ROOT = Path('/data1/user/ymdai/ember_runs/source_native_operator_compiler_20261017/first_write_seed7')
+SCHEMA = 'ember_source_native_operator_first_write_r8_seed7_v1'
+PHASE = 'source_native_operator_first_write'
+OBJECTIVE = 'real_source_full10flow_operator_pullback_rank8_QR2_functional_alpha_native_FM_v1'
+ARM = 'native_operator180'
+FINAL = 180
+PERMANENT = (90, 180)
+STATES = (0, 4, 8, 12)
+IDENTITY_TASKS = (42, 55, 64, 96, 101)
+OPTIMIZER = dict(lr=1e-4, betas=(.9, .95), eps=1e-8, weight_decay=1e-4)
+LIMITS = dict(optimizer_updates=180, FM_queries=20160, logical_conditions=720,
+    physical_submissions=160, control_steps=59200, dummy_steps=1600, total_steps=60800,
+    engineering_extra_attempts=16, added_peak_GiB=12, profile_joint_equivalents=4,
+    profile_FM_queries=448, M_cache_bytes=2**30, frozen_H_cache_bytes=4*2**30)
 
-def queue_path(root):return Path(root)/'evaluation.sqlite'
 
-def checkpoint_path(root,update):
-    if update!=FINAL:raise ValueError('only the registered1090 checkpoint can be read')
-    return TRAIN_ROOT/'checkpoints'/f'update_{update:08d}'/'state.pt'
+def queue_path(root):
+    return Path(root)/'evaluation.sqlite'
+
+
+def checkpoint_path(root, update):
+    if update not in PERMANENT:
+        raise ValueError('only recovery90 and the unique terminal180 are permanent checkpoints')
+    return Path(root)/'checkpoints'/f'update_{update:08d}'/'state.pt'

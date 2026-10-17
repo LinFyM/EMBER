@@ -1,269 +1,307 @@
-"""Atomic endpoint compilation, then read-only paired seen/held evidence."""
+"""Atomic complete first-write LoRAs and label-side finite-panel comparisons."""
 from pathlib import Path
 from itertools import combinations
-import datetime,json,os,subprocess,time
+import datetime, os, subprocess, time
 import torch
-from safetensors.torch import load_file,save_file
-from ember.pi05_source_checkpoint import read_json,write_json_atomic
+from safetensors.torch import load_file, save_file
+from ember.pi05_source_checkpoint import read_json, write_json_atomic
 from ember.lora import validate_lora_state
 from ember.reference.analysis import paired
-from ember.proposal_writer.analysis import paired as checked_pair,billing
-from ember.reference.accounting import summary,connect
-from .contract import (SCHEMA,PHASE,FINAL,TASKS,VALIDATION_TASKS,VIDEO_ROOT,REFERENCE_ROOT,
-    INITIAL_READER,ASSETS,SOURCE,NORMALIZATION,SOURCE_INPUTS,OPERATOR_FILE,OBJECTIVE,PREVIOUS_ROOT,ARM,TRAIN_ROOT,MODEL_SCHEMA,MODEL_PHASE,TRAINING_PRODUCER,checkpoint_path)
+from ember.proposal_writer.analysis import paired as checked_pair, billing
+from ember.reference.accounting import summary, connect
+from .contract import (SCHEMA, PHASE, FINAL, TASKS, VIDEO_ROOT, REFERENCE_ROOT, INITIAL_READER,
+    ASSETS, SOURCE, NORMALIZATION, OBJECTIVE, PREVIOUS_ROOT, H_ROOT, ARM, IDENTITY_TASKS, checkpoint_path)
 from .analysis import grouped
 
 
-def generated(root,role,panel):
-    return Path(root)/'generated'/role/f'task_{panel["task"]:04d}'/f'state_{panel["init_state_id"]:03d}'
+def topology():
+    from ember.pi05_lora import load_pi05_lora_contract, derive_pi05_lora_rank
+    return derive_pi05_lora_rank(load_pi05_lora_contract(ASSETS/'configs/pi05_lora_rank128_aligned.json'), rank=8)
 
 
-def generation_identity(root,role,panel):
-    return dict(schema=SCHEMA,phase=PHASE,objective=OBJECTIVE,operator_constants=str(OPERATOR_FILE),training_producer=TRAINING_PRODUCER,model_schema=MODEL_SCHEMA,checkpoint=str(checkpoint_path(root,FINAL)),update=FINAL,
-        source_checkpoint=str(ASSETS/SOURCE),normalization=str(ASSETS/NORMALIZATION),frozen_reader=str(INITIAL_READER),
-        source_inputs=str(SOURCE_INPUTS),role=role,task=panel['task'],init_state_id=panel['init_state_id'],
-        teacher_demo=panel['teacher_demo'],noise_root=panel['noise_root'],registered_scene=panel.get('registered_scene'),
-        rank=8,alpha=8,dropout=0.,targets=38,complete=True,held_offline_labels_read=False,
-        teacher_input='complete_frozen_ordered_image_memory',interaction_adaptation=False,MT_loaded=False,
-        path=str(generated(root,role,panel)/'lora.safetensors'))
+def generated(root, role, panel):
+    if role != 'seen' or panel['task'] not in TASKS:
+        raise ValueError('only the registered36 non-held first-write conditions can compile')
+    return Path(root)/'generated'/role/f'task_{panel["task"]:04d}'/'v0'
 
 
-def validate_generated(root,role,panel,*,factors=False):
-    from .weights import topology
-    folder=generated(root,role,panel);meta=read_json(folder/'metadata.json');identity=generation_identity(root,role,panel)
-    if any(meta.get(k)!=v for k,v in identity.items()) or not (folder/'lora.safetensors').is_file():
-        raise ValueError('saved per-video controller lost its endpoint/input identity')
+def generation_identity(root, role, panel):
+    from .data import report_conditions
+    condition = report_conditions()[panel['task']]
+    if panel['teacher_demo'] != condition['teacher_demo']:
+        raise ValueError('terminal compilation must use the registered report v0 teaching')
+    return dict(schema=SCHEMA, phase=PHASE, objective=OBJECTIVE,
+        checkpoint=str(checkpoint_path(root, FINAL)), update=FINAL,
+        source_checkpoint=str(ASSETS/SOURCE), normalization=str(ASSETS/NORMALIZATION),
+        frozen_reader=str(INITIAL_READER), source_history_root=str(H_ROOT),
+        practice_states=condition['practice_states'], practice_noise_root=202610161,
+        role=role, task=panel['task'], teacher_demo=panel['teacher_demo'],
+        rank=8, alpha=8, dropout=0., targets=38, complete=True, held_offline_labels_read=False,
+        teacher_input='complete_frozen_ordered_image_memory', query_feedback_read=False,
+        interaction_adaptation=True, new_practice=0, MT_loaded=False,
+        path=str(generated(root, role, panel)/'lora.safetensors'))
+
+
+def validate_generated(root, role, panel, *, factors=False):
+    folder = generated(root, role, panel); meta = read_json(folder/'metadata.json')
+    identity = generation_identity(root, role, panel)
+    if any(meta.get(k) != v for k, v in identity.items()) or not (folder/'lora.safetensors').is_file():
+        raise ValueError('saved complete controller lost its terminal/report/history identity')
     if factors:
-        state=load_file(str(folder/'lora.safetensors'),device='cpu');validate_lora_state(state,topology())
-        if any(not bool(v.isfinite().all()) for v in state.values()):raise ValueError('nonfinite complete generated LoRA')
+        state = load_file(str(folder/'lora.safetensors'), device='cpu')
+        validate_lora_state(state, topology())
+        if any(not bool(v.isfinite().all()) for v in state.values()):
+            raise ValueError('nonfinite complete generated LoRA')
     return meta
 
 
 class Materializer:
-    """Lazy generator/M owner. Only original1090 and this run's actual saved LoRAs are adopted."""
-    def __init__(self,root,device,runtime,*,row_chunk=4096,pack=2,frame_chunk=32):
-        self.root,self.device,self.runtime=Path(root),torch.device(device),runtime
-        self.source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
-        self.row_chunk,self.pack,self.frame_chunk=int(row_chunk),int(pack),int(frame_chunk)
-        if min(self.row_chunk,self.pack,self.frame_chunk)<1:raise ValueError('physical generation sizes must be positive')
-        self.model,self.memory=None,None
+    """The one compiler seam; four query states share one complete condition LoRA."""
+    def __init__(self, root, device, runtime, *, row_chunk=4096, pack=1, frame_chunk=32,
+                 loader=None, materialize=None):
+        self.root, self.device, self.runtime = Path(root), torch.device(device), runtime
+        self.source_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+        self.row_chunk, self.pack, self.frame_chunk = int(row_chunk), int(pack), int(frame_chunk)
+        if min(self.row_chunk, self.pack, self.frame_chunk) < 1:
+            raise ValueError('physical generation sizes must be positive')
+        self.loader, self.materialize, self.model = loader, materialize, None
 
     def _ensure(self):
-        if self.model is not None:return
-        from .model import SourceWeightCompiler
-        from .weights import load_source_inputs
-        from .video import MemoryStore
-        folder=checkpoint_path(self.root,FINAL).parent;manifest=read_json(folder/'manifest.json')
-        state=torch.load(folder/'state.pt',map_location='cpu',weights_only=False,mmap=True)
-        expected=dict(schema=MODEL_SCHEMA,phase=MODEL_PHASE,stage='joint',next_update=FINAL,source_inputs=str(SOURCE_INPUTS),objective=OBJECTIVE,operator_constants=str(OPERATOR_FILE),
-            frozen_reader=str(INITIAL_READER),frozen_source=str(ASSETS/SOURCE),normalization=str(ASSETS/NORMALIZATION))
-        if (not manifest['complete'] or manifest['schema']!=MODEL_SCHEMA or manifest['stage']!='joint' or manifest['next_update']!=FINAL or any(state.get(k)!=v for k,v in expected.items())):
-            raise ValueError('only the original fixed complete1090 may compile')
-        with torch.random.fork_rng(devices=[]):self.model=SourceWeightCompiler(load_source_inputs(self.root))
-        self.model.load_state_dict(state['generator'],strict=True);del state
-        self.model=self.model.to(self.device).eval().requires_grad_(False)
-        self.memory=MemoryStore(self.root,self.device,self.runtime,frame_chunk=self.frame_chunk)
+        if self.model is not None:
+            return
+        if self.loader is None or self.materialize is None:
+            from .learning import load_final, materialize
+            self.loader = self.loader or load_final
+            self.materialize = self.materialize or materialize
+        self.model = self.loader(self.root, self.runtime)
 
-    def needs_held_prefix(self,panels):
-        self._ensure()
-        return any(not self.memory.cache.dependency_ready(f'held_t{p["task"]:04d}_d{p["teacher_demo"]:02d}') for p in panels)
-
-    def _adopt(self,role,panel):
-        destination=generated(self.root,role,panel);temporary=destination.with_name(destination.name+'.partial')
-        if destination.exists():validate_generated(self.root,role,panel,factors=True);return True
-        if not temporary.exists():return False
-        identity=generation_identity(self.root,role,panel)
+    def _adopt(self, role, panel):
+        destination = generated(self.root, role, panel); temporary = destination.with_name('v0.partial')
+        if destination.exists():
+            validate_generated(self.root, role, panel, factors=True)
+            return True
+        if not temporary.exists():
+            return False
+        identity = generation_identity(self.root, role, panel)
         if not (temporary/'intent.json').exists():
             if (temporary/'lora.safetensors').exists() or (temporary/'metadata.json').exists():
-                raise ValueError('pending complete controller has no attributable immutable intent')
+                raise ValueError('pending controller has no attributable immutable intent')
             return False
-        if read_json(temporary/'intent.json')!=identity:raise ValueError('partial compiler transaction belongs to another condition')
-        if not (temporary/'lora.safetensors').exists():return False
-        from .weights import topology
-        state=load_file(str(temporary/'lora.safetensors'),device='cpu');validate_lora_state(state,topology())
-        if any(not bool(v.isfinite().all()) for v in state.values()):raise ValueError('invalid pending complete controller')
+        if read_json(temporary/'intent.json') != identity:
+            raise ValueError('partial transaction belongs to another condition')
+        if not (temporary/'lora.safetensors').exists():
+            return False
+        state = load_file(str(temporary/'lora.safetensors'), device='cpu')
+        validate_lora_state(state, self.runtime.lora)
+        if any(not bool(v.isfinite().all()) for v in state.values()):
+            raise ValueError('invalid pending complete controller')
         if not (temporary/'metadata.json').exists():
-            write_json_atomic(temporary/'metadata.json',dict(identity,recovered_after_parameter_write=True))
-        elif any(read_json(temporary/'metadata.json').get(k)!=v for k,v in identity.items()):
-            raise ValueError('pending complete metadata lost its immutable compiler identity')
-        temporary.rename(destination);validate_generated(self.root,role,panel);return True
+            write_json_atomic(temporary/'metadata.json', dict(identity, recovered_after_parameter_write=True))
+        elif any(read_json(temporary/'metadata.json').get(k) != v for k, v in identity.items()):
+            raise ValueError('pending metadata lost its immutable compiler identity')
+        temporary.rename(destination)
+        return True
 
-    @torch.no_grad()
-    def compile(self,role,panels):
-        from ember.writer.runtime import autocast
-        tick=time.monotonic();missing=[p for p in panels if not self._adopt(role,p)];measurements=[]
-        if missing:self._ensure()
-        for first in range(0,len(missing),self.pack):
-            part=missing[first:first+self.pack];memories=[]
-            for panel in part:
-                M=(self.memory.training(panel['task'],panel['teacher_demo']) if role=='seen'
-                    else self.memory.held(panel['task'],panel['init_state_id'],panel))
-                memories.append(M.to(self.device))
-            measured=self.memory.drain_measurements();measurements.extend(measured)
-            folder=self.root/'materialization';folder.mkdir(exist_ok=True)
-            with (folder/f'memory_{os.uname().nodename}_{os.getpid()}.jsonl').open('a') as stream:
-                for measure in measured:stream.write(json.dumps(dict(role=role,**measure))+'\n')
-            with autocast(self.device):states=self.model(memories,row_chunk=self.row_chunk,checkpointed=False)
-            if len(states)!=len(part):raise ValueError('each video requires its own complete generated controller')
-            for panel,state in zip(part,states,strict=True):
-                destination=generated(self.root,role,panel);temporary=destination.with_name(destination.name+'.partial')
-                temporary.mkdir(parents=True,exist_ok=True);identity=generation_identity(self.root,role,panel)
-                if (temporary/'intent.json').exists() and read_json(temporary/'intent.json')!=identity:raise ValueError('pending generation identity changed')
-                write_json_atomic(temporary/'intent.json',identity);validate_lora_state(state,self.model.lora)
-                if any(not bool(v.isfinite().all()) for v in state.values()):raise ValueError('nonfinite generator output cannot execute')
-                payload=temporary/'lora.safetensors.partial'
-                save_file({k:v.detach().float().cpu().contiguous() for k,v in state.items()},str(payload))
-                with payload.open('rb') as stream:os.fsync(stream.fileno())
-                payload.replace(temporary/'lora.safetensors')
-                write_json_atomic(temporary/'metadata.json',dict(identity,materialization_source_commit=self.source_commit,
-                    generated_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat()))
-                temporary.rename(destination)
-            del states,memories
-        receipt=dict(new_controllers=len(missing),adopted_controllers=len(panels)-len(missing),seconds=time.monotonic()-tick,
-            materialize_pack=self.pack,row_chunk=self.row_chunk,frame_chunk=self.frame_chunk,
-            memory=measurements)
-        return [validate_generated(self.root,role,p) for p in panels],receipt
+    def compile(self, role, panels):
+        tick = time.monotonic(); unique = {}
+        for panel in panels:
+            unique.setdefault((panel['task'], panel['teacher_demo']), panel)
+        missing = [p for p in unique.values() if not self._adopt(role, p)]
+        if missing:
+            self._ensure()
+        for panel in missing:
+            # Native VJP/JVP compilation itself requires autograd even at inference.
+            state = self.materialize(self.runtime, self.model, panel['task'], panel['teacher_demo'])
+            validate_lora_state(state, self.runtime.lora)
+            if any(not bool(v.isfinite().all()) for v in state.values()):
+                raise ValueError('nonfinite native-operator compiler output cannot execute')
+            destination = generated(self.root, role, panel); temporary = destination.with_name('v0.partial')
+            temporary.mkdir(parents=True, exist_ok=True); identity = generation_identity(self.root, role, panel)
+            if (temporary/'intent.json').exists() and read_json(temporary/'intent.json') != identity:
+                raise ValueError('pending generation identity changed')
+            write_json_atomic(temporary/'intent.json', identity)
+            payload = temporary/'lora.safetensors.partial'
+            save_file({k: v.detach().float().cpu().contiguous() for k, v in state.items()}, str(payload))
+            with payload.open('rb') as stream:
+                os.fsync(stream.fileno())
+            payload.replace(temporary/'lora.safetensors')
+            write_json_atomic(temporary/'metadata.json', dict(identity,
+                materialization_source_commit=self.source_commit,
+                generated_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat()))
+            temporary.rename(destination)
+        receipt = dict(new_controllers=len(missing), adopted_controllers=len(unique)-len(missing),
+            query_cases=len(panels), seconds=time.monotonic()-tick, materialize_pack=self.pack,
+            row_chunk=self.row_chunk, frame_chunk=self.frame_chunk)
+        return [validate_generated(self.root, role, p) for p in panels], receipt
 
     def close(self):
-        if self.memory is not None:self.memory.close()
-        self.memory,self.model=None,None
-
-
-def _index(rows,panels):
-    keys={(p['task'],p['init_state_id']) for p in panels};result={}
-    suites=('libero_spatial','libero_object','libero_goal','libero_10')
-    for original in rows:
-        row=dict(original);task=row.get('global_task_id')
-        if task is None:task=10*suites.index(row['suite'])+int(row['task_id'])
-        row['global_task_id']=int(task)  # Derived suite/local identity; never fabricate observations.
-        key=int(task),int(row['init_state_id'])
-        if key in result:raise ValueError('duplicate historical paired case')
-        result[key]=row
-    if set(result)!=keys:raise ValueError('historical reference is not the entire registered panel')
-    return [result[p['task'],p['init_state_id']] for p in panels]
+        if self.model is not None and hasattr(self.model, 'close'):
+            self.model.close()
+        self.model = None
 
 
 def case_task(row):
-    if 'global_task_id' in row:return int(row['global_task_id'])
-    return 10*('libero_spatial','libero_object','libero_goal','libero_10').index(row['suite'])+int(row['task_id'])
+    if 'global_task_id' in row:
+        return int(row['global_task_id'])
+    return 10*('libero_spatial', 'libero_object', 'libero_goal', 'libero_10').index(row['suite'])+int(row['task_id'])
 
 
-def historical(root,panels):
-    """Actual raw rows, opened only after training/final consumers; never conditions."""
-    run=read_json(Path(root)/'run_contract.json');bank={r['task']:r for r in run['references']}
-    video=read_json(VIDEO_ROOT/'analysis/results.json');seen={a:[] for a in ('source','reference','U36')}
-    linear=REFERENCE_ROOT.parent/'control_linear64_seed7'
-    for p in panels['seen']:
-        task,init=p['task'],p['init_state_id'];base=REFERENCE_ROOT/'selection'/f'task_{task:04d}'
-        for arm,folder in (('source',base/'update_00000000'),('reference',base/f'update_{bank[task]["selected_update"]:08d}'),('U36',linear/'readout'/f'task_{task:04d}')):
-            seen[arm].append(read_json(folder/f'state_{init:03d}.json'))
-    for update in ('900','1800'):seen['Reader'+update]=video['checkpoints'][update]['raw_rows']['seen']
-    paths=video['validation_references'];validation={}
-    for update in ('900','1800'):validation['Reader'+update]=video['checkpoints'][update]['raw_rows']['validation']
-    validation['MT153']=read_json(Path(paths['MT153']))['rows'];validation['G165']=read_json(Path(paths['G165']))['raw_rows']
-    for arm in ('D72','D144'):validation[arm]=read_json(Path(paths[arm]))['arms']['operator_only']['validation']['raw_rows']
-    psi_path=REFERENCE_ROOT.parent/'functional_feedback_validation180_seed7/analysis/results.json'
-    validation['psi180']=read_json(psi_path)['raw_rows']['functional_feedback_validation180']
-    previous=read_json(PREVIOUS_ROOT/'analysis/results.json')
-    for role,arms in (('seen',seen),('validation',validation)):
-        arms['source_weight1180']=previous['raw_rows'][role]['source_weight1180']
-    adjacent=read_json(TRAIN_ROOT/'analysis/results.json')
-    for role,arms in (('seen',seen),('validation',validation)):
-        arms['factor_credit1180']=adjacent['raw_rows'][role]['factor_credit1180']
-    result={role:{a:_index(v,panels[role]) for a,v in arms.items()} for role,arms in (('seen',seen),('validation',validation))}
-    for role,expected in (('seen',dict(source=218,reference=502,U36=484,Reader900=334,Reader1800=413,source_weight1180=244,factor_credit1180=306)),
-            ('validation',dict(Reader900=117,Reader1800=111,MT153=153,G165=165,D72=175,D144=168,psi180=119,source_weight1180=57,factor_credit1180=128))):
-        if {a:sum(r['success'] for r in v) for a,v in result[role].items()}!=expected:raise ValueError('actual historical full-panel identity/count changed')
-        from ember.pi05_eval.scene import validate_scene_row
-        for arm,rows in result[role].items():
-            for row,panel in zip(rows,panels[role],strict=True):
-                validate_scene_row(row,row,dict(operator_read_write_scene=panel.get('registered_scene')))
-                if (arm.startswith('Reader') or arm=='factor_credit1180') and row.get('teacher_demo')!=panel['teacher_demo']:
-                    raise ValueError('historical Reader teaching differs from the same-condition panel')
-    return result,dict(video=str(VIDEO_ROOT/'analysis/results.json'),reference=str(REFERENCE_ROOT),linear=str(linear),
-        validation=paths,psi180=str(psi_path),source_weight1180=str(PREVIOUS_ROOT/'analysis/results.json'),factor_credit1180=str(TRAIN_ROOT/'analysis/results.json'),MT_missing_initial_proprio='registered scene/RNG checked; no fabricated proprio',
-        D_G='historical MT-based methods, not source-only matched ablations',psi='uses actual practice, not a matched zero-interaction ablation')
+def _index(rows, panels):
+    keys = {(p['task'], p['init_state_id']) for p in panels}; result = {}
+    for original in rows:
+        row = dict(original); task = case_task(row); row['global_task_id'] = task
+        key = task, int(row['init_state_id'])
+        if key in result:
+            raise ValueError('duplicate historical paired case')
+        result[key] = row
+    if set(result) != keys:
+        raise ValueError('historical reference is not the entire registered144 panel')
+    return [result[p['task'], p['init_state_id']] for p in panels]
 
 
-def grouped_evidence(arms,tasks,panels,identity):
-    rows=[]
+def historical(root, panels):
+    """Label side only; no reference forward, held read, or adaptation dependency."""
+    base = REFERENCE_ROOT.parent
+    paths = {name: base/name/'analysis/results.json' for name in
+        ('feedback_readout_seed7', 'incumbent_compilation_seed7', 'functional_feedback_seed7')}
+    feedback = read_json(paths['feedback_readout_seed7']); incumbent = read_json(paths['incumbent_compilation_seed7'])
+    functional = read_json(paths['functional_feedback_seed7'])
+    values = {a: feedback['raw_rows'][a] for a in ('source', 'reference', 'Reader900', 'first_best', 'full')}
+    values['random_search86'] = incumbent['raw_rows']['video']
+    values['functional93'] = functional['raw_rows']['functional_feedback']
+    expected = dict(source=58, reference=127, Reader900=89, first_best=73, full=79, random_search86=86, functional93=93)
+    result = {a: _index(rows, panels['seen']) for a, rows in values.items()}
+    if {a: sum(r['success'] for r in rows) for a, rows in result.items()} != expected:
+        raise ValueError('actual historical full144 success count changed')
+    for rows in result.values():
+        checked_pair(result['source'], rows)
+    for row, panel in zip(result['Reader900'], panels['seen'], strict=True):
+        if row.get('teacher_demo') != panel['teacher_demo']:
+            raise ValueError('historical Reader did not consume the same report teaching')
+    _check_historical_teaching(base, panels['seen'])
+    anchors = _historical_anchors(base, panels['seen'])
+    provenance = dict(raw_row_sources={k: str(v) for k, v in paths.items()},
+        historical_costs=dict(feedback=feedback.get('costs'), incumbent=incumbent.get('costs'),
+            functional=functional.get('costs'), functional_scientific_cost_basis=functional.get('scientific_cost_basis')),
+        same_video_verification='Reader raw teacher_demo and frozen v0 condition manifests; old source/reference have no teaching input',
+        comparison_limits='Historical methods use different shared theta, searches and/or H. These are capability references, not matched video/history ablations.',
+        source_weight_comparison='Only same-task same-video init0 anchors36 are paired. Other108 query states use different old videos and are excluded.')
+    return result, anchors, provenance
+
+
+def _check_historical_teaching(base, panels):
+    # Rows from adaptive historical arms do not always repeat teacher_demo.
+    # Their frozen producer manifests, rather than invented row fields, bind V.
+    report = {p['task']: p['teacher_demo'] for p in panels}
+    mappings = read_json(base/'feedback_readout_seed7/manifest.json')['mappings']
+    for arm in ('Reader900', 'first_best', 'full'):
+        selected = [m for m in mappings if m['arm'] == arm]
+        if (len(selected) != 144 or {(m['task'], m['state_id']) for m in selected} !=
+                {(p['task'], p['init_state_id']) for p in panels}
+                or any(m['teacher_demo'] != report[m['task']] for m in selected)):
+            raise ValueError('historical frozen144 manifest changed its report teaching')
+    for family, arm in (('incumbent_compilation_seed7', 'video'), ('functional_feedback_seed7', 'functional_feedback')):
+        conditions = [c for c in read_json(base/family/'run_contract.json')['conditions'] if c['arm'] == arm]
+        if (len(conditions) != 36 or {c['task'] for c in conditions} != set(TASKS)
+                or any(c['teacher_demo'] != report[c['task']] for c in conditions)):
+            raise ValueError('historical adaptation condition changed its report teaching')
+
+
+def _historical_anchors(base, panels):
+    anchors = {}
+    for name, folder in (('source_weight1180', PREVIOUS_ROOT),
+            ('factor_credit1180', base/'source_weight_factor_credit_seed7'),
+            ('factor_credit1090', base/'source_weight_factor_credit_adjacent1090_seed7')):
+        rows = [read_json(folder/'readout/seen'/f'task_{t:04d}'/'state_000.json') for t in TASKS]
+        subset = [p for p in panels if p['init_state_id'] == 0]
+        anchors[name] = _index(rows, subset)
+        for row, panel in zip(anchors[name], subset, strict=True):
+            if row.get('teacher_demo') != panel['teacher_demo']:
+                raise ValueError('old source-W anchor is not the same task/video condition')
+    return anchors
+
+
+def grouped_evidence(arms, tasks, identity):
+    rows = []
     for task in sorted(tasks):
-        values={a:[r for r in cases if case_task(r)==task]
-            for a,cases in arms.items()}
-        sets={a:{r['init_state_id'] for r in v if r['success']} for a,v in values.items()};comparisons={}
-        for a,b in combinations(values,2):
-            checked=checked_pair(values[a],values[b]);item=paired(values[a],values[b]);union=sets[a]|sets[b]
-            item.update(success_set_union=sorted(union),jaccard=len(sets[a]&sets[b])/len(union) if union else 1.,
+        values = {a: [r for r in cases if case_task(r) == task] for a, cases in arms.items()}
+        sets = {a: {r['init_state_id'] for r in v if r['success']} for a, v in values.items()}; comparisons = {}
+        for a, b in combinations(values, 2):
+            checked = checked_pair(values[a], values[b]); item = paired(values[a], values[b]); union = sets[a] | sets[b]
+            item.update(success_set_union=sorted(union), jaccard=len(sets[a] & sets[b])/len(union) if union else 1.,
                 first_native_first5_RMSE=checked['first_native_first5_RMSE'])
-            comparisons[a+'_to_'+b]=item
-        group='validation8' if task in VALIDATION_TASKS else ('target24' if task<40 else 'source_seen_support12')
-        item=dict(task=task,suite=tasks[task]['suite'],group=group,identity=task in identity,
-            cases=len(values[next(iter(values))]),success_sets={a:sorted(v) for a,v in sets.items()},comparisons=comparisons)
+            comparisons[a+'_to_'+b] = item
+        item = dict(task=task, suite=tasks[task]['suite'],
+            group='target24' if task < 40 else 'source_seen_support12', identity=task in identity,
+            cases=len(values[next(iter(values))]), success_sets={a: sorted(v) for a, v in sets.items()}, comparisons=comparisons)
         if 'reference' in sets:
-            gains=sets['reference']-sets['source'];item.update(reference_new_gains=sorted(gains),reference_gains_preserved={a:sorted(v&gains) for a,v in sets.items()})
+            gains = sets['reference']-sets['source']
+            item.update(reference_new_gains=sorted(gains), reference_gains_preserved={a: sorted(v & gains) for a, v in sets.items()})
         rows.append(item)
     return grouped(rows)
 
 
-def interaction_evidence(root,raw,panels,limits):
-    """Every final row must own one complete physical receipt; unknowns stay charged."""
+def interaction_evidence(root, rows, panels, limits):
+    """Valid cases are unique; every unreturned attempt remains fully charged."""
     with connect(root) as db:
-        ledger={r[0]:r[1:] for r in db.execute('SELECT identity,case_id,status,control,dummy,row_path FROM attempts')}
-    expected=set()
+        ledger = {r[0]: r[1:] for r in db.execute('SELECT identity,case_id,status,control,dummy,row_path FROM attempts')}
+    expected = set()
     from .readout import row_path
-    for role in ('seen','validation'):
-        for row,panel in zip(raw[role][ARM],panels[role],strict=True):
-            case=f'{role}_t{panel["task"]:04d}_s{panel["init_state_id"]:03d}';expected.add(case)
-            actual=ledger.get(row['attempt_id'])
-            wanted=(case,'complete',row['steps'],10,str(row_path(root,role,panel)))
-            if actual!=wanted:raise ValueError('final valid row is not bound to its complete actual-cost ledger receipt')
-    complete=[r for r in ledger.values() if r[1]=='complete']
-    if len(complete)!=976 or {r[0] for r in complete}!=expected or any(r[0] not in expected for r in ledger.values()):
-        raise ValueError('only976 unique complete final cases may finish')
-    evidence=summary(root);control=sum(v['control'] for v in evidence.values());dummy=sum(v['dummy'] for v in evidence.values())
-    physical=len(ledger);extra=physical-len({r[0] for r in ledger.values()})
-    if (physical>limits['physical_submissions'] or control>limits['control_steps'] or dummy>limits['dummy_steps']
-            or control+dummy>limits['total_steps'] or extra>limits['engineering_extra_attempts']):
-        raise ValueError('actual and conservatively unknown final costs exceed the registered limits')
+    for row, panel in zip(rows, panels, strict=True):
+        case = f'seen_t{panel["task"]:04d}_s{panel["init_state_id"]:03d}'; expected.add(case)
+        wanted = (case, 'complete', row['steps'], 10, str(row_path(root, 'seen', panel)))
+        if ledger.get(row['attempt_id']) != wanted:
+            raise ValueError('final row is not bound to its actual complete physical ledger receipt')
+    complete = [r for r in ledger.values() if r[1] == 'complete']
+    if len(complete) != 144 or {r[0] for r in complete} != expected or any(r[0] not in expected for r in ledger.values()):
+        raise ValueError('only144 unique complete final cases may finish')
+    evidence = summary(root); control = sum(v['control'] for v in evidence.values()); dummy = sum(v['dummy'] for v in evidence.values())
+    physical = len(ledger); extra = physical-len({r[0] for r in ledger.values()})
+    if (physical > limits['physical_submissions'] or control > limits['control_steps'] or dummy > limits['dummy_steps']
+            or control+dummy > limits['total_steps'] or extra > limits['engineering_extra_attempts']):
+        raise ValueError('actual plus unknown final costs exceed one of the registered simultaneous limits')
     return evidence
 
 
 def paid_dependencies():
-    source_root=(ASSETS/SOURCE).parent.parent;source_summary=read_json(source_root/'run_summary.json')
-    reference=read_json(REFERENCE_ROOT/'analysis/results.json')['billing']
-    video=read_json(VIDEO_ROOT/'analysis/results.json')['billing']
-    return dict(shared_paid_source=str(ASSETS/SOURCE),source_summary=str(source_root/'run_summary.json'),
-        source_training_only_GPU_hours_lower_bound=4*source_summary['wall_seconds']/3600,
-        source_cost_scope='original4 ranks through last update; excludes failed final save/recovery and earlier preparation',
-        shared_paid_reference=str(REFERENCE_ROOT),reference_family_billing=reference,
-        shared_paid_Reader900=str(INITIAL_READER),Reader_family_billing=video,
-        shared_paid_previous_compiler=str(PREVIOUS_ROOT),previous_compiler_billing=read_json(PREVIOUS_ROOT/'analysis/results.json')['billing'],
-        shared_paid_factor_credit=str(TRAIN_ROOT),factor_credit_billing=read_json(TRAIN_ROOT/'analysis/results.json')['billing'],
-        source_center_and_units='old basis saved identity/layout and control_space76S only; no old U/code/neural decoder forward',
-        costs_are_not_from_zero='current-root billing excludes prior source/reference/Reader learning and old failures; do not add shared costs twice')
+    base = REFERENCE_ROOT.parent
+    return dict(shared_source=str(ASSETS/SOURCE), shared_Reader900=str(INITIAL_READER),
+        shared_reference=str(REFERENCE_ROOT), source_practice_root=str(H_ROOT),
+        source_practice=dict(episodes=144, control_steps=38937, dummy_steps=1440, total_steps=40377,
+            successes=52, replans=7808, read_only_reused=True),
+        historical_family_billing={name: billing(base/name) for name in
+            ('reference_seed7', 'video_initial_seed7', 'feedback_proposals_seed7')},
+        costs_are_not_from_zero='Current billing excludes prior source/reference/Reader learning; shared dependencies must not be double counted.')
 
 
 def analyze(root):
-    from .readout import inputs,saved_case
-    root=Path(root);run,tasks,panels=inputs(root);old,provenance=historical(root,panels);results={};raw={}
-    identity={r['task'] for r in run['references'] if r['path'] is None}
-    for role in ('seen','validation'):
-        new=[saved_case(root,role,tasks[role][p['task']],p) for p in panels[role]]
-        raw[role]={a:v for a,v in old[role].items() if a!='factor_credit1180'}
-        raw[role][ARM]=new;raw[role]['factor_credit1180']=old[role]['factor_credit1180']
-        results[role]=grouped_evidence(raw[role],tasks[role],panels[role],identity)
-    interactions=interaction_evidence(root,raw,panels,run['limits'])
-    if len(raw['seen'][ARM])!=576 or len(raw['validation'][ARM])!=400:
-        raise ValueError('only complete976 and the original finite physical budget can finish')
-    result=dict(schema=SCHEMA,phase=PHASE,complete=True,checkpoint=str(checkpoint_path(root,FINAL)),update=FINAL,
-        panels=results,raw_rows=raw,provenance=provenance,billing=billing(root),interactions=interactions,limits=run['limits'],
-        new_episodes=976,zero_interaction=True,shared_updates=0,training_source=dict(checkpoint=str(checkpoint_path(root,FINAL)),producer=TRAINING_PRODUCER,optimizer_restored=False),held_offline_labels_read=False,Test=False,
-        selection='unique preregistered saved1090; no training, geometry or checkpoint selection',automatic_successor=False,
-        dependencies=paid_dependencies())
-    write_json_atomic(root/'analysis/results.json',result);write_json_atomic(root/'completion.json',dict(complete=True,rows=976,result=str(root/'analysis/results.json')))
-    lines=['# Source权重条件完整LoRA：唯一1090相邻读出','',
-        'seen576：'+str(results['seen']['total']['successes']),'','strict validation400：'+str(results['validation']['total']['successes']),'',
-        '完整raw rows、每task/suite/target-support/identity、RGL/churn/Jaccard及参考新增能力保留见results.json。',
-        '旧D/G含MT，ψ含实践；它们是历史强参照，不是匹配零交互机制消融。MT缺原初始proprio不补造。',
-        '相邻两点也不能单独认证稳定最终能力；0中间选点/额外forward探针/controls/Test/自动续训。']
-    (root/'analysis/report.md').write_text('\n'.join(lines)+'\n');return result
+    from .readout import inputs, saved_case
+    root = Path(root); run, tasks, panels = inputs(root)
+    new = [saved_case(root, 'seen', tasks['seen'][p['task']], p) for p in panels['seen']]
+    old, anchors, provenance = historical(root, panels); raw = dict(old, **{ARM: new})
+    results = grouped_evidence(raw, tasks['seen'], set(IDENTITY_TASKS))
+    anchor_rows = {a: [r for r in rows if r['init_state_id'] == 0] for a, rows in raw.items()}
+    anchor_rows.update(anchors)
+    anchor_results = grouped_evidence(anchor_rows, tasks['seen'], set(IDENTITY_TASKS))
+    interactions = interaction_evidence(root, new, panels['seen'], run['limits'])
+    if len(new) != 144 or len({str(generated(root, 'seen', p)) for p in panels['seen']}) != 36:
+        raise ValueError('the unique endpoint requires36 full controllers and144 new episodes')
+    result = dict(schema=SCHEMA, phase=PHASE, complete=True, checkpoint=str(checkpoint_path(root, FINAL)), update=FINAL,
+        panels=dict(seen=results), raw_rows=dict(seen=raw), same_video_init0_anchors=dict(rows=36,
+            results=anchor_results, raw_rows=anchor_rows, other108_paired=False), provenance=provenance,
+        billing=billing(root), interactions=interactions, limits=run['limits'], new_episodes=144, reused_final_episodes=0,
+        zero_interaction=False, new_practice=0, shared_updates=FINAL, held_offline_labels_read=False, held=False, Test=False,
+        selection='unique preregistered terminal180;90 is recovery only; finite non-held diagnostic, not strict400 qualification',
+        automatic_successor=False, dependencies=paid_dependencies(),
+        success_keys={a: sorted([[case_task(r), r['init_state_id']] for r in rows if r['success']]) for a, rows in raw.items()})
+    write_json_atomic(root/'analysis/results.json', result)
+    write_json_atomic(root/'completion.json', dict(complete=True, rows=144, controllers=36, result=str(root/'analysis/results.json')))
+    lines = ['# 原生完整算子首写：唯一180末点', '',
+        '非held有限面板144行：'+str(results['total']['successes']),
+        '覆盖：'+str(results['total']['breadth']), '',
+        '每task同一v0视频复用四新初态；这不是400不同教学条件或held迁移资格。',
+        '复用144段source实践/40377步，当前0新实践不能记作zero-interaction。',
+        '旧source-W仅init0的36个同视频锚配对；其余108未作同condition比较。',
+        '任务、suite、target/support、identity、完整成功键、R/G/L和代价见同目录JSON。']
+    (root/'analysis/report.md').write_text('\n'.join(lines)+'\n')
+    return result

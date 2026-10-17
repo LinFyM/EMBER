@@ -1,3 +1,20 @@
+## 2026-10-17 原生首写CPU消费者通过，准备新冻结GPU执行
+
+真实144 source raw H/7808decision/40377步/52success、按四episode顺序的每task16支撑已核；720逻辑事件/20160query、每task20不同非报告V、20等权周期/90流恢复、真实HDF5 offset1/chunk50/source-normalized stateful prompt及连续/非连续noise-time分片通过。144原参照与36同视频锚由原rows读取，旧source-W其余108不伪配对。
+紧凑CPU Jacobian oracle的完整QR/alpha/gauge与双伴随梯度一致（最大绝对差约7.28e−11）；真实M/H hidden/facts加显式synthetic视觉bridge的3,144,739参数/53张量梯度均finite非零。后者未用真实source视觉forward，不冒充GPU机制或科学能力；真实十步G/JVP/QR-alpha/native LoRA消费及CUDA完整恢复留受限4更新消费者核。
+同node1–6 rank的真实query碎片按全局/112与SUM同步，条件的G/QR/alpha只计算一次；FM可拼不同task的实际片段。0参考BA/pair/teacher参数回归、0旧Adam/MT/旧生成头。旧source-W模型/weights/1090入口及无消费者held memory读取/旧几何flags退役，唯一control_space继续复用Runtime/native/FM/queue/ledger。源码净增999行/5个职责模块，最大320行、结构guard无hard；schema校验和单次分布式编译-广播-FM余切-伴随的复杂度review由明确所有权/生命周期承担，无平行Writer或主动旧loss。
+实现已集成；下一正式命令为clean pushed detached native_operator_frozen_20261017的`.venv/bin/python -m ember.control_space.run owner --root /data1/user/ymdai/ember_runs/source_native_operator_compiler_20261017/first_write_seed7`。单owner依次至多4可丢弃更新/448FM、fresh180唯一轨迹/CP90与180+rolling、36套/144新query；每个实际GPU子job现场核strg01 data1/双node6或8-node6/真实VRAM/CPU-PSS。
+当前尚未GPU启动；2.5–5.5h预期、12GiB峰/共享H4GiB/M1GiB及独立160提交60800步保持。临时权重不进正式；所有旧时钟/40377实践与旧依赖费保持。一个实际退出等待者/无Queue心跳/第二waiter，整批或真实边界一次回main，不设普通工程ACK。
+
+## 2026-10-17 原生完整算子首写执行接手（尚未GPU启动）
+
+执行01a13dbf从main97cabedc接手canonical工程/科研记录/Git独占窗口；首个可证本地UTC观察02:39:51.303327Z，准备时刻另存新ROOT dispatch/admission。唯一active source_native_operator_compiler_20261017设计全文已读，旧§1–22不恢复。
+独占codex/native-operator-first-write-20261017与native_operator_dev_20261017实施：source H读取/context与数据/144读出在互不重叠隔离分支并行，原生完整38算子J0/双伴随/QR-alpha/训练和Git由唯一实验owner闭环，不另建科学owner或waiter。
+唯一control_space职责替换原source-W生成，保留native/FM/Runtime/queue/ledger/cache原语；native.py负责固定source十步J0/J0T，model/history负责fresh压力与真实经历，learning/training负责完整信用/唯一fresh180，checkpoint负责完整状态，readout负责36套144新行。旧model/weights/1090专用主动面退役到Git/frozen，不保留训练fallback；必要新模块用于这些真实不同生命周期，结构guard审阅净增长/尺寸而非另造框架。
+建ROOT前strg01 data1 quota独立核验余量约150.7GiB，相关du旧M/W ROOT3.423GiB/source H ROOT11.954GiB、shared约80TiB；新增12GiB峰可容纳，实际原件admission/preparation_storage.json。source H/M只读，H新特征所有worker统一≤4GiB/M共享≤1GiB，0复制原H/prefix/模型/参考。
+当前仅CPU实现/消费者准备，尚无GPU/profile/训练/新环境。正式只fresh180/20160FM、终点36套/144新query；临时最多4更新/448FM/0env且丢弃，160提交/60800步/独立16extra硬界。已付source144/40377步及全部旧依赖/事故/时钟保留，非zero-interaction。
+预估工程/消费者1.5–3h+学习读出1–2.5h，整批2.5–5.5h，首有用工作修正；训练/正式计算须新clean pushed detached和live双node6/8-node6/VRAM/CPU/quota准入。唯一owner持续退出等待、0Queue/心跳/第二waiter，完成整批/真实边界一次回main并归还写窗口，0自动后继。
+
 ## 2026-10-17 main科学接回：§22家族停止与唯一新候选
 
 main已读取§22完整原件、当前实际算子，并复算两点各task成功集合。1090→1180 seen290→306/R253G53L37，held121→128/R97G31L24；Object+23而其它target合计−4，heldtask26+9而其它350−2。依据事前停止线，停止冻结Phi900＋source-W共享行列头＋36参考回归继续补丁；部分信用恢复不抹去，128仍低MT153，三零held与训练参考缺口保持。完整论证见[分析§32–33](docs/analyses/source_control_space_learning_20261015.md#32-相邻原件触发回归家族停止而不是抹去已学到的能力)。

@@ -1,3 +1,9 @@
+## 2026-10-17：撤回差分反演优先依据，明确录像辨识与实践校准边界
+
+Owner质询producer差标签的可辨识性、可迁移性及误差相消。main在[原分析首节](analyses/feedback_learning_reassessment_20261017.md)承认训练图拟合不约束未知录像，原始教学没有当前控制族的真实producer代码；相同Reader/task不保证误差正相关。原式实践作用等于减去自身代码读出残差，理想差分拟合使同task不同H都输出r(V)-b_task，不能同时用它论证按不同失败持续修订。
+
+只读旧path.json作CPU秩计算：36 task/158面板的455相关配对，分task差矩阵秩之和122、最高11、中位3、11 task为0；参数覆盖与可见控制覆盖严格分开。结合Reader900/1800、ControlCalibrated、functional/native及旧quotient结果，降低整体控制器反演/共同偏差相消假说的优先级；G/D等既有正例保持。自身实践的可解释增量限定为实际共同物理/观测变量的校准，尚未形成新完整方法。0新模型/env/GPU、采集、实现或派发，无active design，先不开实验。
+
 ## 2026-10-17：撤回关系评分主线，复算失败行为标签与控制传递
 
 Owner指出上一版仍靠Phi式关系评分/参数搜索及稀疏成功，main接受；functional93已含H条件密集FM，不能重新包装。只读旧八臂144首动作，target运动相对reference误差Reader .515166、functional .473203、native .937133，差距主要也在task内均值；不由首replan解释全程，task1/29不利反例保留。旧feedback_proposals的632H/158面板全部存在，203成功；455面板对状态/RNG匹配，126组两边全失败但首动作不同。97组至少两共同成功初态的配对仅10 task且76组在task0/20，独立覆盖不因样本帧数放大。

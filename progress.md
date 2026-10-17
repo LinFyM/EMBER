@@ -1,8 +1,10 @@
-## 2026-10-17 学习链再审：全失败的已知行为标签与实际编译消费者
+## 2026-10-17 学习链复核：差分标签不保证视觉辨识，理想拟合也消去实践差异
 
-Owner指出上一版仍回到Phi评分/参数搜索，主讨论接受。只读复算既有八臂首5步：target24运动相对reference误差Reader .515166、functional .473203、native .937133，native缺口主要也在task内均值，不能先认定A状态区分为主因；不以第一replan距离替代闭环，task1/29反例保留。读取旧feedback_proposals的36 task/158面板/632实际H，203成功、67全面板失败；455面板对初态/env/首noise配对，126组两边全失败但首动作不同。97组至少两共同成功初态只覆盖10 task，其中76组来自task0/20。
+Owner质询已知LoRA差是否可被录像辨识、是否会记忆控制器及误差为何相消。main接受并撤回上一轮差分反演的优先完整方案资格；[原分析首节](docs/analyses/feedback_learning_reassessment_20261017.md)给出相同录像/不同跨初态控制的反例、录像响应与独立query功能之间的可辨识条件、原始教学无真实producer代码的缺口，以及误差差分的实际风险。
 
-当前讨论式为`y_next=y_current+r(V)-r(O_current)`，复用原有source/r8控制表达；r同权读取教学和真实自身RGB，不能输入自身y抄标签。共享学习实际producer差，并以该同一输出在独立non-held状态的功能目标训练；纯task常量抵消，失败行为仍有实际y标签，不能把它误标正确策略。原Reader已做共同producer监督、functional93已做H条件FM、旧G/P-I/FR/native正负全部继承；这是一项明确学习关系的候选，不是已证实新方法。详见[现有分析首节](docs/analyses/feedback_learning_reassessment_20261017.md)。新函数标签未计算，0实现/采集/模型/env/GPU/派发，无active design，先不开实验。
+新增CPU只读复算旧158面板代码：455同task配对的分task差矩阵秩之和122，最高11/中位3，11个task没有task内参数变化；这不是全局122维或视觉可辨识证据。数学重排表明，实践只提供Reader对自身代码的预测残差；理想配对拟合下所有同task实践给同一`r(V)-b_task`，不能同时声称模型按不同失败内容学到新的修订。自身H可校准共同物理/观测变量，但不测量teacher在未展示状态上的任意控制参数。
+
+已复核Reader900/1800、ControlCalibrated、functional/native及旧quotient边界，训练域代码逼近不等于held迁移，已有正例与不利分布均保留。当前没有已推通的新完整方法或active design，0新模型/env/GPU、采集、实现及实验派发；只完成原件分析、CPU线性代数与现有文档。Owner先不开实验保持；以下旧“当前”条目为当时状态，不能恢复执行。
 
 ## 2026-10-17 当前具体化：自动标签与task12实例，暂不开实验
 

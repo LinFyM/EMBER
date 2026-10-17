@@ -1,3 +1,9 @@
+## 2026-10-17 原生首写唯一owner实际启动
+
+owner1893672/监督1892547于2026-10-17T03:06:46.092437Z从clean pushed detached199fc3dc启动，正式workspace native_operator_frozen_20261017。直接退出reader1542/PTY20292，0自Queue/心跳/第二waiter；launch原件的actual_GPU_launch_yet=false只描述当时父进程启动，不冒充首有效更新或episode。
+ROOT source_native_operator_compiler_20261017/first_write_seed7；既有run_contract/dispatch/preparation和现场storage准入保留。受限一次4更新/448FM/0env→fresh180→唯一36LoRA/144新query由同owner接续，profile参数不进正式；所有GPU子job每launch live双node/6或8-node6/VRAM/CPU-PSS及strg01 quota。
+当前仅确认owner启动，首有用GPU机制/吞吐和正式有效更新待实际事件；原2.5–5.5h预计/12GiB峰/H4GiB/M1GiB/160提交60800步与历史成本时钟不变。整批验收/Git后一次可靠回main并归还写窗口，无自动后继。
+
 ## 2026-10-17 原生首写CPU消费者通过，准备新冻结GPU执行
 
 真实144 source raw H/7808decision/40377步/52success、按四episode顺序的每task16支撑已核；720逻辑事件/20160query、每task20不同非报告V、20等权周期/90流恢复、真实HDF5 offset1/chunk50/source-normalized stateful prompt及连续/非连续noise-time分片通过。144原参照与36同视频锚由原rows读取，旧source-W其余108不伪配对。

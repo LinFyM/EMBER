@@ -165,9 +165,19 @@ def profile_campaign(args):
     if (args.root/'physical_selection.json').exists():return read_json(args.root/'physical_selection.json')
     profile=args.root/'profile'
     if (args.root/'profiles/campaign.json').exists():
-        raise RuntimeError('partial consumer campaign requires exact receipt reconciliation, never a repeated profile')
-    write_json_atomic(args.root/'profiles/campaign.json',dict(start_UTC=utc(),max_updates=4,max_FM_queries=448,
-        tasks=[0,13,20,32],temporary_parameters_discarded_from_formal=True,new_environment_episodes=0))
+        recovery=args.root/'analysis/engineering_attempt001/recovery.json'
+        if not args.resume or not recovery.exists():
+            raise RuntimeError('partial consumer campaign needs exact receipt reconciliation')
+        evidence=read_json(recovery)
+        attempts=list((args.root/'jobs/profile_first3').glob('attempt_*'))
+        if (evidence.get('consumed_FM_queries')!=0 or evidence.get('valid_updates')!=0
+                or not evidence.get('all_original_processes_exited') or not evidence.get('scope_fix_only')
+                or len(attempts)!=1 or str(attempts[0])!=evidence.get('original_job_attempt')
+                or (profile/'training/updates.jsonl').exists() or list((profile/'checkpoints').glob('update_*'))):
+            raise RuntimeError('this finite zero-consumption engineering recovery does not apply')
+    else:
+        write_json_atomic(args.root/'profiles/campaign.json',dict(start_UTC=utc(),max_updates=4,max_FM_queries=448,
+            tasks=[0,13,20,32],temporary_parameters_discarded_from_formal=True,new_environment_episodes=0))
     launch(args,'profile_first3',['profile','--root',str(profile),'--start','0','--stop','3'],4,estimate=600,minimum=22000)
     available=learning_devices(args,6,minimum=22000,label='profile_last_available')
     launch(args,'profile_last1',['profile','--root',str(profile),'--start','3','--stop','4'],len(available),

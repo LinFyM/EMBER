@@ -100,7 +100,7 @@ def train(args):
                 if update==args.start:
                     print('EMBER_WORK_EVENT '+json.dumps(dict(kind='training_observation',**{k:v for k,v in report.items()
                         if k not in ('memory','logical_events','local_compilations','local_actual_F_out_consumer')})),flush=True)
-            if (update+1)%9==0 or update+1 in (90,180) or update+1==args.stop:
+            if disposable or (update+1)%9==0 or update+1 in (90,180) or update+1==args.stop:
                 save(args.root,model,optimizer,scheduler,stream,context,
                     dict(support_microbatch=args.support_microbatch,FM_microbatch=args.microbatch),
                     update=update+1,training_seconds=elapsed,disposable=disposable,frozen_response_cache=compiler.F0)

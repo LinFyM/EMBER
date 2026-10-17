@@ -123,7 +123,9 @@ class NativeJacobian:
         # Forward AD computes the real first derivative through all ten calls.
         # Eager source attention supports dual tensors; no finite differences.
         for first,last,velocity in self.parts:
-            with torch.autograd.forward_ad.dual_level():
+            # Autograd.Function.forward/backward disable forward AD by default.
+            # These fixed linear-map implementations explicitly own the JVP.
+            with torch.autograd.forward_ad._set_fwd_grad_enabled(True),torch.autograd.forward_ad.dual_level():
                 dual = tuple(torch.autograd.forward_ad.make_dual(z,d.detach().float())
                              for z,d in zip(self.dense.zeros(),operators,strict=True))
                 output = self._actions(velocity,self.noise[first:last],dual,checkpointed=False)

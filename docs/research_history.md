@@ -1,3 +1,20 @@
+## 2026-10-17 §22原1090完整相邻读出与费用资源验收
+
+从main b27b78f0接手，首次01:39:14.985237Z；唯一owner1294904于01:44:26.915663Z启动、02:09:24.811810Z exit0，持续直接reader1467/PTY42742结束。首次→科学退出30.164min、owner24.965min，原35–65min预期/验收另计与家族09:05:48.038、全部旧时钟/费用保持。0Queue/心跳/第二waiter。
+原训练producer eadfe958ff17b0d1b4e1ff10265c234883b243b0的1090/schema ember_source_weight_factor_credit_r8_seed7_v1/joint/next1090只读；manifest/CP原地不改、不copy、不恢复Adam。正式新读出d963e8c34199bd71a90b00ecf1843853c15cb086、新readout schema显式区别于原训练，4838160参数/源W-A0-76S/完整Φ900有序M/full38r8-alpha8-drop0不变。
+唯一control_space窄接owner/loader/readout/queue/账本；旧training/profile/learning/checkpoint、Stream和算子几何主动入口退役到Git/frozen，源码净减615行/0新module/最大269行，无平行Writer/fallback。实际CPU来源/M/976映射/完整76tensor/原子queue-adopt/unknown全额/有效拒重跑消费者通过；无额外GPU/model/env smoke或profile。model/weights/video/cache数学无修改。
+
+976新完整LoRA与976新episode/92shard，0旧输出/episode填新结果。seen1090=290（source218/ref502/U484/Reader334413/旧244），1180=306；1090→1180 R253/G53/L37、churn90/Jaccard.737609，breadth31→33。target116→135、support174→171、identity80→79；source保206→203/失12→15，参考新增288保74→87，target270保69→82、support18保5→5。
+seenSpatial34→35、Object15→38、Goal51→46、Long16→16、support174→171；增量集中Object，未消除能力交换。全部36任务、source/ref/Reader与历史强参照的配对集合见原件。
+validation1090=121（Reader117/111、MT153/G165/D175168/ψ119/旧57），1180=128；1090→1180 R97/G31/L24、churn55/Jaccard.638158，breadth5→5。
+task[3,6,11,16,23,26,31,39]为[37,7,42,0,0,29,6,0]→[32,9,38,0,0,38,11,0]：task26+9、其余350为92→90，三零任务不变。1090对Reader R75G46L42、对MT R94G27L59；1180对Reader R78G50L39、对MT R96G32L57。正例与所有损失保留，不按task回选/union，不把胜旧57或两点净升称广泛稳定/视频因果/最终成功。
+
+真实976提交/258437control+9760dummy=268197步，unknown0/extra0/16/有效或正常失败重跑0；992/343840/9920/353760同时满足。6实际job全exit0/readout2.421583033535GPUh，0训练/profile；峰6物理卡/node4/2，现场6/8-node6/liveVRAM/CPU-PSS/data1准入原件保留，foreign不触碰。
+有用16槽中位.146801episode/s/9.164108native plans/s，8槽.129937/8.137101，尾4与2槽保留，0重探32/额外科学profile。32次完整close、累计312envPID（非同时并发）全退；worker子树最多18process/108threads，最低node MemAvailable272.54/366.08GiB。终检UID GPU0/zombies0、nodePSS .313/1.698GiB；已有同UID其它服务未误杀。
+976物化M全部只读命中、33459帧当量=18931seen+14528held；0prefix新建/重读/Reader新forward/producer545/离线teacher标签。共享M charged617130072bytes<1GiB，本ROOT无M/W/CP副本；旧CP/manifest/W/D/SQLite mtime均早于首次。原59114/14528已付采样帧、§21 3.579776625832GPUh/266610步、§20 9.817228845821GPUh/281142步及source/reference/Reader依赖区间分别保留，不重复加总或称从零总成本。
+ROOT终检约2.422GiB<6GiB合同，磁盘非连续采样不伪称精确高水；原完整CP/所有事故/unknown区间不动。开发树与已集成本地branch清理，formal frozen d963e8c3保留；最终clean pushed main/回报身份见git_delivery.json/main_completion_receipt.json。
+[整批报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/source_weight_factor_credit_adjacent1090_seed7/analysis/engineering_completion.md)及ROOT analysis/results/adjacent_readout/engineering_acceptance/teaching_consumption/resource_exit包含全部任务/suite/target-support/identity、RGL/churn/Jaccard/成功集合、配对限制、费用/资源。§22有限目标完成，无自动1000/更多点/训练块/controls/Test，main消费后依§21/22家族停止线自主裁决；整批一次可靠回报后归还canonical写窗口。
+
 ## 2026-10-17 主讨论消费因子信用结果，只读既存1090相邻点
 
 main在01:25Z整批交付/写窗口归还后，消费实际source-W/学习/训练/评测代码、976新行与1180记录和CPU算子原件。

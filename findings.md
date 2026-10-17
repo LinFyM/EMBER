@@ -1,3 +1,10 @@
+## 2026-10-17 相邻1090→1180有获得，也保留集中增量与交换
+
+原固定生成器1090全新同条件读出seen290、validation121；1180为306/128。seen R253/G53/L37（Jaccard.737609），validation R97/G31/L24（.638158）。末段并非全无能力变化，但不能用净+16/+7替代广泛稳定获得：seenObject15→38，Goal51→46、support174→171，identity80→79；heldtask26的29→38贡献+9，其余350的92→90净−2，16/23/39两点均0。
+1090 source218保206/失12，1180保203/失15；参考新增288保存74→87、target270保69→82。训练参考控制仍大量缺失。held1090对Reader117为G46/L42、对MT153为G27/L59；1180为G50/L39与G32/L57。相对旧57的恢复成立，强参照差距和损失亦成立，0按task回选/union或自动增量。
+本批只读原1090，新976完整LoRA/episode，0新训练/算子或动作探针；相邻结果不能唯一归因某阶段/层，也不认证视频操作理解或因果。完整任务/suite/breadth/成功集合、配对限制及正负例见[报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/source_weight_factor_credit_adjacent1090_seed7/analysis/engineering_completion.md)。main据§21/22家族停止线消费后继，执行端无自动更多点/续训/controls/Test。
+976有效行/268197真实步/2.421583033535GPUh，unknown0/extra0；共享M只读复用不是0教学，原CP/旧事故/已付依赖费用与时钟独立保留。
+
 ## 2026-10-17 部分信用恢复不等于广泛教学编译
 
 同模型/同视频和query流/同曝光只改前段loss后，target71→135、held57→128，支持该干预改善了实际学习；

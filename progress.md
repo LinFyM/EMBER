@@ -1,3 +1,14 @@
+## 2026-10-17 §22完整976读出及验收结束，待一次可靠main交付
+
+唯一owner1294904于02:09:24.811810Z exit0，直接reader1467/PTY42742结束；首次01:39:14.985237Z→科学退出30.164min，owner实际24.965min，原35–65min/家族09:05:48.038及旧费用保持，验收/Git另计。
+原eadfe958/1090只读模型，formal读出d963e8c3；0训练/Adam恢复/profile/额外forward或环境smoke。976新完整LoRA/976新episode/92shard全部有效，unknown0/extra0/16/有效行重跑0。
+seen1090=290/576→1180=306，R253G53L37/churn90/Jaccard.737609；target116→135、support174→171、identity80→79；参考新增288保74→87（target270保69→82），source保206→203。
+validation1090=121/400→1180=128，R97G31L24/churn55/Jaccard.638158；八task1090[37,7,42,0,0,29,6,0]→1180[32,9,38,0,0,38,11,0]。task26+9、其余350净−2，三零任务不变；强Reader117/111、MT153/G165/D175168/ψ119及旧57全部保留，不能称广泛稳定提高。
+本批2.421583033535GPUh，258437control+9760dummy=268197步；6job全exit0，峰6卡/node4/2，32次fullclose/312累计环境PID全部退出。终检UID GPU0/zombie0、nodePSS .313/1.698GiB；foreign未触碰。
+976次M只读命中/33459帧当量（seen18931/held14528），0新prefix/Reader或producer545读取；共享617130072bytes，新ROOT无CP/W/M副本，旧索引/CP不写。终检约2.422GiB<6GiB，非连续磁盘峰采样；已付教学/共享依赖及旧事故费用不清零。
+[整批报告](/data1/user/ymdai/ember_runs/source_policy_space_compiler_20261015/source_weight_factor_credit_adjacent1090_seed7/analysis/engineering_completion.md)和results/adjacent_readout/engineering_acceptance/resource_exit/teaching_consumption含全部任务/强参照/成功集合/费用/资源。开发树与已集成本地branch已清理、formal frozen保留；最终main clean pushed见git_delivery.json。
+当前无待跑阶段；一次可靠回main01a13dd9后归还canonical工程/科研记录/Git窗口。§21家族停止线保持，0自动更多CP/训练/controls/Test/第二窗口，main消费后裁决。
+
 ## 2026-10-17 §22唯一正式只读owner已启动
 
 owner1294904于01:44:26.915663Z从clean pushed detached d963e8c3启动，ROOT source_weight_factor_credit_adjacent1090_seed7，直接退出reader1467/PTY42742；launch原件注明当时尚未GPU启动，不能将派发或父进程启动当有效episode。
